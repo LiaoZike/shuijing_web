@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+{% block title %}水井村三生共好・雲林口湖{% endblock %}
+{% load static %}
+{% block link_css %}
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+{% endblock %}
+{% block extra_css %}
+.parallax-section {
+    background-image: url('{% static "image/background.jpg" %}');
+}
+{% endblock %}
+
+{% block content %}
+
+<!-- ===================== HERO CAROUSEL ===================== -->
+<div id="heroCarousel" class="carousel slide hero-carousel" data-bs-ride="carousel" data-bs-interval="4000">
+    <div class="carousel-indicators">
+        {% for slide in slides %}
+        <button type="button" data-bs-target="#heroCarousel"
+                data-bs-slide-to="{{ forloop.counter0 }}"
+                {% if forloop.first %}class="active"{% endif %}></button>
+        {% endfor %}
+    </div>
+    <div class="carousel-inner">
+        {% for slide in slides %}
+        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+            <div class="hero-bg" style="background-image: url('{{ slide.image.url }}');">
+                <div class="hero-caption">
+                    <div class="tag">{{ slide.get_category_display|upper }}</div>
+                    <h1>{{ slide.title }}</h1>
+                    <p>{{ slide.subtitle }}</p>
+                    <p class="hero-description">{{ slide.description }}</p>
+                </div>
+                {% if slide.cc_credit %}
+                <small class="cc_sentence">{{ slide.cc_credit }}</small>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon"></span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon"></span>
+    </button>
+</div>
+
+<div class="scroll-down" onclick="document.querySelector('.sansheng-section').scrollIntoView({behavior:'smooth'})">
+    ↓ 探索水井村
+</div>
+
+<!-- ===================== 三生 CARDS ===================== -->
+<section class="sansheng-section">
+    <div class="container">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <div class="divider-bamboo"></div>
+            <p class="section-subtitle mb-3">THREE HARMONIES</p>
+            <h2 class="section-title">三生共好</h2>
+            <p style="color:var(--text-muted);font-size:0.88rem;margin-top:12px;letter-spacing:0.1em;">
+                生產・生態・生活，三者相輔相成，共創永續村莊
+            </p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="sansheng-card">
+                    <span class="card-icon">🌾</span>
+                    <div class="card-cn">生 產</div>
+                    <div class="card-en">PRODUCTION</div>
+                    <p class="card-desc">水井村土地肥沃，農漁資源豐富。在地農民世代耕耘，孕育出獨特的沿海農產，承載著口湖鄉的風土記憶。</p>
+                    <div class="card-tags">
+                        <span class="tag-pill">在地農產</span>
+                        <span class="tag-pill">特色商品</span>
+                        <span class="tag-pill">農業體驗</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="sansheng-card">
+                    <span class="card-icon">🌿</span>
+                    <div class="card-cn">生 態</div>
+                    <div class="card-en">ECOLOGY</div>
+                    <p class="card-desc">緊鄰沿海濕地，是候鳥遷徙的重要棲息地。豐富的生態資源讓水井村成為自然與人文共存的生態寶地。</p>
+                    <div class="card-tags">
+                        <span class="tag-pill">沿海濕地</span>
+                        <span class="tag-pill">候鳥生態</span>
+                        <span class="tag-pill">生態攝影</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
+                <div class="sansheng-card">
+                    <span class="card-icon">🏮</span>
+                    <div class="card-cn">生 活</div>
+                    <div class="card-en">LIFE</div>
+                    <p class="card-desc">村民之間人情味濃厚，傳統節慶與在地文化世代相傳。這裡的生活，是台灣鄉村最真實的樣貌。</p>
+                    <div class="card-tags">
+                        <span class="tag-pill">社區活動</span>
+                        <span class="tag-pill">文化傳承</span>
+                        <span class="tag-pill">生活互動</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===================== 視差區塊 ===================== -->
+<section class="parallax-section">
+    <div class="parallax-content container" data-aos="fade-up">
+        <blockquote>「這片土地，靜靜守護著世代的記憶」</blockquote>
+        <cite>— 雲林縣口湖鄉・水井村</cite>
+    </div>
+</section>
+
+<!-- ===================== 服務項目 ===================== -->
+<section class="services-section">
+    <div class="container">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <div class="divider-bamboo"></div>
+            <p class="section-subtitle mb-3">OUR SERVICES</p>
+            <h2 class="section-title">我們能為你做什麼</h2>
+        </div>
+        <div class="row g-4">
+            {% for service in services %}
+            <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="{{ forloop.counter }}00">
+                <div class="service-card {% if service.is_featured %}service-card-featured{% endif %}">
+                    {% if service.badge_text %}
+                    <div class="service-badge">{{ service.badge_text }}</div>
+                    {% endif %}
+                    <div class="service-icon">{{ service.icon }}</div>
+                    <div class="service-num">{{ forloop.counter|stringformat:"02d" }}</div>
+                    <h4 class="service-title">{{ service.title }}</h4>
+                    <p class="service-desc">{{ service.description }}</p>
+                    <a href="{{ service.link_url }}" class="service-link">{{ service.link_text }} →</a>
+                </div>
+            </div>
+            {% empty %}
+            <p style="color:var(--text-muted);text-align:center;">服務項目建置中，敬請期待。</p>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+
+<!-- ===================== 近期活動 ===================== -->
+<section class="events-section">
+    <div class="container">
+        <div class="row align-items-start">
+            <div class="col-lg-4 mb-5" data-aos="fade-right">
+                <div class="divider-bamboo" style="margin:0 0 12px;"></div>
+                <p class="section-subtitle mb-3">EVENTS</p>
+                <h2 class="section-title">近期活動</h2>
+                <p style="color:var(--text-muted);font-size:0.87rem;line-height:1.9;margin-top:16px;">
+                    水井村定期舉辦各類社區活動，
+                    歡迎外地朋友前來體驗
+                    最道地的台灣鄉村生活。
+                </p>
+            </div>
+            <div class="col-lg-8" data-aos="fade-left">
+                {% for activity in activities %}
+                <div class="event-card {% if activity.date < today %}event-past{% endif %}">
+                    <div class="event-date">
+                        <div class="day">{{ activity.date|date:"d" }}</div>
+                        <div class="month">{{ activity.date|date:"M"|upper }}</div>
+                    </div>
+                    <div class="event-info">
+                        <h5>
+                            {{ activity.title }}
+                            {% if activity.date < today %}
+                            <span class="badge-past">已結束</span>
+                            {% elif activity.is_featured %}
+                            <span class="badge-featured">推薦</span>
+                            {% endif %}
+                        </h5>
+                        <p>
+                            {% if activity.location %}{{ activity.location }}{% endif %}
+                            {% if activity.location and activity.time %}・{% endif %}
+                            {% if activity.time %}{{ activity.time }}{% endif %}
+                        </p>
+                    </div>
+                    {% if activity.link_url %}
+                    <a href="{{ activity.link_url }}" style="margin-left:auto;">
+                        <i class="bi bi-arrow-right" style="color:var(--bamboo-light);"></i>
+                    </a>
+                    {% else %}
+                    <i class="bi bi-arrow-right ms-auto" style="color:var(--bamboo-light);opacity:0.25;"></i>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <p style="color:var(--text-muted);font-size:0.85rem;padding-top:24px;">近期暫無活動，敬請期待。</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- 查看全部按鈕 -->
+        {% if activities %}
+        <div class="text-center mt-4" data-aos="fade-up">
+            <a href="#" class="btn-login" style="font-size:0.82rem;padding:10px 32px;letter-spacing:0.15em;">
+                查看全部活動 →
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- ===================== 相簿 GRID ===================== -->
+<section class="gallery-section">
+    <div class="container-fluid px-4">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <div class="divider-bamboo"></div>
+            <p class="section-subtitle mb-3">GALLERY</p>
+            <h2 class="section-title">水井村印象</h2>
+        </div>
+        <div class="gallery-grid" data-aos="fade-up">
+            <div class="gallery-item gi-1">
+                <img src="https://images.unsplash.com/photo-1500964757637-c85e8a162699?w=800" alt="農田風光">
+                <div class="overlay"><span class="gallery-label">農田風光</span></div>
+            </div>
+            <div class="gallery-item gi-2">
+                <img src="https://images.unsplash.com/photo-1504701954957-2010ec3bcec1?w=600" alt="候鳥生態">
+                <div class="overlay"><span class="gallery-label">候鳥生態</span></div>
+            </div>
+            <div class="gallery-item gi-3">
+                <img src="https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=600" alt="沿海濕地">
+                <div class="overlay"><span class="gallery-label">沿海濕地</span></div>
+            </div>
+            <div class="gallery-item gi-4">
+                <img src="https://images.unsplash.com/photo-1470770841072-f978cf4d019e?w=600" alt="社區活動">
+                <div class="overlay"><span class="gallery-label">社區活動</span></div>
+            </div>
+            <div class="gallery-item gi-5">
+                <img src="https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=600" alt="在地生活">
+                <div class="overlay"><span class="gallery-label">在地生活</span></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===================== CTA ===================== -->
+<section class="cta-section">
+    <div class="container" data-aos="fade-up">
+        <p class="section-subtitle mb-3">COME VISIT US</p>
+        <h2 class="section-title mb-4">來水井村走走</h2>
+        <p style="color:var(--text-muted);font-size:0.9rem;letter-spacing:0.12em;margin-bottom:36px;">
+            雲林縣口湖鄉・感受台灣鄉村最真實的三生共好
+        </p>
+        {% if user.is_authenticated %}
+            <a href="#" class="btn-login" style="font-size:0.9rem;padding:12px 36px;">瀏覽活動</a>
+        {% else %}
+            <a href="{% url 'login_portal' %}?next=/" class="btn-login" style="font-size:0.9rem;padding:12px 36px;">
+                <i class="bi bi-google me-2"></i>登入加入我們
+            </a>
+        {% endif %}
+    </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block content %}
+<div style="min-height:60vh;display:flex;align-items:center;justify-content:center;text-align:center;">
+    <div>
+        <p style="color:var(--bamboo-light);letter-spacing:0.2em;font-size:0.8rem;">ERROR</p>
+        <h2 style="font-family:'Noto Serif TC',serif;color:var(--cream);margin-bottom:16px;">登入失敗</h2>
+        <p style="color:var(--text-muted);margin-bottom:32px;">請再試一次或聯絡管理員</p>
+        <a href="{% url 'login_portal' %}?next=/" class="btn-login">
+            重新登入
+        </a>
+    </div>
+</div>
+{% endblock %}

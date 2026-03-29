@@ -1,0 +1,244 @@
+:root {
+    --wood-dark:   #2E1F0F;
+    --wood-mid:    #4A3220;
+    --wood-light:  #7A5C38;
+    --bamboo:      #8B6914;
+    --bamboo-light:#C4A052;
+    --cream:       #F2E8D0;
+    --cream-dark:  #D4C4A0;
+    --green-deep:  #1E3320;
+    --green-mid:   #3A5C30;
+    --green-light: #6A9050;
+    --ink:         #1A120A;
+    --text-light:  #F5EDD8;
+    --text-muted:  #A09070;
+}
+
+* {
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, 
+        "Segoe UI", "PingFang TC", "Microsoft JhengHei", 
+        "Noto Sans TC", Arial, sans-serif;
+}
+
+body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background-color: var(--ink);
+    color: var(--text-light);
+    overflow-x: hidden;
+}
+
+/* ===================== NAVBAR ===================== */
+#mainNav {
+    background: rgba(30, 15, 5, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(139, 105, 20, 0.2);
+    transition: background 0.4s ease, box-shadow 0.4s ease, padding 0.3s ease;
+    padding: 18px 0;
+}
+
+#mainNav.scrolled {
+    background: rgba(20, 10, 3, 0.97);
+    box-shadow: 0 2px 30px rgba(0,0,0,0.5);
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(139, 105, 20, 0.4);
+}
+
+.navbar-brand {
+    font-family: 'Noto Serif TC', serif;
+    font-weight: 700;
+    color: var(--cream) !important;
+    letter-spacing: 0.05em;
+}
+
+.navbar-brand .brand-en {
+    font-size: 0.65rem;
+    color: var(--bamboo-light);
+    display: block;
+    letter-spacing: 0.2em;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-weight: 300;
+}
+
+.nav-link {
+    color: var(--cream-dark) !important;
+    font-size: 0.88rem;
+    letter-spacing: 0.12em;
+    padding: 8px 16px !important;
+    position: relative;
+    transition: color 0.3s;
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 4px;
+    left: 16px;
+    width: 0;
+    height: 1px;
+    background: var(--bamboo-light);
+    transition: width 0.3s ease;
+}
+
+.nav-link:hover {
+    color: var(--bamboo-light) !important;
+}
+
+.nav-link:hover::after {
+    width: calc(100% - 32px);
+}
+
+/* 下拉選單 */
+.dropdown-menu {
+    background: rgba(20, 10, 3, 0.97);
+    border: 1px solid rgba(139, 105, 20, 0.3);
+    border-radius: 0;
+    min-width: 160px;
+    padding: 8px 0;
+}
+
+.dropdown-item {
+    color: var(--cream-dark);
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    padding: 10px 20px;
+    transition: all 0.2s;
+}
+
+.dropdown-item:hover {
+    background: rgba(139, 105, 20, 0.15);
+    color: var(--bamboo-light);
+    padding-left: 26px;
+}
+
+/* Google 登入按鈕 */
+.btn-login {
+    border: 1px solid rgba(196, 160, 82, 0.5);
+    color: var(--bamboo-light);
+    font-size: 0.82rem;
+    padding: 7px 18px;
+    border-radius: 2px;
+    background: transparent;
+    letter-spacing: 0.1em;
+    transition: all 0.3s;
+}
+
+.btn-login:hover {
+    background: rgba(139, 105, 20, 0.2);
+    border-color: var(--bamboo-light);
+    color: var(--cream);
+}
+
+/* Hamburger */
+.navbar-toggler {
+    border: 1px solid rgba(196, 160, 82, 0.4);
+    padding: 4px 10px;
+}
+
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28196%2C160%2C82%2C0.9%29' stroke-width='2' stroke-linecap='round' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+/* ===================== FOOTER ===================== */
+footer {
+    background: var(--wood-dark);
+    border-top: 1px solid rgba(139, 105, 20, 0.25);
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+footer .footer-brand {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 1.3rem;
+    color: var(--cream);
+    letter-spacing: 0.1em;
+}
+
+footer .footer-divider {
+    width: 40px;
+    height: 1px;
+    background: var(--bamboo);
+    margin: 16px 0;
+}
+
+footer a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.82rem;
+    letter-spacing: 0.08em;
+    transition: color 0.2s;
+}
+
+footer a:hover {
+    color: var(--bamboo-light);
+}
+
+footer .footer-bottom {
+    border-top: 1px solid rgba(255,255,255,0.06);
+    font-size: 0.78rem;
+    color: rgba(160, 144, 112, 0.5);
+}
+
+/* ===================== UTILS ===================== */
+.section-title {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 1.6rem;
+    color: var(--cream);
+    letter-spacing: 0.08em;
+    font-weight: 500;
+}
+
+.section-subtitle {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    letter-spacing: 0.2em;
+}
+
+.divider-bamboo {
+    width: 50px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--bamboo), var(--bamboo-light));
+    margin: 0 auto 12px;
+}
+/* Toast */
+.toast-container {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.site-toast {
+    position:fixed;top:100px;right:10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 20px;
+    backdrop-filter: blur(12px);
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    min-width: 260px;
+    animation: toastIn 0.4s ease forwards;
+    color: var(--cream);
+    background: rgba(20, 40, 20, 0.95);
+    border: 1px solid rgba(80, 140, 60, 0.5);
+    border-left: 3px solid #6A9050;
+}
+.site-toast button {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0;
+    line-height: 1;
+}
+.site-toast button:hover { color: var(--cream); }
+@keyframes toastIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to   { opacity: 1; transform: translateX(0); }
+}

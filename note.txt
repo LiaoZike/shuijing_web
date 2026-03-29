@@ -1,0 +1,22 @@
+source ./.venv/bin/activate
+
+
+
+cd ..   # 到專案資料夾的上一層
+zip -r shuijing.zip shuijing/ \
+    --exclude "shuijing/.venv/*" \
+    --exclude "shuijing/__pycache__/*" \
+    --exclude "shuijing/*/__pycache__/*" \
+    --exclude "shuijing/*.pyc" \
+    --exclude "shuijing/db.sqlite3" \
+    --exclude "shuijing/.env"
+
+
+上傳後解壓
+cd ~
+unzip shuijing.zip -d shuijing
+
+
+python manage.py collectstatic
+
+/static/ => /home/web41243166/shuijing/staticfiles/

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}水井村三生共好{% endblock %}</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;700&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- AOS 動畫 -->
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    {% block link_css %}{% endblock %}
+    <style>
+        {% block extra_css %}{% endblock %}
+    </style>
+</head>
+<body>
+
+<!-- ===================== NAVBAR ===================== -->
+<nav class="navbar navbar-expand-lg fixed-top" id="mainNav">
+    <div class="container">
+        <a class="navbar-brand" href="{% url 'home' %}">
+            水井村
+            <span class="brand-en">SHUIJING VILLAGE</span>
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarMain">
+            <ul class="navbar-nav mx-auto">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">生 產</a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#">在地農產</a></li>
+                        <li><a class="dropdown-item" href="#">特色商品</a></li>
+                        <li><a class="dropdown-item" href="#">農業體驗</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">生 態</a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#">沿海濕地</a></li>
+                        <li><a class="dropdown-item" href="#">候鳥生態</a></li>
+                        <li><a class="dropdown-item" href="#">生態相簿</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">生 活</a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#">社區活動</a></li>
+                        <li><a class="dropdown-item" href="#">文化傳承</a></li>
+                        <li><a class="dropdown-item" href="#">生活互動</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">關 於</a>
+                </li>
+            </ul>
+
+            <!-- 登入 / 用戶 -->
+            <div class="d-flex align-items-center gap-3">
+                {% if user.is_authenticated %}
+                    <div class="dropdown">
+                        <button class="btn-login dropdown-toggle" data-bs-toggle="dropdown">
+                            {{ user.first_name|default:user.email }}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#">個人資料</a></li>
+                            <li><a class="dropdown-item" href="#">我的紀錄</a></li>
+                            <li><hr class="dropdown-divider" style="border-color:rgba(139,105,20,0.2);"></li>
+                            <li>
+                                <form method="post" action="/accounts/logout/">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item" style="background:none;border:none;width:100%;text-align:left;">
+                                        登出
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                {% else %}
+                    <a href="{% url 'login_portal' %}?next={{ request.path }}" class="btn-login">
+                        登入
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- ===================== Main ===================== -->
+<main>
+    {% block content %}{% endblock %}
+</main>
+<!-- ===================== TOAST ===================== -->
+{% if messages %}
+<div class="toast-container">
+    {% for message in messages %}
+    <div class="site-toast {% if message.tags %}toast-{{ message.tags }}{% endif %}" id="toast-{{ forloop.counter }}">
+        <span>{{ message }}</span>
+        <button onclick="this.parentElement.remove()">×</button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+<!-- ===================== FOOTER ===================== -->
+<footer class="pt-5 pb-3 mt-0">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-4 mb-4">
+                <div class="footer-brand">水井村</div>
+                <div class="footer-divider"></div>
+                <p style="font-size:0.83rem;line-height:1.9;color:var(--text-muted);">
+                    位於雲林縣口湖鄉沿海地帶，<br>
+                    一個充滿自然生命力的靜謐村莊。<br>
+                    三生共好・永續共存。
+                </p>
+            </div>
+            <div class="col-6 col-lg-2 mb-4">
+                <p style="color:var(--cream-dark);font-size:0.8rem;letter-spacing:0.15em;margin-bottom:14px;">生 產</p>
+                <ul class="list-unstyled">
+                    <li class="mb-2"><a href="#">在地農產</a></li>
+                    <li class="mb-2"><a href="#">特色商品</a></li>
+                    <li class="mb-2"><a href="#">農業體驗</a></li>
+                </ul>
+            </div>
+            <div class="col-6 col-lg-2 mb-4">
+                <p style="color:var(--cream-dark);font-size:0.8rem;letter-spacing:0.15em;margin-bottom:14px;">生 態</p>
+                <ul class="list-unstyled">
+                    <li class="mb-2"><a href="#">沿海濕地</a></li>
+                    <li class="mb-2"><a href="#">候鳥生態</a></li>
+                    <li class="mb-2"><a href="#">生態相簿</a></li>
+                </ul>
+            </div>
+            <div class="col-6 col-lg-2 mb-4">
+                <p style="color:var(--cream-dark);font-size:0.8rem;letter-spacing:0.15em;margin-bottom:14px;">生 活</p>
+                <ul class="list-unstyled">
+                    <li class="mb-2"><a href="#">社區活動</a></li>
+                    <li class="mb-2"><a href="#">文化傳承</a></li>
+                    <li class="mb-2"><a href="#">生活互動</a></li>
+                </ul>
+            </div>
+            <div class="col-6 col-lg-2 mb-4">
+                <p style="color:var(--cream-dark);font-size:0.8rem;letter-spacing:0.15em;margin-bottom:14px;">關 於</p>
+                <ul class="list-unstyled">
+                    <li class="mb-2"><a href="#">村莊介紹</a></li>
+                    <li class="mb-2"><a href="#">聯絡我們</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom pt-3 mt-3 text-center">
+            © 2025 水井村三生共好平台・雲林縣口湖鄉・Liao-Zike
+        </div>
+    </div>
+</footer>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+<script>
+    AOS.init({ duration: 700, once: false, offset: 80 });
+
+    // Navbar 滾動變色
+    window.addEventListener('scroll', () => {
+        const nav = document.getElementById('mainNav');
+        nav.classList.toggle('scrolled', window.scrollY > 50);
+    });
+    // Toast 自動消失
+    document.querySelectorAll('.site-toast').forEach((toast, i) => {
+        setTimeout(() => {
+            toast.style.transition = 'opacity 0.4s, transform 0.4s';
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(20px)';
+            setTimeout(() => toast.remove(), 400);
+        }, 3500 + i * 500);  // 多個 toast 錯開消失
+    });
+</script>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

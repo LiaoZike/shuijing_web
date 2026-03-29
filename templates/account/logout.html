@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block content %}
+<div style="min-height:60vh;display:flex;align-items:center;justify-content:center;text-align:center;">
+    <div>
+        <p style="color:var(--bamboo-light);letter-spacing:0.2em;font-size:0.8rem;">LOGOUT</p>
+        <h2 style="font-family:'Noto Serif TC',serif;color:var(--cream);margin-bottom:16px;">確定要登出？</h2>
+        <form method="post" action="/accounts/logout/">
+            {% csrf_token %}
+            <button type="submit" class="btn-login">確定登出</button>
+        </form>
+        <a href="/" style="display:block;margin-top:16px;color:var(--text-muted);font-size:0.85rem;">取消，回首頁</a>
+    </div>
+</div>
+{% endblock %}

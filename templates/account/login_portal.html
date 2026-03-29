@@ -1,0 +1,327 @@
+{% extends "../base.html" %}
+{% load socialaccount %}
+
+{% block title %}登入・水井村三生共好{% endblock %}
+
+{% block extra_css %}
+#mainNav, footer { display: none !important; }
+
+.login-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.login-bg {
+    position: fixed;
+    inset: 0;
+    background-image: url('https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=1600&q=80');
+    background-size: cover;
+    background-position: center;
+    filter: brightness(0.5) saturate(0.8);
+    z-index: 0;
+}
+
+.login-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 6, 2, 0.62);
+}
+
+.glass-card {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 400px;
+    margin: 20px;
+    padding: 52px 44px;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    border-left: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 8px 60px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.15);
+    animation: fadeUp 0.7s ease forwards;
+}
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.glass-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 10%; right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(196,160,82,0.8), transparent);
+}
+
+.corner { position: absolute; width: 16px; height: 16px; border-color: rgba(196,160,82,0.5); border-style: solid; }
+.c-tl { top: 14px; left: 14px; border-width: 1px 0 0 1px; }
+.c-tr { top: 14px; right: 14px; border-width: 1px 1px 0 0; }
+.c-bl { bottom: 14px; left: 14px; border-width: 0 0 1px 1px; }
+.c-br { bottom: 14px; right: 14px; border-width: 0 1px 1px 0; }
+
+.brand-block { text-align: center; margin-bottom: 32px; }
+
+.brand-kanji {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 2.6rem;
+    font-weight: 500;
+    color: #fff;
+    letter-spacing: 0.25em;
+    text-shadow: 0 2px 20px rgba(0,0,0,0.4);
+    display: block;
+}
+
+.brand-en {
+    font-size: 0.6rem;
+    color: rgba(196,160,82,0.9);
+    letter-spacing: 0.4em;
+    margin-top: 6px;
+    display: block;
+    font-weight: 300;
+}
+
+.brand-line {
+    width: 40px; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(196,160,82,0.6), transparent);
+    margin: 20px auto 24px;
+}
+
+.login-heading {
+    text-align: center;
+    font-size: 0.82rem;
+    color: rgba(255,255,255,0.75);
+    letter-spacing: 0.25em;
+    margin-bottom: 6px;
+    font-weight: 300;
+}
+
+.login-desc {
+    text-align: center;
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.45);
+    letter-spacing: 0.12em;
+    margin-bottom: 36px;
+    line-height: 1.9;
+}
+
+/* ── Google 按鈕 ── */
+.btn-google {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    padding: 13px 20px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.22);
+    color: rgba(255,255,255,0.92);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 0.88rem;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    border-radius: 2px;
+}
+
+.btn-google:hover:not(.loading) {
+    background: rgba(255,255,255,0.18);
+    border-color: rgba(196,160,82,0.6);
+    color: #fff;
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+
+.btn-google.loading {
+    pointer-events: none;
+    opacity: 0.75;
+    border-color: rgba(196,160,82,0.4);
+}
+
+.btn-google svg.g-icon { width: 18px; height: 18px; flex-shrink: 0; transition: opacity 0.2s; }
+.btn-google.loading svg.g-icon { display: none; }
+
+.btn-google .spinner {
+    display: none;
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-top-color: rgba(196,160,82,0.9);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+}
+.btn-google.loading .spinner { display: block; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.login-note {
+    margin-top: 24px;
+    text-align: center;
+    font-size: 0.68rem;
+    color: rgba(255,255,255,0.3);
+    letter-spacing: 0.1em;
+    line-height: 2;
+}
+
+.back-home {
+    display: block;
+    text-align: center;
+    margin-top: 20px;
+    font-size: 0.72rem;
+    color: rgba(196,160,82,0.55);
+    letter-spacing: 0.15em;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.back-home:hover { color: rgba(196,160,82,1); text-decoration: none; }
+
+/* popup 等待遮罩 */
+#popup-mask {
+    display: none;
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(6px);
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 18px;
+}
+#popup-mask.show { display: flex; }
+#popup-mask .big-spinner {
+    width: 48px; height: 48px;
+    border: 3px solid rgba(255,255,255,0.12);
+    border-top-color: rgba(196,160,82,0.9);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+#popup-mask .mask-text {
+    color: rgba(255,255,255,0.65);
+    font-size: 0.82rem;
+    letter-spacing: 0.2em;
+}
+#popup-mask .mask-sub {
+    color: rgba(255,255,255,0.3);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+}
+{% endblock %}
+
+{% block content %}
+<div class="login-bg"></div>
+
+<!-- popup 等待遮罩 -->
+<div id="popup-mask">
+    <div class="big-spinner"></div>
+    <p class="mask-text">正在開啟 Google 登入</p>
+    <p class="mask-sub">請在彈出視窗完成授權</p>
+</div>
+
+<div class="login-page">
+    <div class="glass-card">
+        <div class="corner c-tl"></div>
+        <div class="corner c-tr"></div>
+        <div class="corner c-bl"></div>
+        <div class="corner c-br"></div>
+
+        <div class="brand-block">
+            <span class="brand-kanji">水井村</span>
+            <span class="brand-en">SHUIJING VILLAGE</span>
+        </div>
+
+        <div class="brand-line"></div>
+
+        <p class="login-heading">會員登入</p>
+        <p class="login-desc">加入三生共好社群</p>
+
+        <button class="btn-google" id="btnGoogle" onclick="startGoogleLogin()">
+            <div class="spinner"></div>
+            <svg class="g-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+            </svg>
+            <span>以 Google 帳號繼續</span>
+        </button>
+
+        <p class="login-note">
+            ※ 登入即表示同意本平台使用條款<br>
+            ※ 個人資料僅供社群功能使用
+        </p>
+
+        <a href="{% url 'home' %}" class="back-home">← 返回首頁</a>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+const nextUrl = new URLSearchParams(window.location.search).get('next') || '/';
+let popupWin = null;
+let pollTimer = null;
+
+function startGoogleLogin() {
+    const btn = document.getElementById('btnGoogle');
+    btn.classList.add('loading');
+
+    const w = 520, h = 620;
+    const left = Math.round(window.screenX + (window.outerWidth - w) / 2);
+    const top  = Math.round(window.screenY + (window.outerHeight - h) / 2);
+
+    const popupUrl = "/accounts/google/login/?process=login&next=/login/popup-done/";
+
+    popupWin = window.open(
+        popupUrl,
+        'google_login',
+        `width=${w},height=${h},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes`
+    );
+
+    if (!popupWin || popupWin.closed) {
+        window.location.href = popupUrl;
+        return;
+    }
+
+    document.getElementById('popup-mask').classList.add('show');
+
+    pollTimer = setInterval(async () => {
+        try {
+            const res = await fetch('/auth-status/', { credentials: 'same-origin' });
+            const data = await res.json();
+
+            if (data.authenticated) {
+                clearInterval(pollTimer);
+                document.getElementById('popup-mask').classList.remove('show');
+                window.location.href = nextUrl;
+            }
+        } catch (e) {}
+
+        if (!popupWin || popupWin.closed) {
+            clearInterval(pollTimer);
+            document.getElementById('popup-mask').classList.remove('show');
+            btn.classList.remove('loading');
+        }
+    }, 1000);
+}
+
+window.addEventListener("message", function(event) {
+    if (event.origin !== window.location.origin) return;
+
+    if (event.data === "login_success") {
+        if (pollTimer) clearInterval(pollTimer);
+        document.getElementById('popup-mask').classList.remove('show');
+        window.location.href = nextUrl;
+    }
+});
+</script>
+{% endblock %}
