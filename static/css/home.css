@@ -151,8 +151,8 @@
 
 .sansheng-card:hover {
     /* background: rgba(255,255,255,0.055); */
-    background: var(--green-deep);
     border-color: rgba(139, 105, 20, 0.4);
+    background: var(--green-deep);
     transform: translateY(-4px);
 }
 
