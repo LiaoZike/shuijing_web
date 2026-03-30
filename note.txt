@@ -20,3 +20,6 @@ unzip shuijing.zip -d shuijing
 python manage.py collectstatic
 
 /static/ => /home/web41243166/shuijing/staticfiles/
+
+
+pip freeze > requirements.txt

@@ -25,18 +25,24 @@ def on_logout(request, user, **kwargs):
 #     return render(request, 'core/home.html', {'slides': slides})
 
 def home(request):
-    slides     = HeroSlide.objects.filter(is_active=True)
-    services   = ServiceItem.objects.filter(is_active=True)
-    today      = timezone.now().date()
-    activities = Activity.objects.filter(
-        is_active=True
-    ).annotate(
+    slides   = HeroSlide.objects.filter(is_active=True)
+    services = ServiceItem.objects.filter(is_active=True)
+    today    = timezone.now().date()
+
+    activities = Activity.objects.filter(is_active=True).annotate(
         is_past=Case(
-            When(date__lt=today, then=Value(1)),
+            # 有結束日期 → 看結束日期是否已過
+            When(end_date__isnull=False, end_date__lt=today, then=Value(1)),
+            # 沒結束日期 → 看開始日期是否已過
+            When(end_date__isnull=True, date__lt=today, then=Value(1)),
             default=Value(0),
             output_field=IntegerField(),
         )
-    ).order_by('is_past', '-is_featured', 'date')[:4]
+    ).order_by(
+        'is_past',          # 未過期的排前面
+        '-is_featured',     # 精選的排前面
+        '-date',            # 同樣條件下，最晚開始的排最前面
+    )[:4]
 
     return render(request, 'core/home.html', {
         'slides':     slides,

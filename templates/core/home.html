@@ -159,7 +159,7 @@
             </div>
             <div class="col-lg-8" data-aos="fade-left">
                 {% for activity in activities %}
-                <div class="event-card {% if activity.date < today %}event-past{% endif %}">
+                <div class="event-card {% if activity.is_past %}event-past{% endif %}">
                     <div class="event-date">
                         <div class="day">{{ activity.date|date:"d" }}</div>
                         <div class="month">{{ activity.date|date:"M"|upper }}</div>
@@ -167,16 +167,19 @@
                     <div class="event-info">
                         <h5>
                             {{ activity.title }}
-                            {% if activity.date < today %}
-                            <span class="badge-past">已結束</span>
+                            {% if activity.is_past %}
+                                <span class="badge-past">已結束</span>
                             {% elif activity.is_featured %}
-                            <span class="badge-featured">推薦</span>
+                                <span class="badge-featured">推薦</span>
                             {% endif %}
                         </h5>
                         <p>
                             {% if activity.location %}{{ activity.location }}{% endif %}
                             {% if activity.location and activity.time %}・{% endif %}
                             {% if activity.time %}{{ activity.time }}{% endif %}
+                            {% if activity.end_date %}
+                                ・至 {{ activity.end_date|date:"m/d" }}
+                            {% endif %}
                         </p>
                     </div>
                     {% if activity.link_url %}
