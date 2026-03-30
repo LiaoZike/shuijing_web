@@ -8,7 +8,7 @@ from .models import HeroSlide, ServiceItem, Activity
 class HeroSlideAdmin(admin.ModelAdmin):
     list_display  = ['order', 'category', 'title', 'is_active']
     list_editable = ['order', 'is_active']
-    list_display_links = ['title']   # ← 加這行，指定 title 當連結
+    list_display_links = ['title']
     list_filter   = ['category', 'is_active']
 
 #################################################

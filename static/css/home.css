@@ -145,18 +145,22 @@
     left: 0;
     width: 3px;
     height: 0;
-    background: var(--bamboo);
+    background: var(--green-mid);
     transition: height 0.4s ease;
 }
 
 .sansheng-card:hover {
-    background: rgba(255,255,255,0.055);
+    /* background: rgba(255,255,255,0.055); */
+    background: var(--green-deep);
     border-color: rgba(139, 105, 20, 0.4);
     transform: translateY(-4px);
 }
 
 .sansheng-card:hover::before {
     height: 100%;
+}
+.divider-bamboo{
+    background: linear-gradient(90deg, var(--green-mid), var(--bamboo-light));
 }
 
 .card-icon {
@@ -203,8 +207,8 @@
 }
 
 .tag-pill:hover {
-    border-color: var(--bamboo-light);
-    color: var(--bamboo-light);
+    border-color: var(--green-light);
+    color: var(--green-light);
 }
 
 .parallax-section {
@@ -326,7 +330,7 @@
 
 .event-card:hover {
     padding-left: 12px;
-    border-bottom-color: var(--bamboo);
+    border-bottom-color: var(--green-mid);
 }
 
 .event-date {
