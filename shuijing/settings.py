@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'django_bootstrap5',
     'accounts',
     'core',
+    'guide',
 ]
 
 MIDDLEWARE = [
@@ -173,3 +174,6 @@ ACCOUNT_EMAIL_VERIFICATION = 'none'
 # allauth 預設會自動送 messages，確認沒有關掉就好
 MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 ACCOUNT_ADAPTER = 'accounts.adapter.CustomAccountAdapter'
+
+# 自定義設定
+ACTIVITIES_PER_PAGE = 12

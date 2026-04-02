@@ -1,0 +1,542 @@
+{% extends 'base.html' %}
+{% block title %}水井村的故事・風雲客棧{% endblock %}
+{% load static %}
+
+{% block extra_css %}
+body { background: #F5F0E8; color: #2E1F0F; }
+
+/* PAGE HERO */
+.story-hero {
+    min-height: 100vh;
+    background: var(--wood-dark);
+    display: flex;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    padding: 120px 0 80px;
+}
+.story-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url('https://images.unsplash.com/photo-1500964757637-c85e8a162699?w=1600')
+                center/cover no-repeat;
+    opacity: 0.15;
+}
+.story-hero-content {
+    position: relative;
+    z-index: 2;
+}
+.story-hero-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.4em;
+    color: var(--bamboo-light);
+    margin-bottom: 20px;
+}
+.story-hero h1 {
+    font-family: 'Noto Serif TC', serif;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    color: var(--cream);
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    line-height: 1.5;
+    margin-bottom: 20px;
+}
+.story-hero p {
+    color: var(--cream-dark);
+    font-size: 1rem;
+    letter-spacing: 0.1em;
+    line-height: 2;
+    max-width: 560px;
+}
+
+/* 故事章節 */
+.story-section {
+    padding: 100px 0;
+}
+.story-section:nth-child(even) {
+    background: #EDE5D0;
+}
+.story-section:nth-child(odd) {
+    background: #F5F0E8;
+}
+
+.story-chapter-num {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 4rem;
+    color: rgba(139,105,20,0.15);
+    line-height: 1;
+    margin-bottom: 8px;
+}
+.story-chapter-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.3em;
+    color: var(--bamboo);
+    margin-bottom: 12px;
+}
+.story-chapter-title {
+    font-family: 'Noto Serif TC', serif;
+    font-size: clamp(1.4rem, 3vw, 2rem);
+    color: #2E1F0F;
+    margin-bottom: 24px;
+    letter-spacing: 0.06em;
+}
+.story-text {
+    font-size: 0.95rem;
+    color: #5A4030;
+    line-height: 2.2;
+    letter-spacing: 0.04em;
+}
+.story-divider {
+    width: 40px;
+    height: 2px;
+    background: var(--bamboo);
+    margin: 20px 0;
+}
+
+/* 資訊卡片 */
+.info-box {
+    background: white;
+    border: 1px solid rgba(139,105,20,0.2);
+    border-left: 3px solid var(--bamboo);
+    padding: 24px;
+    margin: 24px 0;
+}
+.info-box h5 {
+    font-family: 'Noto Serif TC', serif;
+    color: #2E1F0F;
+    font-size: 1rem;
+    margin-bottom: 12px;
+}
+.info-box p {
+    font-size: 0.88rem;
+    color: #7A5C38;
+    line-height: 1.9;
+    margin: 0;
+}
+
+/* 三寶展示 */
+.treasure-section {
+    padding: 100px 0;
+    background: var(--wood-dark);
+}
+.treasure-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(196,160,82,0.2);
+    padding: 40px 30px;
+    text-align: center;
+    height: 100%;
+    transition: all 0.3s;
+    position: relative;
+}
+.treasure-card:hover {
+    background: rgba(255,255,255,0.07);
+    border-color: rgba(196,160,82,0.5);
+    transform: translateY(-4px);
+}
+.treasure-icon { font-size: 3rem; margin-bottom: 20px; display: block; }
+.treasure-name {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 1.5rem;
+    color: var(--cream);
+    margin-bottom: 8px;
+    letter-spacing: 0.1em;
+}
+.treasure-en {
+    font-size: 0.7rem;
+    color: var(--bamboo-light);
+    letter-spacing: 0.3em;
+    margin-bottom: 20px;
+}
+.treasure-desc {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    line-height: 1.9;
+}
+.treasure-badge {
+    position: absolute;
+    top: 16px; right: 16px;
+    font-size: 0.68rem;
+    padding: 3px 10px;
+    border: 1px solid rgba(139,105,20,0.4);
+    color: var(--bamboo-light);
+    letter-spacing: 0.12em;
+}
+
+/* 時間軸 */
+.timeline {
+    position: relative;
+    padding: 0;
+}
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 20px;
+    top: 0; bottom: 0;
+    width: 1px;
+    background: rgba(139,105,20,0.3);
+}
+.timeline-item {
+    display: flex;
+    gap: 32px;
+    margin-bottom: 40px;
+    position: relative;
+}
+.timeline-dot {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border: 1px solid var(--bamboo);
+    background: #F5F0E8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    color: var(--bamboo);
+    letter-spacing: 0;
+    z-index: 1;
+    font-family: 'Noto Serif TC', serif;
+}
+.timeline-content h5 {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 1rem;
+    color: #2E1F0F;
+    margin-bottom: 8px;
+}
+.timeline-content p {
+    font-size: 0.86rem;
+    color: #7A5C38;
+    line-height: 1.9;
+    margin: 0;
+}
+
+/* 數字統計 */
+.stats-section {
+    padding: 80px 0;
+    background: #2E1F0F;
+}
+.stat-item { text-align: center; padding: 20px; }
+.stat-num {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 3rem;
+    color: var(--bamboo-light);
+    line-height: 1;
+    margin-bottom: 8px;
+}
+.stat-unit { font-size: 1.2rem; }
+.stat-label {
+    font-size: 0.82rem;
+    color: var(--cream-dark);
+    letter-spacing: 0.15em;
+}
+
+/* 文史館 */
+.museum-section {
+    padding: 100px 0;
+    background: #EDE5D0;
+}
+{% endblock %}
+
+{% block content %}
+
+<!-- HERO -->
+<section class="story-hero">
+    <div class="container story-hero-content">
+        <p class="story-hero-label" data-aos="fade-up">SHUIJING VILLAGE STORY</p>
+        <h1 data-aos="fade-up" data-aos-delay="100">
+            風頭水尾的村莊<br>
+            承載著台灣的<br>百年記憶
+        </h1>
+        <p data-aos="fade-up" data-aos-delay="200">
+            雲林縣最偏遠的角落，一個以「鑿井」聞名於世的漁村。<br>
+            這裡的人，靠著一雙手走天下；<br>
+            這裡的土地，默默守護著世代的故事。
+        </p>
+    </div>
+</section>
+
+<!-- 數字統計 -->
+<section class="stats-section">
+    <div class="container">
+        <div class="row g-0">
+            <div class="col-6 col-md-3" data-aos="fade-up" data-aos-delay="100">
+                <div class="stat-item">
+                    <div class="stat-num">300<span class="stat-unit">+</span></div>
+                    <div class="stat-label">年開發歷史</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3" data-aos="fade-up" data-aos-delay="200">
+                <div class="stat-item">
+                    <div class="stat-num">95<span class="stat-unit">%</span></div>
+                    <div class="stat-label">全台鑿井技術源自水井村</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3" data-aos="fade-up" data-aos-delay="300">
+                <div class="stat-item">
+                    <div class="stat-num">300<span class="stat-unit">年</span></div>
+                    <div class="stat-label">百年雞蛋花樹樹齡</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3" data-aos="fade-up" data-aos-delay="400">
+                <div class="stat-item">
+                    <div class="stat-num">40<span class="stat-unit">戶</span></div>
+                    <div class="stat-label">現存村民戶數</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 章節一：村莊起源 -->
+<section class="story-section">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6" data-aos="fade-right">
+                <div class="story-chapter-num">01</div>
+                <p class="story-chapter-label">THE ORIGIN</p>
+                <h2 class="story-chapter-title">從鑿井而生的村莊</h2>
+                <div class="story-divider"></div>
+                <p class="story-text">
+                    約三百年前，顏思齊、鄭芝龍等人由北港登陸台灣，逐步向外擴張屯墾。
+                    距離北港不遠的水井村，很快便有移民進駐，其中要角是葉舉人，
+                    鑿井技術正是由他自唐山招募的工人所傳下。
+                </p>
+                <p class="story-text mt-3">
+                    水井村西臨台灣海峽，南傍北港溪，又有七頃之多如馬蹄形之湖環繞其中，
+                    天然成為水源基地。附近聚落在此取水，後來加牆圍之，一如井狀，
+                    故稱為「水井」，先民在井之旁聚集成庄。
+                </p>
+
+                <div class="info-box mt-4">
+                    <h5>🔑 村名由來</h5>
+                    <p>
+                        水井村的男人，就是靠著一身找井、鑿井的本領走天下。
+                        全村有 2/3 的人靠鑿井為生，據說全台九成五的鑿井師傅，
+                        技術都源自這個小村莊。
+                    </p>
+                </div>
+            </div>
+            <div class="col-lg-6" data-aos="fade-left">
+                <div style="background:#E8DFC8;height:400px;display:flex;align-items:center;
+                            justify-content:center;border:1px solid rgba(139,105,20,0.2);">
+                    <div style="text-align:center;color:#9A8070;">
+                        <div style="font-size:3rem;margin-bottom:12px;">🏮</div>
+                        <p style="font-size:0.82rem;letter-spacing:0.15em;">水井文史館（照片待放）</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 章節二：地理與困境 -->
+<section class="story-section">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6 order-lg-2" data-aos="fade-left">
+                <div class="story-chapter-num">02</div>
+                <p class="story-chapter-label">THE CHALLENGE</p>
+                <h2 class="story-chapter-title">風頭水尾的困境</h2>
+                <div class="story-divider"></div>
+                <p class="story-text">
+                    「風頭水尾」，這四個字道盡了水井村的處境。
+                    位於雲林縣最西南角，是雲林最偏遠、最角落的村莊。
+                    西臨台灣海峽，長年飽受海風吹襲；
+                    又是灌溉渠道的最末端，水資源匱乏。
+                </p>
+                <p class="story-text mt-3">
+                    隨著時代變遷，人口老化、年輕人外流，
+                    傳統的鑿井產業逐漸凋零。
+                    現今全村不到40戶，卻留下了無數珍貴的文化記憶，
+                    等待被重新發現與守護。
+                </p>
+
+                <div class="info-box mt-4">
+                    <h5>📍 地理位置</h5>
+                    <p>雲林縣口湖鄉水井村，北緯23°37'，東經120°08'。
+                    位於北港溪出海口北側，是台灣西海岸典型的沿海漁村聚落。</p>
+                </div>
+            </div>
+            <div class="col-lg-6 order-lg-1" data-aos="fade-right">
+                <div style="background:#D8CDB8;height:400px;display:flex;align-items:center;
+                            justify-content:center;border:1px solid rgba(139,105,20,0.2);">
+                    <div style="text-align:center;color:#9A8070;">
+                        <div style="font-size:3rem;margin-bottom:12px;">🌊</div>
+                        <p style="font-size:0.82rem;letter-spacing:0.15em;">沿海風光（照片待放）</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 水井三寶 -->
+<section class="treasure-section">
+    <div class="container">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <div class="divider-bamboo"></div>
+            <p class="section-subtitle mb-3">THE THREE TREASURES</p>
+            <h2 class="section-title">水井三寶</h2>
+            <p style="color:var(--text-muted);font-size:0.88rem;margin-top:12px;letter-spacing:0.1em;">
+                烏龜・白馬・姻緣花，三寶承載著水井村的風水、信仰與自然
+            </p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="treasure-card">
+                    <span class="treasure-badge">風水地理</span>
+                    <span class="treasure-icon">🐢</span>
+                    <div class="treasure-name">烏 龜</div>
+                    <div class="treasure-en">THE TURTLE</div>
+                    <p class="treasure-desc">
+                        水井村的風水地理形勝，村落地形狀如龜形，
+                        象徵長壽與庇護。先民選擇此地定居，
+                        正是看中了這片土地龜形地貌所帶來的吉祥之氣，
+                        守護著世世代代的村民。
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="treasure-card">
+                    <span class="treasure-badge">在地信仰</span>
+                    <span class="treasure-icon">🐴</span>
+                    <div class="treasure-name">白 馬</div>
+                    <div class="treasure-en">THE WHITE HORSE</div>
+                    <p class="treasure-desc">
+                        李府千歲的座騎塑像，是水井村深厚信仰文化的象徵。
+                        雖然塑像現已不存，但白馬的故事依然流傳於村民之間，
+                        代表著先民對神明的敬仰與守護之情，
+                        是無形的精神遺產。
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
+                <div class="treasure-card">
+                    <span class="treasure-badge">300年古樹</span>
+                    <span class="treasure-icon">🌸</span>
+                    <div class="treasure-name">姻緣花</div>
+                    <div class="treasure-en">THE MARRIAGE FLOWER</div>
+                    <p class="treasure-desc">
+                        水井村的百年雞蛋花樹，約有300年歷史，
+                        為先人從外地移植而來。每年盛開的雞蛋花，
+                        見證了無數世代的村民生活與記憶，
+                        是水井村最美麗、最長壽的自然遺產。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 章節三：文史館 -->
+<section class="story-section">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6" data-aos="fade-right">
+                <div class="story-chapter-num">03</div>
+                <p class="story-chapter-label">THE MUSEUM</p>
+                <h2 class="story-chapter-title">水井文史館</h2>
+                <div class="story-divider"></div>
+                <p class="story-text">
+                    水井文史館是認識水井村的第一站，小而美的展覽空間，
+                    是早年水井村的縮影。館內陳設著老房子的通舖、老裁縫車、
+                    古農具、舊照片，每一件物品都訴說著過去的故事。
+                </p>
+                <p class="story-text mt-3">
+                    文史館對面是水井小公園「寒泉食」，寓意「取之不盡，用之不竭」，
+                    擺放有社區耆老製作的柴井車，以及供遊客體驗的汲水器具，
+                    讓現代人也能感受先民的智慧與生活。
+                </p>
+            </div>
+            <div class="col-lg-6" data-aos="fade-left">
+                <div style="background:#E8DFC8;height:400px;display:flex;align-items:center;
+                            justify-content:center;border:1px solid rgba(139,105,20,0.2);">
+                    <div style="text-align:center;color:#9A8070;">
+                        <div style="font-size:3rem;margin-bottom:12px;">🏛️</div>
+                        <p style="font-size:0.82rem;letter-spacing:0.15em;">水井文史館（照片待放）</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 章節四：在地物產 -->
+<section class="story-section">
+    <div class="container">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <div class="divider-bamboo"></div>
+            <p class="section-subtitle mb-3">LOCAL PRODUCTS</p>
+            <h2 class="story-chapter-title" style="text-align:center;">口湖鄉在地物產</h2>
+        </div>
+        <div class="row g-4">
+            {% for product in products %}
+            <div class="col-md-4" data-aos="fade-up">
+                <div class="info-box" style="height:100%;">
+                    <h5>{{ product.icon }} {{ product.name }}</h5>
+                    <p>{{ product.desc }}</p>
+                </div>
+            </div>
+            {% empty %}
+            <!-- 靜態佔位資料，之後從資料庫撈 -->
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="info-box">
+                    <h5>🐚 文蛤</h5>
+                    <p>口湖鄉擁有雲林縣唯一1600多公頃的養殖漁業生產專區，文蛤是最具代表性的在地水產，鮮甜肥美。</p>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="info-box">
+                    <h5>🐟 台灣鯛・虱目魚</h5>
+                    <p>台灣鯛加工產品聞名國內外，虱目魚是沿海養殖的傳統魚種，滋味鮮美，是在地人的家常美食。</p>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
+                <div class="info-box">
+                    <h5>🦐 白蝦・烏魚子</h5>
+                    <p>白蝦鮮甜彈牙，烏魚子是珍貴的冬季限定美食，每年冬至前後是品嚐烏魚子的最佳時機。</p>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="400">
+                <div class="info-box">
+                    <h5>🐌 馬蹄蛤</h5>
+                    <p>馬蹄蛤主題館是口湖鄉知名景點，可體驗下水摸蛤、乘膠筏遊魚塭等農漁體驗活動。</p>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="500">
+                <div class="info-box">
+                    <h5>🐉 龍膽石斑</h5>
+                    <p>高經濟價值的養殖魚種，口湖鄉的養殖技術成熟，是供應全台高檔餐廳的重要產地之一。</p>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="600">
+                <div class="info-box">
+                    <h5>🌿 龍鬚菜</h5>
+                    <p>沿海地區特有的海藻食材，清爽可口，富含膳食纖維，是健康的在地野菜，深受饕客喜愛。</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section style="padding:80px 0;background:#2E1F0F;text-align:center;">
+    <div class="container" data-aos="fade-up">
+        <p class="section-subtitle mb-3">COME AND SEE</p>
+        <h2 class="section-title mb-4">親自來感受水井村的溫度</h2>
+        <p style="color:var(--text-muted);font-size:0.9rem;letter-spacing:0.12em;margin-bottom:36px;">
+            雲林縣口湖鄉水井村・歡迎外地朋友來訪
+        </p>
+        <a href="{% url 'event_list' %}" class="btn-login"
+           style="font-size:0.9rem;padding:12px 36px;margin-right:12px;">
+            查看活動
+        </a>
+        <a href="{% url 'contact' %}" class="btn-login"
+           style="font-size:0.9rem;padding:12px 36px;">
+            聯絡我們
+        </a>
+    </div>
+</section>
+
+{% endblock %}

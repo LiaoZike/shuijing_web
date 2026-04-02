@@ -31,17 +31,20 @@
                     <button type="submit"><i class="bi bi-search"></i></button>
                 </div>
                 <!-- 保留其他篩選參數 -->
-                {% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
+                <input type="hidden" name="status" value="{{ status }}">
             </form>
 
             <!-- 狀態篩選 -->
             <div class="status-tabs ms-auto">
                 <a href="?status=upcoming{% if query %}&q={{ query }}{% endif %}"
-                   class="status-tab {% if status == 'upcoming' %}active{% endif %}">即將舉辦</a>
+                   class="status-tab {% if status == 'upcoming' %}active{% endif %}"
+                   data-status="upcoming">即將舉辦</a>
                 <a href="?status=past{% if query %}&q={{ query }}{% endif %}"
-                   class="status-tab {% if status == 'past' %}active{% endif %}">已結束</a>
+                   class="status-tab {% if status == 'past' %}active{% endif %}"
+                   data-status="past">已結束</a>
                 <a href="?status=all{% if query %}&q={{ query }}{% endif %}"
-                   class="status-tab {% if status == 'all' %}active{% endif %}">全部</a>
+                   class="status-tab {% if status == 'all' %}active{% endif %}"
+                   data-status="all">全部</a>
             </div>
         </div>
     </div>

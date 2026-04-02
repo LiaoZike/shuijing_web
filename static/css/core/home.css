@@ -337,8 +337,12 @@
     padding: 24px 0;
     display: flex;
     align-items: center;
-    gap: 24px;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 18px;
     transition: all 0.3s;
+    min-width: 0;
+    width: 100%;
 }
 
 .event-card:hover {
@@ -348,8 +352,59 @@
 
 .event-date {
     min-width: 60px;
+    width: 80px;
     text-align: center;
+    flex: 0 0 auto;
 }
+
+.event-info {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.event-card > a,
+.event-card > span.arrow-text,
+.event-card > i {
+    flex-shrink: 0;
+    margin-left: auto;
+    white-space: nowrap;
+}
+
+.event-card > a {
+    color: var(--bamboo-light);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.event-card > a:hover {
+    color: var(--cream);
+}
+
+@media (max-width: 768px) {
+    .event-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 18px 0;
+    }
+    .event-date {
+        min-width: auto;
+        width: auto;
+        text-align: left;
+    }
+    .event-card > a,
+    .event-card > span.arrow-text,
+    .event-card > i {
+        margin-left: 0;
+    }
+    .event-card {
+        border-bottom: 1px solid rgba(139, 105, 20, 0.08);
+    }
+    .event-card:hover {
+        padding-left: 0;
+    }
+}
+
 
 .event-date .day {
     font-family: 'Noto Serif TC', serif;
@@ -369,12 +424,53 @@
     color: var(--cream);
     font-size: 1rem;
     margin-bottom: 6px;
+    word-break: break-word;
+    overflow-wrap: anywhere;
 }
 
 .event-info p {
     color: var(--text-muted);
     font-size: 0.82rem;
     margin: 0;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+.events-section {
+    overflow-x: hidden;
+}
+
+.event-card {
+    min-width: 0;
+    width: 100%;
+}
+
+.event-info {
+    min-width: 0;
+}
+
+.event-card > a,
+.event-card > span.arrow-text,
+.event-card > i {
+    flex-shrink: 0;
+}
+
+/* 手機響應式調整 */
+@media (max-width: 768px) {
+    .event-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .event-date {
+        min-width: auto;
+        text-align: left;
+    }
+    .event-card > a,
+    .event-card > span.arrow-text,
+    .event-card > i {
+        margin-left: 0 !important;
+    }
 }
 
 /* ===================== CTA ===================== */

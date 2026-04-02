@@ -22,8 +22,9 @@ from allauth.socialaccount.providers.google.views import oauth2_login, oauth2_ca
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path('guide/', include('guide.urls')),
+
     path('accounts/login/',views.abort404),
-    
     path('accounts/google/login/', oauth2_login, name='google_login'),
     path('accounts/google/login/callback/', oauth2_callback, name='google_callback'),
     path('accounts/logout/', views.logout_view, name='logout'),

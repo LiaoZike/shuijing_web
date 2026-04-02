@@ -271,6 +271,7 @@ body {
     margin-bottom: 32px;
     padding-bottom: 16px;
     border-bottom: 1px solid rgba(139,105,20,0.1);
+    font-size: 1rems;
 }
 
 .result-info strong { color: var(--bamboo); }
@@ -541,7 +542,7 @@ body {
     align-items: center;
     gap: 8px;
     color: #9A8070;
-    font-size: 0.82rem;
+    font-size: 1rem;
     letter-spacing: 0.1em;
     text-decoration: none;
     margin-bottom: 40px;

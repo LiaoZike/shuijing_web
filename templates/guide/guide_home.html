@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'guide/guide.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="guide-page">
+  <section class="guide-hero">
+    <div class="container">
+      <p class="guide-kicker">SHUIJING INTERACTIVE GUIDE</p>
+      <h1 class="guide-title">水井村互動導覽</h1>
+      <p class="guide-subtitle">
+        透過導覽內容認識水井村的地方故事、三寶傳說、光雕牆特色與聚落記憶，
+        後續也將結合 AR 體驗，讓地方文化可以被看見、被理解、被互動探索。
+      </p>
+
+      <div class="guide-filter-group">
+        <a href="{% url 'guide:home' %}"
+           class="guide-filter-btn {% if not current_category %}active{% endif %}">
+          全部
+        </a>
+        <a href="{% url 'guide:category' 'treasure' %}"
+           class="guide-filter-btn {% if current_category == 'treasure' %}active{% endif %}">
+          三寶
+        </a>
+        <a href="{% url 'guide:category' 'lightwall' %}"
+           class="guide-filter-btn {% if current_category == 'lightwall' %}active{% endif %}">
+          光雕牆
+        </a>
+        <a href="{% url 'guide:category' 'temple' %}"
+           class="guide-filter-btn {% if current_category == 'temple' %}active{% endif %}">
+          廟宇
+        </a>
+        <a href="{% url 'guide:category' 'origin' %}"
+           class="guide-filter-btn {% if current_category == 'origin' %}active{% endif %}">
+          聚落起源
+        </a>
+        <a href="{% url 'guide:category' 'ecology' %}"
+           class="guide-filter-btn {% if current_category == 'ecology' %}active{% endif %}">
+          生態
+        </a>
+        <a href="{% url 'guide:category' 'usr' %}"
+           class="guide-filter-btn {% if current_category == 'usr' %}active{% endif %}">
+          USR成果
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="pb-4">
+    <div class="container">
+      {% if featured_spots %}
+      <div class="mb-5">
+        <h2 class="guide-section-title">精選導覽</h2>
+        <div class="row g-4">
+          {% for spot in featured_spots %}
+          <div class="col-md-6 col-xl-4">
+            <div class="guide-card">
+              {% if spot.cover_image %}
+              <div class="guide-card-img-wrap">
+                <img src="{{ spot.cover_image.url }}" alt="{{ spot.title }}" class="guide-card-img">
+              </div>
+              {% endif %}
+              <div class="guide-card-body">
+                <span class="guide-badge">{{ spot.get_category_display }}</span>
+                <h3 class="guide-card-title">{{ spot.title }}</h3>
+                {% if spot.location_name %}
+                <p class="guide-card-meta">地點：{{ spot.location_name }}</p>
+                {% endif %}
+                <p class="guide-card-text">{{ spot.short_intro|default:"尚無簡介" }}</p>
+                <a href="{% url 'guide:detail' spot.slug %}" class="guide-btn-primary">查看內容</a>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="pb-5">
+        <h2 class="guide-section-title">
+          {% if category_label %}
+            {{ category_label }}列表
+          {% else %}
+            全部導覽點
+          {% endif %}
+        </h2>
+
+        <div class="row g-4">
+          {% for spot in spots %}
+          <div class="col-md-6 col-xl-4">
+            <div class="guide-card">
+              {% if spot.cover_image %}
+              <div class="guide-card-img-wrap">
+                <img src="{{ spot.cover_image.url }}" alt="{{ spot.title }}" class="guide-card-img">
+              </div>
+              {% endif %}
+              <div class="guide-card-body">
+                <span class="guide-badge">{{ spot.get_category_display }}</span>
+                <h3 class="guide-card-title">{{ spot.title }}</h3>
+                {% if spot.location_name %}
+                <p class="guide-card-meta">地點：{{ spot.location_name }}</p>
+                {% endif %}
+                <p class="guide-card-text">{{ spot.short_intro|default:"尚無簡介" }}</p>
+                <a href="{% url 'guide:detail' spot.slug %}" class="guide-btn-secondary">閱讀更多</a>
+              </div>
+            </div>
+          </div>
+          {% empty %}
+          <div class="col-12">
+            <div class="guide-empty-box">
+              目前這個分類還沒有內容。
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

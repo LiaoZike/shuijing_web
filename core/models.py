@@ -70,7 +70,7 @@ class Activity(models.Model):
                                    help_text='單日活動留空')
     register_deadline = models.DateTimeField('報名截止時間', blank=True, null=True,
                                          help_text='留空表示不限截止日')
-    time        = models.CharField('時間', max_length=50, blank=True,
+    time        = models.CharField('活動時間', max_length=50, blank=True,
                                    help_text='例如：09:00 - 17:00')
     location    = models.CharField('地點', max_length=100)  # 必填拿掉 blank=True
     cover_image = models.ImageField('宣傳圖片', upload_to='static/image/activities/',

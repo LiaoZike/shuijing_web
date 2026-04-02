@@ -1,0 +1,614 @@
+{% extends 'base.html' %}
+{% block title %}虎科大 USR 成果・水井村{% endblock %}
+{% load static %}
+
+{% block extra_css %}
+body { background: #F5F0E8; color: #2E1F0F; }
+
+/* PAGE HERO */
+.usr-hero {
+    padding: 140px 0 80px;
+    background: #1A2A1A;
+    position: relative;
+    overflow: hidden;
+}
+.usr-hero::before {
+    content: '';
+    position: absolute;
+    top: -100px; right: -100px;
+    width: 500px; height: 500px;
+    border: 1px solid rgba(106,144,80,0.12);
+    border-radius: 50%;
+}
+.usr-hero-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.4em;
+    color: var(--green-light);
+    margin-bottom: 16px;
+}
+.usr-hero h1 {
+    font-family: 'Noto Serif TC', serif;
+    font-size: clamp(1.6rem, 4vw, 2.6rem);
+    color: var(--cream);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+.usr-hero p { color: var(--text-muted); font-size: 0.9rem; letter-spacing: 0.08em; line-height: 1.9; }
+
+/* 計畫概要 */
+.plan-section {
+    padding: 80px 0;
+    background: #F5F0E8;
+}
+.plan-card {
+    background: white;
+    border: 1px solid rgba(139,105,20,0.15);
+    padding: 32px;
+    height: 100%;
+    transition: all 0.3s;
+}
+.plan-card:hover {
+    border-color: rgba(139,105,20,0.4);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+}
+.plan-icon { font-size: 2rem; margin-bottom: 16px; display: block; }
+.plan-title {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 1.05rem;
+    color: #2E1F0F;
+    margin-bottom: 12px;
+}
+.plan-desc { font-size: 0.86rem; color: #7A5C38; line-height: 1.9; }
+
+/* 三大策略 */
+.strategy-section {
+    padding: 80px 0;
+    background: #EDE5D0;
+}
+.strategy-num {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 3rem;
+    color: rgba(139,105,20,0.2);
+    line-height: 1;
+    margin-bottom: 8px;
+}
+.strategy-title {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 1.1rem;
+    color: #2E1F0F;
+    margin-bottom: 12px;
+}
+.strategy-items { list-style: none; padding: 0; }
+.strategy-items li {
+    font-size: 0.86rem;
+    color: #5A4030;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(139,105,20,0.1);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.strategy-items li::before {
+    content: '▸';
+    color: var(--bamboo);
+    font-size: 0.7rem;
+}
+
+/* AIoT 展示 */
+.aiot-section {
+    padding: 80px 0;
+    background: #1E3320;
+}
+.aiot-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(106,144,80,0.2);
+    padding: 28px 24px;
+    height: 100%;
+    transition: all 0.3s;
+}
+.aiot-card:hover {
+    background: rgba(255,255,255,0.07);
+    border-color: rgba(106,144,80,0.5);
+    transform: translateY(-3px);
+}
+.aiot-icon { font-size: 1.8rem; margin-bottom: 14px; display: block; }
+.aiot-title {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 1rem;
+    color: var(--cream);
+    margin-bottom: 10px;
+}
+.aiot-desc { font-size: 0.83rem; color: #80A870; line-height: 1.9; }
+.aiot-tag {
+    display: inline-block;
+    font-size: 0.68rem;
+    padding: 2px 8px;
+    border: 1px solid rgba(106,144,80,0.4);
+    color: var(--green-light);
+    letter-spacing: 0.1em;
+    margin-top: 12px;
+    margin-right: 4px;
+}
+
+/* 師生成果 */
+.achievement-section { padding: 80px 0; background: #F5F0E8; }
+.achievement-card {
+    background: white;
+    border: 1px solid rgba(139,105,20,0.15);
+    border-top: 3px solid var(--green-mid);
+    padding: 28px 24px;
+    margin-bottom: 20px;
+    transition: all 0.3s;
+}
+.achievement-card:hover {
+    border-color: rgba(58,92,48,0.5);
+    transform: translateX(4px);
+}
+.achievement-date { font-size: 0.75rem; color: var(--bamboo); letter-spacing: 0.1em; margin-bottom: 8px; }
+.achievement-title { font-family: 'Noto Serif TC', serif; font-size: 1rem; color: #2E1F0F; margin-bottom: 8px; }
+.achievement-desc { font-size: 0.85rem; color: #7A5C38; line-height: 1.8; margin: 0; }
+
+/* 影音區 */
+.video-section { padding: 80px 0; background: #EDE5D0; }
+.video-link {
+    display: block;
+    background: white;
+    border: 1px solid rgba(139,105,20,0.15);
+    padding: 20px 24px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.3s;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.video-link:hover {
+    border-color: var(--bamboo);
+    color: inherit;
+    text-decoration: none;
+    transform: translateX(4px);
+}
+.video-date { font-size: 0.75rem; color: var(--bamboo); min-width: 80px; }
+.video-title { font-size: 0.9rem; color: #2E1F0F; flex: 1; }
+.video-arrow { color: var(--bamboo-light); font-size: 0.9rem; }
+
+/* 計畫成員 */
+.team-section { padding: 80px 0; background: var(--wood-dark); }
+.team-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(139,105,20,0.2);
+    padding: 20px;
+    text-align: center;
+    height: 100%;
+}
+.team-role { font-size: 0.68rem; color: var(--bamboo-light); letter-spacing: 0.2em; margin-bottom: 8px; }
+.team-name { font-family: 'Noto Serif TC', serif; font-size: 1.05rem; color: var(--cream); margin-bottom: 6px; }
+.team-dept { font-size: 0.78rem; color: var(--text-muted); letter-spacing: 0.06em; }
+{% endblock %}
+
+{% block content %}
+
+<!-- HERO -->
+<section class="usr-hero">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8" data-aos="fade-up">
+                <p class="usr-hero-label">NFU USR PROJECT</p>
+                <h1>
+                    國立虎尾科技大學<br>
+                    水井村 USR 社會實踐計畫
+                </h1>
+                <p>
+                    「水井村智慧減碳節水三生一體社會實踐計畫」<br>
+                    電機資訊學院與口湖鄉水井村攜手合作，<br>
+                    以智慧科技為偏鄉漁村注入新活力，實現三生共好的永續目標。
+                </p>
+            </div>
+            <div class="col-lg-4 text-center mt-4 mt-lg-0" data-aos="fade-up" data-aos-delay="200">
+                <div style="border:1px solid rgba(106,144,80,0.3);padding:30px 20px;">
+                    <p style="font-size:0.72rem;color:var(--green-light);letter-spacing:0.2em;margin-bottom:12px;">
+                        教育部 USR 計畫
+                    </p>
+                    <p style="font-family:'Noto Serif TC',serif;font-size:1.1rem;
+                               color:var(--cream);letter-spacing:0.06em;line-height:1.8;margin:0;">
+                        大學特色類<br>萌芽型計畫
+                    </p>
+                    <div style="margin:16px 0;height:1px;background:rgba(106,144,80,0.3);"></div>
+                    <p style="font-size:0.78rem;color:var(--text-muted);margin:0;">
+                        實踐場域：雲林縣水井村<br>
+                        SDGs：6・7・11・12・13
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 計畫目標 -->
+<section class="plan-section">
+    <div class="container">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <div class="divider-bamboo"></div>
+            <p class="section-subtitle mb-3">PROJECT GOALS</p>
+            <h2 class="section-title">三大發展目標</h2>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="plan-card">
+                    <span class="plan-icon">🌿</span>
+                    <h4 class="plan-title">環境生態保護</h4>
+                    <p class="plan-desc">
+                        減少碳排放和水資源浪費，發展淨水技術，
+                        改善當地生態環境，保護水下和陸上生物。
+                        以智慧科技監控水質，守護沿海濕地生態。
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="plan-card">
+                    <span class="plan-icon">🌾</span>
+                    <h4 class="plan-title">生產效率提升</h4>
+                    <p class="plan-desc">
+                        發展低成本、低碳和節水的智慧養殖技術，
+                        提高養殖業的生產效率和品質，
+                        促進當地漁農業經濟發展，增加村民收入。
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
+                <div class="plan-card">
+                    <span class="plan-icon">🏮</span>
+                    <h4 class="plan-title">生活品質改善</h4>
+                    <p class="plan-desc">
+                        用藝文提高村民生活品質，透過智慧科技教育
+                        和工藝產品設計技術，提升水井村的品牌形象，
+                        讓更多外地人認識這個美麗的漁村。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 三大推動策略 -->
+<section class="strategy-section">
+    <div class="container">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <div class="divider-bamboo"></div>
+            <p class="section-subtitle mb-3">STRATEGIES</p>
+            <h2 class="section-title">三大推動策略</h2>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+                <div style="background:white;border:1px solid rgba(139,105,20,0.15);padding:32px;height:100%;">
+                    <div class="strategy-num">01</div>
+                    <h4 class="strategy-title">低碳智慧養殖監控系統</h4>
+                    <ul class="strategy-items">
+                        <li>智慧科技養殖課程推廣</li>
+                        <li>智慧養殖監控系統建置</li>
+                        <li>低碳海洋教育活動</li>
+                        <li>AIoT 感測器水質即時監測</li>
+                        <li>智慧行銷平台建立</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+                <div style="background:white;border:1px solid rgba(139,105,20,0.15);padding:32px;height:100%;">
+                    <div class="strategy-num">02</div>
+                    <h4 class="strategy-title">水資源循環監控次系統</h4>
+                    <ul class="strategy-items">
+                        <li>綠色農業課程</li>
+                        <li>節水生態監控系統</li>
+                        <li>生物淨水技術研究</li>
+                        <li>水資源循環再利用</li>
+                        <li>智慧灌溉系統導入</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
+                <div style="background:white;border:1px solid rgba(139,105,20,0.15);padding:32px;height:100%;">
+                    <div class="strategy-num">03</div>
+                    <h4 class="strategy-title">三生共好永續發展平台</h4>
+                    <ul class="strategy-items">
+                        <li>社會實踐課程</li>
+                        <li>永續工藝產品開發</li>
+                        <li>尚虎雲產銷網建立</li>
+                        <li>水井三寶文化推廣</li>
+                        <li>地方創生品牌建立</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- AIoT 智慧科技展示 -->
+<section class="aiot-section">
+    <div class="container">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <div class="divider-bamboo" style="background:linear-gradient(90deg,var(--green-mid),var(--green-light));"></div>
+            <p class="section-subtitle mb-3" style="color:var(--green-light);">AIOT TECHNOLOGY</p>
+            <h2 class="section-title">AIoT 智慧科技應用</h2>
+            <p style="color:#80A870;font-size:0.88rem;margin-top:12px;letter-spacing:0.1em;">
+                虎科大電機資訊學院將先進科技導入水井村，實現智慧農漁業
+            </p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="aiot-card">
+                    <span class="aiot-icon">🐟</span>
+                    <h4 class="aiot-title">智慧養殖監控</h4>
+                    <p class="aiot-desc">
+                        導入 AIoT 感測器即時監控魚塭水質，
+                        包含溫度、pH值、溶氧量等關鍵指標，
+                        讓漁民隨時掌握養殖狀況，
+                        提升魚貨存活率與品質。
+                    </p>
+                    <span class="aiot-tag">水質監測</span>
+                    <span class="aiot-tag">IoT感測</span>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="aiot-card">
+                    <span class="aiot-icon">💧</span>
+                    <h4 class="aiot-title">水資源節水監控</h4>
+                    <p class="aiot-desc">
+                        建立水資源循環監控系統，
+                        透過智慧節水技術與生物淨水技術，
+                        減少水資源浪費，實現農業用水的
+                        永續循環再利用。
+                    </p>
+                    <span class="aiot-tag">節水技術</span>
+                    <span class="aiot-tag">循環利用</span>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="300">
+                <div class="aiot-card">
+                    <span class="aiot-icon">🌱</span>
+                    <h4 class="aiot-title">智慧農業應用</h4>
+                    <p class="aiot-desc">
+                        結合土壤感測器與環境監測，
+                        提供農民精準的種植建議，
+                        減少農藥與肥料的浪費，
+                        實現低碳永續農業生產。
+                    </p>
+                    <span class="aiot-tag">精準農業</span>
+                    <span class="aiot-tag">低碳生產</span>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="400">
+                <div class="aiot-card">
+                    <span class="aiot-icon">🤖</span>
+                    <h4 class="aiot-title">OTTO 機器人教育</h4>
+                    <p class="aiot-desc">
+                        將 OTTO 機器人帶入水井村，
+                        讓在地孩童透過動手做機器人，
+                        接觸 STEAM 教育，
+                        縮短城鄉數位落差。
+                    </p>
+                    <span class="aiot-tag">STEAM教育</span>
+                    <span class="aiot-tag">機器人</span>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="500">
+                <div class="aiot-card">
+                    <span class="aiot-icon">🎯</span>
+                    <h4 class="aiot-title">Matrix 機器人</h4>
+                    <p class="aiot-desc">
+                        辦理 Matrix 機器人工作坊，
+                        結合程式設計與機器人控制，
+                        培養學生的邏輯思維與創意，
+                        為未來科技人才紮根。
+                    </p>
+                    <span class="aiot-tag">程式設計</span>
+                    <span class="aiot-tag">創客教育</span>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="600">
+                <div class="aiot-card">
+                    <span class="aiot-icon">🌸</span>
+                    <h4 class="aiot-title">樹藝 AI 水井三寶</h4>
+                    <p class="aiot-desc">
+                        結合 AI 技術與在地文化，
+                        以水井三寶（烏龜、白馬、姻緣花）
+                        為主題創作 AI 藝術作品，
+                        已在台西客運等地展出。
+                    </p>
+                    <span class="aiot-tag">AI創作</span>
+                    <span class="aiot-tag">文化科技</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 師生實踐成果 -->
+<section class="achievement-section">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-4 mb-5" data-aos="fade-right">
+                <div class="divider-bamboo" style="margin:0 0 16px;"></div>
+                <p class="section-subtitle mb-3">ACHIEVEMENTS</p>
+                <h2 class="section-title">師生實踐成果</h2>
+                <p style="color:#7A5C38;font-size:0.88rem;line-height:1.9;margin-top:16px;">
+                    虎科大電資學院師生深入水井村，
+                    以智慧科技與人文關懷，
+                    陪伴村民共同打造三生共好的美好生活。
+                </p>
+                <a href="https://ossr.nfu.edu.tw/zh_tw/practices/getVideoList"
+                   target="_blank" class="btn-login mt-3"
+                   style="display:inline-block;">
+                    查看更多影音 →
+                </a>
+            </div>
+            <div class="col-lg-8" data-aos="fade-left">
+                <div class="achievement-card">
+                    <p class="achievement-date">2025年3月 · 社會實踐</p>
+                    <h5 class="achievement-title">三寶奇緣——水井村 × 他里霧文化尋訪</h5>
+                    <p class="achievement-desc">
+                        電機資訊學院於雲林縣斗南他里霧文化園區舉辦社會實踐活動，
+                        水井村居民親手製作「姻緣花」玉米籜工藝結合LED燈光設計，
+                        融合傳統工藝與現代創意科技，展現跨世代合作的社會價值。
+                    </p>
+                </div>
+                <div class="achievement-card">
+                    <p class="achievement-date">2025年 · AIoT 課程</p>
+                    <h5 class="achievement-title">智慧科技課程進駐水井村</h5>
+                    <p class="achievement-desc">
+                        學院教師帶領學生將 AIoT 智慧養殖監控技術導入水井村漁塭，
+                        協助漁民使用感測器即時監控水質，
+                        減輕勞動負擔並提升養殖效率，讓科技服務在地農漁業。
+                    </p>
+                </div>
+                <div class="achievement-card">
+                    <p class="achievement-date">2025年 · 樹藝 AI 展出</p>
+                    <h5 class="achievement-title">水井三寶 AI 藝術創作展</h5>
+                    <p class="achievement-desc">
+                        尚虎雲團隊以水井三寶為主題創作的 AI 藝術作品，
+                        於2025年10月在竹山鎮小鎮文創協助下，
+                        在台西客運展出，將在地文化與科技藝術完美融合。
+                    </p>
+                </div>
+                <div class="achievement-card">
+                    <p class="achievement-date">持續進行 · STEAM 教育</p>
+                    <h5 class="achievement-title">機器人工作坊 × 偏鄉科技教育</h5>
+                    <p class="achievement-desc">
+                        定期辦理 OTTO 機器人、Matrix 機器人工作坊，
+                        帶領水井村及口湖鄉孩童接觸 STEAM 教育，
+                        縮短城鄉數位落差，培育下一代科技人才。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 相關影音 -->
+<section class="video-section">
+    <div class="container">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <div class="divider-bamboo"></div>
+            <p class="section-subtitle mb-3">VIDEO RECORDS</p>
+            <h2 class="section-title">影音紀錄</h2>
+        </div>
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <a href="https://ossr.nfu.edu.tw/zh_tw/practices/getVideoList"
+                   target="_blank" class="video-link" data-aos="fade-up" data-aos-delay="100">
+                    <span class="video-date">2026/01</span>
+                    <span class="video-title">114年深耕計畫目標二成果影片</span>
+                    <span class="video-arrow">→</span>
+                </a>
+                <a href="https://ossr.nfu.edu.tw/zh_tw/practices/getVideoList"
+                   target="_blank" class="video-link" data-aos="fade-up" data-aos-delay="150">
+                    <span class="video-date">2026/02</span>
+                    <span class="video-title">2026 樹藝森林精靈機器人工作坊</span>
+                    <span class="video-arrow">→</span>
+                </a>
+                <a href="https://ossr.nfu.edu.tw/zh_tw/practices/getVideoList"
+                   target="_blank" class="video-link" data-aos="fade-up" data-aos-delay="200">
+                    <span class="video-date">2025/10</span>
+                    <span class="video-title">第四屆亞太永續博覽會 USR EXPO</span>
+                    <span class="video-arrow">→</span>
+                </a>
+                <a href="https://ossr.nfu.edu.tw/zh_tw/practices/getVideoList"
+                   target="_blank" class="video-link" data-aos="fade-up" data-aos-delay="250">
+                    <span class="video-date">2025/10</span>
+                    <span class="video-title">尚虎雲在竹山小鎮社會實踐</span>
+                    <span class="video-arrow">→</span>
+                </a>
+                <div class="text-center mt-4" data-aos="fade-up">
+                    <a href="https://ossr.nfu.edu.tw/zh_tw/practices/getVideoList"
+                       target="_blank" class="btn-login">
+                        查看全部影音記錄 →
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 計畫團隊 -->
+<section class="team-section">
+    <div class="container">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <div class="divider-bamboo"></div>
+            <p class="section-subtitle mb-3">PROJECT TEAM</p>
+            <h2 class="section-title">計畫團隊</h2>
+        </div>
+        <div class="row g-3">
+            <div class="col-6 col-md-4 col-lg-3" data-aos="fade-up" data-aos-delay="100">
+                <div class="team-card">
+                    <p class="team-role">計畫主持人</p>
+                    <h5 class="team-name">許永和 博士</h5>
+                    <p class="team-dept">資訊工程系特聘教授<br>電機資訊學院院長</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3" data-aos="fade-up" data-aos-delay="150">
+                <div class="team-card">
+                    <p class="team-role">共同主持人</p>
+                    <h5 class="team-name">林正敏 教授</h5>
+                    <p class="team-dept">電機資訊學院教授<br>永續發展暨社會責任處執行長</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3" data-aos="fade-up" data-aos-delay="200">
+                <div class="team-card">
+                    <p class="team-role">共同主持人</p>
+                    <h5 class="team-name">張耀南 教授</h5>
+                    <p class="team-dept">生物科技系教授</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3" data-aos="fade-up" data-aos-delay="250">
+                <div class="team-card">
+                    <p class="team-role">協同主持人</p>
+                    <h5 class="team-name">莊文河 副教授</h5>
+                    <p class="team-dept">資訊工程系</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3" data-aos="fade-up" data-aos-delay="300">
+                <div class="team-card">
+                    <p class="team-role">協同主持人</p>
+                    <h5 class="team-name">郭永明 助理教授</h5>
+                    <p class="team-dept">電子工程系</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3" data-aos="fade-up" data-aos-delay="350">
+                <div class="team-card">
+                    <p class="team-role">協同主持人</p>
+                    <h5 class="team-name">吳添全 助理教授</h5>
+                    <p class="team-dept">電子工程系</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3" data-aos="fade-up" data-aos-delay="400">
+                <div class="team-card">
+                    <p class="team-role">協同主持人</p>
+                    <h5 class="team-name">陳鳳雀 助理教授</h5>
+                    <p class="team-dept">通識教育中心</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3" data-aos="fade-up" data-aos-delay="450">
+                <div class="team-card">
+                    <p class="team-role">計畫聯絡人</p>
+                    <h5 class="team-name">陳靜美</h5>
+                    <p class="team-dept">電資學院<br>研究副管理師</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-5" data-aos="fade-up">
+            <p style="color:var(--text-muted);font-size:0.82rem;letter-spacing:0.1em;margin-bottom:20px;">
+                聯絡電機資訊學院：05-6315601 ｜ etccollege.nfu.edu.tw
+            </p>
+            <a href="https://ossr.nfu.edu.tw/zh_tw/usr/-30060411"
+               target="_blank" class="btn-login">
+                查看官方計畫頁面 →
+            </a>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

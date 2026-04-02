@@ -121,18 +121,16 @@
                         </p>
                     </div>
 
-                    <div class="event-arrow-btn">
-                        <span class="arrow-text">查看</span>
-                        <i class="bi bi-arrow-right"></i>
-                    </div>
                     {% if activity.link_url %}
-                    <a href="{{ activity.link_url }}" style="margin-left:auto;">
-                        <span class="arrow-text">查看</span>
-                        <i class="bi bi-arrow-right" style="color:var(--bamboo-light);"></i>
-                    </a>
+                        <a href="{{ activity.link_url }}" target="_blank" rel="noreferrer" class="event-link" style="margin-left:auto;">
+                            <span class="arrow-text">查看</span>
+                            <i class="bi bi-arrow-right" style="color:var(--bamboo-light);"></i>
+                        </a>
                     {% else %}
-                    <span class="arrow-text">查看</span>
-                    <i class="bi bi-arrow-right ms-auto" style="color:var(--bamboo-light);opacity:0.25;"></i>
+                        <a href="{% url 'event_detail' activity.pk %}" class="event-link" style="margin-left:auto;">
+                            <span class="arrow-text">查看</span>
+                            <i class="bi bi-arrow-right" style="color:var(--bamboo-light);"></i>
+                        </a>
                     {% endif %}
                 </div>
                 {% empty %}
@@ -144,7 +142,7 @@
         <!-- 查看全部按鈕 -->
         {% if activities %}
         <div class="text-center mt-4" data-aos="fade-up">
-            <a href="#" class="btn-login" style="font-size:0.82rem;padding:10px 32px;letter-spacing:0.15em;">
+            <a href="{% url 'event_list' %}" class="btn-login" style="font-size:0.82rem;padding:10px 32px;letter-spacing:0.15em;">
                 查看全部活動 →
             </a>
         </div>
@@ -211,6 +209,19 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="guide-entry-box text-center">
+        <p class="guide-entry-kicker mb-2">SHUIJING INTERACTIVE GUIDE</p>
+        <h2 class="guide-entry-title mb-3">走進水井村的地方故事</h2>
+        <p class="guide-entry-text mb-4">
+            透過互動導覽認識水井村三寶、光雕牆、聚落起源與在地文化，
+            後續也將結合 AR 掃描體驗，讓地方故事更容易被看見。
+        </p>
+        <a href="{% url 'guide:home' %}" class="btn guide-entry-btn">
+            前往互動導覽
+        </a>
         </div>
     </div>
 </section>

@@ -1,0 +1,314 @@
+/* ===== Guide Theme ===== */
+:root {
+  --guide-bg: #1f1208;
+  --guide-bg-soft: #2b190d;
+  --guide-card: #f6efe4;
+  --guide-card-2: #fffaf2;
+  --guide-text: #2f241c;
+  --guide-text-light: #f4e7d2;
+  --guide-muted: #b89b72;
+  --guide-gold: #c89b5d;
+  --guide-gold-dark: #a9783f;
+  --guide-border: rgba(200, 155, 93, 0.25);
+  --guide-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+}
+
+/* 頁面背景 */
+.guide-page {
+  background:
+    linear-gradient(rgba(24, 12, 5, 0.92), rgba(24, 12, 5, 0.96)),
+    radial-gradient(circle at top left, rgba(200, 155, 93, 0.12), transparent 35%);
+  color: var(--guide-text-light);
+  min-height: 100vh;
+}
+
+/* Hero 區 */
+.guide-hero {
+  padding: 3rem 0 2rem;
+}
+
+.guide-kicker {
+  color: var(--guide-muted);
+  letter-spacing: 0.18em;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+
+.guide-title {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #fff6ea;
+}
+
+.guide-subtitle {
+  max-width: 760px;
+  line-height: 1.9;
+  color: #dbc7ab;
+  margin-bottom: 1.5rem;
+}
+
+/* 分類按鈕 */
+.guide-filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.guide-filter-btn {
+  display: inline-block;
+  padding: 0.65rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--guide-border);
+  color: #f2dfc4;
+  text-decoration: none;
+  transition: all 0.25s ease;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.guide-filter-btn:hover,
+.guide-filter-btn.active {
+  background: linear-gradient(135deg, var(--guide-gold), var(--guide-gold-dark));
+  color: #1e1209;
+  border-color: transparent;
+}
+
+/* 區塊標題 */
+.guide-section-title {
+  color: #fff0da;
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 1.25rem;
+}
+
+/* 卡片 */
+.guide-card {
+  background: linear-gradient(180deg, var(--guide-card), var(--guide-card-2));
+  border: 1px solid rgba(122, 84, 41, 0.08);
+  border-radius: 1.25rem;
+  overflow: hidden;
+  box-shadow: var(--guide-shadow);
+  height: 100%;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.guide-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.24);
+}
+
+.guide-card-img-wrap {
+  background: #eadbc4;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+
+.guide-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.guide-card-body {
+  padding: 1.35rem;
+  color: var(--guide-text);
+}
+
+.guide-badge {
+  display: inline-block;
+  background: rgba(169, 120, 63, 0.12);
+  color: #8d5d2d;
+  border: 1px solid rgba(169, 120, 63, 0.15);
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  font-size: 0.8rem;
+  margin-bottom: 0.85rem;
+}
+
+.guide-card-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.6rem;
+}
+
+.guide-card-meta {
+  color: #7a6755;
+  font-size: 0.95rem;
+  margin-bottom: 0.65rem;
+}
+
+.guide-card-text {
+  color: #43362d;
+  line-height: 1.8;
+  margin-bottom: 1rem;
+}
+
+/* 按鈕 */
+.guide-btn-primary,
+.guide-btn-secondary {
+  display: inline-block;
+  text-decoration: none;
+  border-radius: 999px;
+  padding: 0.72rem 1.15rem;
+  font-weight: 600;
+  transition: all 0.25s ease;
+}
+
+.guide-btn-primary {
+  background: linear-gradient(135deg, var(--guide-gold), var(--guide-gold-dark));
+  color: #20140b;
+  border: none;
+}
+
+.guide-btn-primary:hover {
+  color: #20140b;
+  transform: translateY(-1px);
+}
+
+.guide-btn-secondary {
+  background: transparent;
+  color: #8a5e31;
+  border: 1px solid rgba(169, 120, 63, 0.35);
+}
+
+.guide-btn-secondary:hover {
+  background: rgba(169, 120, 63, 0.08);
+  color: #6f471f;
+}
+
+/* 詳細頁 */
+.guide-detail-wrap {
+  padding: 3rem 0 4rem;
+}
+
+.guide-detail-cover {
+  border-radius: 1.25rem;
+  overflow: hidden;
+  box-shadow: var(--guide-shadow);
+}
+
+.guide-detail-cover img {
+  width: 100%;
+  display: block;
+}
+
+.guide-detail-panel {
+  background: linear-gradient(180deg, var(--guide-card), var(--guide-card-2));
+  color: var(--guide-text);
+  border-radius: 1.25rem;
+  padding: 1.6rem;
+  box-shadow: var(--guide-shadow);
+  height: 100%;
+}
+
+.guide-detail-title {
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  font-weight: 700;
+  color: #2e2119;
+  margin-bottom: 1rem;
+}
+
+.guide-detail-intro {
+  font-size: 1.08rem;
+  color: #4a3a2f;
+  line-height: 1.9;
+}
+
+.guide-info-box {
+  background: rgba(169, 120, 63, 0.08);
+  border: 1px solid rgba(169, 120, 63, 0.12);
+  border-radius: 1rem;
+  padding: 1rem 1.1rem;
+  margin-top: 1rem;
+}
+
+.guide-content-card {
+  background: linear-gradient(180deg, var(--guide-card), var(--guide-card-2));
+  color: var(--guide-text);
+  border-radius: 1.25rem;
+  padding: 1.4rem;
+  box-shadow: var(--guide-shadow);
+  height: 100%;
+}
+
+.guide-content-card h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 0.85rem;
+}
+
+.guide-content-card p,
+.guide-content-card div {
+  line-height: 1.9;
+}
+
+.guide-empty-box {
+  background: rgba(255, 255, 255, 0.04);
+  color: #e4cfaf;
+  border: 1px dashed rgba(200, 155, 93, 0.25);
+  border-radius: 1rem;
+  padding: 1.2rem;
+}
+
+/* 首頁 CTA */
+.guide-entry-section {
+  background: linear-gradient(180deg, rgba(68, 36, 12, 0.18), rgba(23, 11, 4, 0.1));
+}
+
+.guide-entry-box {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2.5rem 2rem;
+  border-radius: 1.5rem;
+  border: 1px solid rgba(200, 155, 93, 0.16);
+  background: linear-gradient(135deg, rgba(47, 24, 10, 0.95), rgba(28, 14, 6, 0.95));
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+}
+
+.guide-entry-kicker {
+  color: var(--guide-muted);
+  letter-spacing: 0.18em;
+  font-size: 0.82rem;
+}
+
+.guide-entry-title {
+  color: #fff1dc;
+  font-weight: 700;
+}
+
+.guide-entry-text {
+  color: #d7c1a3;
+  line-height: 1.9;
+}
+
+.guide-entry-btn {
+  background: linear-gradient(135deg, var(--guide-gold), var(--guide-gold-dark));
+  color: #1f1208;
+  border: none;
+  border-radius: 999px;
+  padding: 0.75rem 1.4rem;
+  font-weight: 700;
+}
+
+.guide-entry-btn:hover {
+  color: #1f1208;
+}
+
+/* 小螢幕 */
+@media (max-width: 768px) {
+  .guide-hero {
+    padding-top: 2rem;
+  }
+
+  .guide-card-body,
+  .guide-detail-panel,
+  .guide-content-card {
+    padding: 1.1rem;
+  }
+
+  .guide-entry-box {
+    padding: 2rem 1.2rem;
+  }
+}

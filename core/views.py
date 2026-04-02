@@ -7,6 +7,7 @@ from django.contrib import messages
 from django.dispatch import receiver
 from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
+from django.conf import settings
 
 @receiver(user_logged_in)
 def on_login(request, user, **kwargs):
@@ -53,13 +54,18 @@ def event_list(request):
     today = timezone.now().date()
     # 搜尋
     query    = request.GET.get('q', '')
-    category = request.GET.get('category', '')
-    status   = request.GET.get('status', 'upcoming')  # upcoming / past / all
+    status   = request.GET.get('status', 'all')
 
     activities = Activity.objects.filter(is_active=True)
-    # 分類篩選
-    if category:
-        activities = activities.filter(category=category)
+
+    # 關鍵字搜尋（標題、描述、地點、標籤）
+    if query:
+        activities = activities.filter(
+            Q(title__icontains=query) |
+            Q(description__icontains=query) |
+            Q(location__icontains=query) |
+            Q(tags__icontains=query)
+        )
 
     # 狀態篩選
     if status == 'upcoming':
@@ -79,16 +85,8 @@ def event_list(request):
             )
         ).order_by('is_past_flag', '-is_featured', 'date')
 
-    # 關鍵字搜尋
-    if query:
-        activities = activities.filter(
-            Q(title__icontains=query) |
-            Q(description__icontains=query) |
-            Q(location__icontains=query)
-        )
-
-    # 分頁（每頁6筆）
-    paginator = Paginator(activities, 6)
+    # 分頁
+    paginator = Paginator(activities, settings.ACTIVITIES_PER_PAGE)
     page_num  = request.GET.get('page', 1)
     page_obj  = paginator.get_page(page_num)
     return render(request, 'core/event_list.html', {
@@ -197,6 +195,10 @@ def event_register(request, pk):
     messages.success(request, f'已成功報名「{activity.title}」，共 {participant_count} 人！')
     return redirect('event_detail', pk=pk)
 
+def story(request):
+    return render(request, 'core/story.html')
+def usr_page(request):
+    return render(request, 'core/usr.html')
 
 def about(request):
     return render(request, 'core/about.html')
