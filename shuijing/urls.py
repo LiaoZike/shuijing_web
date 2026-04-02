@@ -28,10 +28,9 @@ urlpatterns = [
     path('accounts/google/login/callback/', oauth2_callback, name='google_callback'),
     path('accounts/logout/', views.logout_view, name='logout'),
 
-    path('', include('core.urls')),        # 首頁
+    path('', include('core.urls')),
     path('login/', views.login_portal, name='login_portal'),
     path('login/popup-done/', views.popup_done, name='popup_done'),
     path('auth-status/', views.auth_status, name='auth_status'),
     # path('auth/google/popup/', views.google_popup_start, name='google_popup_start'),
-
 ]

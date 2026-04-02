@@ -71,15 +71,28 @@
     margin-top:8px;
     letter-spacing:0.1em;
 }
-.cc_sentence{
-    position:absolute;
-    bottom:8px;
-    right:12px;
-    font-size:0.8rem;
-    background-color: rgba(10,6,2,0.3);
-    padding: 2px;
-    color:rgba(255,255,255,0.6);
-    letter-spacing:0.05em;
+.cc_sentence {
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    left: 12px; 
+    font-size: 0.75rem;
+    background-color: rgba(10, 6, 2, 0.3);
+    padding: 4px 6px;
+    color: rgba(255,255,255,0.6);
+    letter-spacing: 0.02em;
+
+    white-space: normal; 
+    word-break: break-word;
+    overflow-wrap: break-word;
+    text-align: left;
+}
+@media (max-width: 768px) {
+    .cc_sentence {
+        font-size: 0.68rem;
+        line-height: 1.4;
+        padding: 4px 6px;
+    }
 }
 
 /* Carousel 控制 */

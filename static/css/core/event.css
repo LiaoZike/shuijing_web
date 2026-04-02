@@ -1,0 +1,886 @@
+/* ============================================================
+   EVENT.CSS  —  水井村活動頁面樣式
+   色系：淺米色背景 (#F5F0E8) + 深木色文字 (#2E1F0F)
+   標題區塊保留深色 (var(--wood-dark))
+   ============================================================ */
+
+
+/* ============================================================
+   全域覆蓋：淺色系背景
+   ============================================================ */
+body {
+    background-color: #F5F0E8;
+    color: #2E1F0F;
+}
+
+.events-page,
+.detail-body {
+    background: #F5F0E8;
+}
+
+
+/* ============================================================
+   PAGE HERO  —  活動列表頁標題區
+   ============================================================ */
+.page-hero {
+    padding: 120px 0 50px;
+    /* background: var(--wood-dark); */
+    background: #b3aa9f;
+    /* color: #7A5C38; */
+    border-bottom: 1px solid rgba(139,105,20,0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.page-hero::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 400px; height: 400px;
+    border: 4px solid rgba(139, 105, 20, 0.144);
+    border-radius: 50%;
+}
+
+.page-hero::after {
+    content: '';
+    position: absolute;
+    bottom: -80px; left: -80px;
+    width: 300px; height: 300px;
+    border: 2px solid rgba(85, 92, 48, 0.1);
+    border-radius: 50%;
+}
+
+.page-hero-label {
+    font-size: 0.75rem;
+    letter-spacing: 0.35em;
+    /* color: var(--bamboo-light); */
+    /* color: black; */
+    margin-bottom: 14px;
+}
+
+.page-hero h1 {
+    font-family: 'Noto Serif TC', serif;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    /* color: var(--cream); */
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    margin-bottom: 12px;
+}
+
+.page-hero p {
+    font-size: 0.9rem;
+    letter-spacing: 0.1em;
+}
+
+
+/* ============================================================
+   DETAIL HERO  —  活動詳細頁標題區
+   ============================================================ */
+.detail-hero {
+    padding: 140px 0 0;
+    background: var(--wood-dark);
+    position: relative;
+    overflow: hidden;
+}
+
+.detail-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(10,6,2,0.3), var(--wood-dark));
+    z-index: 1;
+}
+
+.detail-hero-bg {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    filter: brightness(0.3) saturate(0.6);
+}
+
+.detail-hero-content {
+    position: relative;
+    z-index: 2;
+    padding-bottom: 50px;
+}
+
+.breadcrumb-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    margin-bottom: 24px;
+}
+
+.breadcrumb-bar a {
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.breadcrumb-bar a:hover { color: var(--bamboo-light); }
+.breadcrumb-bar span { color: rgba(160,144,112,0.4); }
+
+.detail-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.detail-badge {
+    font-size: 0.72rem;
+    padding: 4px 12px;
+    letter-spacing: 0.15em;
+}
+
+.detail-badge.featured {
+    border: 1px solid var(--bamboo);
+    color: var(--bamboo-light);
+}
+
+.detail-badge.past {
+    border: 1px solid rgba(160,144,112,0.3);
+    color: var(--text-muted);
+}
+
+.detail-badge.upcoming {
+    border: 1px solid rgba(58,92,48,0.5);
+    color: var(--green-light);
+}
+
+.detail-title {
+    font-family: 'Noto Serif TC', serif;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    color: var(--cream);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    line-height: 1.4;
+    margin-bottom: 10px;
+}
+
+.detail-subtitle {
+    font-size: 1rem;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    margin-bottom: 24px;
+}
+
+.detail-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.detail-tag {
+    font-size: 0.72rem;
+    padding: 3px 12px;
+    border: 1px solid rgba(58,92,48,0.4);
+    color: var(--green-light);
+    letter-spacing: 0.1em;
+}
+
+
+/* ============================================================
+   搜尋篩選列
+   ============================================================ */
+.filter-bar {
+    background: rgba(245,240,232,0.95);
+    border-bottom: 1px solid rgba(139,105,20,0.2);
+    padding: 20px 0;
+    position: sticky;
+    top: 60px;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+}
+
+.search-box {
+    display: flex;
+    align-items: center;
+    background: white;
+    border: 1px solid rgba(139,105,20,0.3);
+    transition: border-color 0.3s;
+}
+
+.search-box:focus-within { border-color: var(--bamboo-light); }
+
+.search-box input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #2E1F0F;
+    font-size: 0.88rem;
+    padding: 10px 16px;
+    flex: 1;
+    letter-spacing: 0.06em;
+}
+
+.search-box input::placeholder { color: #A09070; }
+
+.search-box button {
+    background: transparent;
+    border: none;
+    border-left: 1px solid rgba(139,105,20,0.3);
+    color: var(--bamboo-light);
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.search-box button:hover { background: rgba(139,105,20,0.1); }
+
+.status-tabs {
+    display: flex;
+    gap: 4px;
+}
+
+.status-tab {
+    font-size: 0.8rem;
+    padding: 8px 16px;
+    border: 1px solid rgba(139,105,20,0.3);
+    color: #7A5C38;
+    text-decoration: none;
+    letter-spacing: 0.1em;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.status-tab:hover,
+.status-tab.active {
+    background: rgba(139,105,20,0.1);
+    color: #4A3220;
+    border-color: var(--bamboo);
+}
+
+
+/* ============================================================
+   活動列表區
+   ============================================================ */
+.events-page {
+    padding: 60px 0 100px;
+    min-height: 60vh;
+}
+
+.result-info {
+    font-size: 0.82rem;
+    color: #7A5C38;
+    letter-spacing: 0.08em;
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(139,105,20,0.1);
+}
+
+.result-info strong { color: var(--bamboo); }
+
+.events-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+}
+
+.event-item {
+    background: white;
+    border: 1px solid rgba(139,105,20,0.15);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.35s ease;
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+}
+
+.event-item::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 0; height: 2px;
+    background: linear-gradient(90deg, var(--green-mid), var(--bamboo-light));
+    transition: width 0.4s ease;
+}
+
+.event-item:hover {
+    border-color: rgba(196,160,82,0.4);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+    color: inherit;
+    text-decoration: none;
+}
+
+.event-item:hover::after { width: 100%; }
+
+.event-item.is-past {
+    opacity: 0.5;
+    filter: grayscale(0.3);
+    background: #F0EBE0;
+}
+.event-item.is-past:hover {
+    opacity: 0.7; filter: grayscale(0.1);
+}
+
+.event-cover {
+    height: 180px;
+    overflow: hidden;
+    position: relative;
+    background: var(--wood-mid);
+}
+
+.event-cover img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+    filter: brightness(0.85) saturate(0.9);
+}
+
+.event-item:hover .event-cover img { transform: scale(1.05); }
+
+.event-cover-placeholder {
+    height: 180px;
+    background: linear-gradient(135deg, var(--wood-dark), var(--green-deep));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    opacity: 0.4;
+}
+
+.event-featured-badge {
+    position: absolute;
+    top: 12px; left: 12px;
+    font-size: 0.68rem;
+    padding: 3px 10px;
+    background: rgba(139,105,20,0.85);
+    color: var(--cream);
+    letter-spacing: 0.15em;
+    backdrop-filter: blur(4px);
+}
+
+.event-past-badge {
+    position: absolute;
+    top: 12px; right: 12px;
+    font-size: 0.68rem;
+    padding: 3px 10px;
+    background: rgba(20,20,20,0.7);
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+}
+
+.event-body {
+    padding: 20px 22px 22px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.event-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.event-meta-date {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 0.8rem;
+    color: var(--bamboo);
+    letter-spacing: 0.08em;
+    color: #B08040;
+}
+
+.event-meta-loc {
+    font-size: 0.78rem;
+    color: #9A8070;
+    letter-spacing: 0.06em;
+}
+
+.event-meta-loc::before { content: '📍 '; font-size: 0.7rem; }
+
+.event-title {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 1.05rem;
+    color: #2E1F0F;
+    margin-bottom: 6px;
+    letter-spacing: 0.04em;
+    line-height: 1.5;
+}
+
+.event-subtitle {
+    font-size: 0.82rem;
+    color: #9A7A50;
+    margin-bottom: 14px;
+    line-height: 1.6;
+}
+
+.event-desc {
+    font-size: 0.83rem;
+    color: #9A8070;
+    line-height: 1.8;
+    flex: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.event-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 14px;
+}
+
+.event-tag {
+    font-size: 0.7rem;
+    padding: 2px 10px;
+    border: 1px solid rgba(58,92,48,0.4);
+    color: var(--green-light);
+    letter-spacing: 0.08em;
+}
+
+.event-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(139,105,20,0.1);
+    font-size: 0.78rem;
+    color: #9A8070;
+}
+
+.event-footer .arrow {
+    color: var(--bamboo-light);
+    transition: transform 0.3s;
+}
+
+.event-item:hover .event-footer .arrow { transform: translateX(4px); }
+
+.empty-state {
+    text-align: center;
+    padding: 80px 0;
+    color: #9A8070;
+}
+
+.empty-state .empty-icon { font-size: 3rem; margin-bottom: 16px; opacity: 0.4; }
+.empty-state p { font-size: 0.9rem; letter-spacing: 0.1em; }
+
+
+/* ============================================================
+   分頁
+   ============================================================ */
+.pagination-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    margin-top: 60px;
+}
+
+.page-btn {
+    width: 38px; height: 38px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid rgba(139,105,20,0.25);
+    color: #7A5C38;
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.page-btn:hover {
+    border-color: var(--bamboo-light);
+    color: var(--bamboo-light);
+    text-decoration: none;
+}
+
+.page-btn.active {
+    background: var(--bamboo);
+    border-color: var(--bamboo);
+    color: white;
+}
+
+.page-btn.disabled {
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+
+/* ============================================================
+   活動詳細頁  —  主內容區
+   ============================================================ */
+.detail-body {
+    padding: 60px 0 100px;
+}
+
+.detail-cover {
+    width: 100%;
+    overflow: hidden;
+    margin-bottom: 36px;
+}
+
+.detail-cover img {
+    width: 100%;
+    max-height: 450px;
+    object-fit: cover;
+    filter: brightness(0.9) saturate(0.95);
+}
+
+.detail-description {
+    font-size: 0.95rem;
+    color: #4A3220;
+    line-height: 2;
+    letter-spacing: 0.04em;
+    white-space: pre-line;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #9A8070;
+    font-size: 0.82rem;
+    letter-spacing: 0.1em;
+    text-decoration: none;
+    margin-bottom: 40px;
+    transition: color 0.2s;
+}
+
+.back-link:hover { color: var(--bamboo); text-decoration: none; }
+
+
+/* ============================================================
+   活動詳細頁  —  右側資訊欄
+   ============================================================ */
+.info-card {
+    background: white;
+    border: 1px solid rgba(139,105,20,0.2);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    padding: 28px 24px;
+    position: sticky;
+    top: 80px;
+}
+
+.contact-card {
+    background: white;
+    border: 1px solid rgba(139,105,20,0.2);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    padding: 20px;
+    margin-top: 16px;
+}
+
+.info-section-title {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 0.78rem;
+    color: var(--bamboo);
+    letter-spacing: 0.2em;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(139,105,20,0.15);
+}
+
+.contact-card .info-section-title { margin-bottom: 14px; }
+
+.info-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    align-items: flex-start;
+}
+
+.info-icon {
+    font-size: 0.9rem;
+    min-width: 20px;
+    margin-top: 2px;
+}
+
+.info-label {
+    font-size: 0.72rem;
+    color: #9A8070;
+    letter-spacing: 0.1em;
+    margin-bottom: 3px;
+}
+
+.info-value {
+    font-size: 0.88rem;
+    color: #2E1F0F;
+    letter-spacing: 0.04em;
+    line-height: 1.5;
+}
+
+.btn-register {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    text-align: center;
+    background: var(--bamboo);
+    color: var(--cream);
+    font-size: 0.88rem;
+    letter-spacing: 0.15em;
+    text-decoration: none;
+    border: none;
+    margin-top: 24px;
+    transition: all 0.3s;
+}
+
+.btn-register:hover {
+    background: var(--bamboo-light);
+    color: var(--ink);
+    text-decoration: none;
+}
+
+.btn-register.disabled {
+    background: rgba(139,105,20,0.2);
+    color: var(--text-muted);
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+
+/* ============================================================
+   相關活動
+   ============================================================ */
+.related-section {
+    padding: 60px 0;
+    background: #EDE5D0;
+    border-top: 1px solid rgba(139,105,20,0.15);
+}
+
+.related-card {
+    background: white;
+    border: 1px solid rgba(139,105,20,0.15);
+    padding: 20px;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: all 0.3s;
+}
+
+.related-card:hover {
+    border-color: rgba(196,160,82,0.4);
+    transform: translateY(-3px);
+    color: inherit;
+    text-decoration: none;
+}
+
+.related-date {
+    font-size: 0.75rem;
+    color: var(--bamboo-light);
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+}
+
+.related-title {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 0.95rem;
+    color: #2E1F0F;
+    line-height: 1.5;
+}
+
+
+/* ============================================================
+   報名表單頁
+   ============================================================ */
+.register-wrap {
+    padding: 140px 0 100px;
+    min-height: 100vh;
+}
+
+.register-card {
+    background: white;
+    border: 1px solid rgba(139,105,20,0.2);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    padding: 40px;
+    max-width: 560px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.register-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 10%; right: 10%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(196,160,82,0.6), transparent);
+}
+
+.register-title {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 1.3rem;
+    color: #2E1F0F;
+    margin-bottom: 6px;
+}
+
+.register-subtitle {
+    font-size: 0.82rem;
+    color: #9A8070;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(139,105,20,0.15);
+}
+
+.form-label {
+    font-size: 0.82rem;
+    color: #7A5C38;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+}
+
+.form-label .required {
+    color: var(--bamboo);
+    margin-left: 4px;
+}
+
+.form-control {
+    background: #FAF7F2;
+    border: 1px solid rgba(139,105,20,0.25);
+    border-radius: 0;
+    color: #2E1F0F;
+    font-size: 0.9rem;
+    padding: 10px 14px;
+}
+
+.form-control:focus {
+    background: white;
+    border-color: var(--bamboo);
+    box-shadow: none;
+    color: #2E1F0F;
+}
+
+.form-control::placeholder { color: #A09070; }
+
+.form-hint {
+    font-size: 0.75rem;
+    color: #A09070;
+    margin-top: 4px;
+}
+
+.section-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 28px 0 20px;
+}
+
+.section-divider span {
+    font-size: 0.75rem;
+    color: var(--bamboo);
+    letter-spacing: 0.2em;
+    white-space: nowrap;
+}
+
+.section-divider::before,
+.section-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(139,105,20,0.2);
+}
+
+.companion-block {
+    background: #FAF7F2;
+    border: 1px solid rgba(139,105,20,0.15);
+    padding: 20px;
+    margin-bottom: 12px;
+    position: relative;
+}
+
+.companion-block .companion-num {
+    font-size: 0.72rem;
+    color: var(--bamboo);
+    letter-spacing: 0.15em;
+    margin-bottom: 14px;
+}
+
+.btn-remove {
+    position: absolute;
+    top: 14px; right: 14px;
+    background: none;
+    border: 1px solid rgba(160,80,80,0.3);
+    color: rgba(180,80,80,0.7);
+    font-size: 0.75rem;
+    padding: 3px 10px;
+    cursor: pointer;
+    letter-spacing: 0.1em;
+    transition: all 0.2s;
+}
+
+.btn-remove:hover {
+    border-color: rgba(180,80,80,0.6);
+    color: rgba(180,80,80,1);
+}
+
+.btn-add-companion {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 11px;
+    background: transparent;
+    border: 1px dashed rgba(139,105,20,0.3);
+    color: #9A8070;
+    font-size: 0.82rem;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 24px;
+}
+
+.btn-add-companion:hover {
+    border-color: var(--bamboo);
+    color: var(--bamboo);
+}
+
+.quota-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: rgba(139,105,20,0.06);
+    border-left: 2px solid var(--bamboo);
+    margin-bottom: 28px;
+    font-size: 0.82rem;
+    color: #4A3220;
+    letter-spacing: 0.05em;
+}
+
+.btn-submit {
+    width: 100%;
+    padding: 14px;
+    background: var(--bamboo);
+    color: white;
+    border: none;
+    font-size: 0.9rem;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    transition: background 0.3s;
+    margin-top: 8px;
+}
+
+.btn-submit:hover {
+    background: var(--bamboo-light);
+    color: #2E1F0F;
+}
+
+
+.view-detail-btn {
+    font-size: 0.78rem;
+    color: white;
+    background: var(--bamboo);
+    padding: 5px 14px;
+    letter-spacing: 0.1em;
+    transition: background 0.2s;
+}
+.event-item:hover .view-detail-btn {
+    background: var(--bamboo-light);
+    color: #2E1F0F;
+}
+
+
+@media (max-width: 576px) {
+    .brand-en { display: none; }
+    .navbar-brand { font-size: 1.1rem; }
+}

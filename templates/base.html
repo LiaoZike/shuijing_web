@@ -33,42 +33,33 @@
             水井村
             <span class="brand-en">SHUIJING VILLAGE</span>
         </a>
-
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+        <button class="navbar-toggler" type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#navbarMain"
+                aria-controls="navbarMain"
+                aria-expanded="false"
+                aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
-
         <div class="collapse navbar-collapse" id="navbarMain">
-            <ul class="navbar-nav mx-auto">
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">生 產</a>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">在地農產</a></li>
-                        <li><a class="dropdown-item" href="#">特色商品</a></li>
-                        <li><a class="dropdown-item" href="#">農業體驗</a></li>
-                    </ul>
-                </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">生 態</a>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">沿海濕地</a></li>
-                        <li><a class="dropdown-item" href="#">候鳥生態</a></li>
-                        <li><a class="dropdown-item" href="#">生態相簿</a></li>
-                    </ul>
-                </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">生 活</a>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">社區活動</a></li>
-                        <li><a class="dropdown-item" href="#">文化傳承</a></li>
-                        <li><a class="dropdown-item" href="#">生活互動</a></li>
-                    </ul>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">關 於</a>
-                </li>
-            </ul>
-
+        <ul class="navbar-nav mx-auto">
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}"
+                href="{% url 'home' %}">首 頁</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}"
+                href="{% url 'about' %}">關 於</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'event' in request.resolver_match.url_name %}active{% endif %}"
+                href="{% url 'event_list' %}">活 動</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}"
+                href="{% url 'contact' %}">聯絡我們</a>
+            </li>
+        </ul>
             <!-- 登入 / 用戶 -->
             <div class="d-flex align-items-center gap-3">
                 {% if user.is_authenticated %}

@@ -1,0 +1,260 @@
+{% extends 'base.html' %}
+{% block title %}{{ activity.title }}・水井村{% endblock %}
+{% load static %}
+
+{% block link_css %}
+    <link rel="stylesheet" href="{% static 'css/core/event.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<!-- ===================== DETAIL HERO ===================== -->
+<section class="detail-hero">
+    {% if activity.cover_image %}
+    <div class="detail-hero-bg"
+         style="background-image: url('{{ activity.cover_image.url }}');"></div>
+    {% endif %}
+
+    <div class="container detail-hero-content">
+        <!-- 麵包屑 -->
+        <div class="breadcrumb-bar" data-aos="fade-right">
+            <a href="{% url 'home' %}">首頁</a>
+            <span>›</span>
+            <a href="{% url 'event_list' %}">活動資訊</a>
+            <span>›</span>
+            <span style="color:var(--cream-dark);">{{ activity.title }}</span>
+        </div>
+
+        <!-- 狀態標籤 -->
+        <div class="detail-status" data-aos="fade-up">
+            {% if activity.is_featured %}
+            <span class="detail-badge featured">置頂推薦</span>
+            {% endif %}
+            {% if activity.is_past %}
+            <span class="detail-badge past">已結束</span>
+            {% else %}
+            <span class="detail-badge upcoming">即將舉辦</span>
+            {% endif %}
+        </div>
+
+        <h1 class="detail-title" data-aos="fade-up" data-aos-delay="50">
+            {{ activity.title }}
+        </h1>
+        {% if activity.title_2 %}
+        <p class="detail-subtitle" data-aos="fade-up" data-aos-delay="100">
+            {{ activity.title_2 }}
+        </p>
+        {% endif %}
+
+        {% if activity.tag_list %}
+        <div class="detail-tags" data-aos="fade-up" data-aos-delay="150">
+            {% for tag in activity.tag_list %}
+            <span class="detail-tag">{{ tag }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- ===================== 主要內容 ===================== -->
+<section class="detail-body">
+    <div class="container">
+        <a href="{% url 'event_list' %}" class="back-link">
+            ← 返回活動列表
+        </a>
+
+        <div class="row g-5">
+            <!-- 左側：說明 -->
+            <div class="col-lg-8" data-aos="fade-right">
+                {% if activity.cover_image %}
+                <div class="detail-cover">
+                    <img src="{{ activity.cover_image.url }}" alt="{{ activity.title }}">
+                </div>
+                {% endif %}
+
+                <div class="divider-bamboo" style="margin:0 0 24px;"></div>
+                <p class="detail-description">{{ activity.description }}</p>
+            </div>
+
+            <!-- 右側：資訊欄 -->
+            <div class="col-lg-4" data-aos="fade-left">
+                <div class="info-card">
+                    <p class="info-section-title">活動資訊</p>
+
+                    <div class="info-row">
+                        <span class="info-icon">📅</span>
+                        <div>
+                            <p class="info-label">活動日期</p>
+                            <p class="info-value">
+                                {{ activity.date|date:"Y 年 m 月 d 日" }}
+                                {% if activity.end_date %}
+                                <br>～ {{ activity.end_date|date:"Y 年 m 月 d 日" }}
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    {% if activity.register_deadline %}
+                    <div class="info-row">
+                        <span class="info-icon">⏰</span>
+                        <div>
+                            <p class="info-label">報名截止</p>
+                            <p class="info-value"
+                            {% if not activity.is_registration_open %}
+                            style="color:var(--text-muted);text-decoration:line-through;"
+                            {% endif %}>
+                                {{ activity.register_deadline|date:"Y 年 m 月 d 日" }}
+                                {% if not activity.is_registration_open and not activity.is_past %}
+                                    <br><small style="color:#E07060;">報名已截止</small>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if activity.time %}
+                    <div class="info-row">
+                        <span class="info-icon">🕐</span>
+                        <div>
+                            <p class="info-label">活動時間</p>
+                            <p class="info-value">{{ activity.time }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if activity.location %}
+                    <div class="info-row">
+                        <span class="info-icon">📍</span>
+                        <div>
+                            <p class="info-label">活動地點</p>
+                            <p class="info-value">{{ activity.location }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if activity.max_participants %}
+                    <div class="info-row">
+                        <span class="info-icon">👥</span>
+                        <div>
+                            <p class="info-label">人數上限</p>
+                            <p class="info-value">{{ activity.max_participants }} 人</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- 報名按鈕 -->
+                    {% if activity.link_url %}
+                        <!-- 有外部連結 → Google 表單 -->
+                        {% if activity.is_past %}
+                            <a class="btn-register disabled">活動已結束</a>
+                        {% elif not activity.is_registration_open %}
+                            <a class="btn-register disabled">報名已截止</a>
+                        {% elif user.is_authenticated %}
+                            <a href="{{ activity.link_url }}" target="_blank"
+                            class="btn-register">立即報名 →</a>
+                            <p style="font-size:0.75rem;color:#9A8070;text-align:center;margin-top:8px;">
+                                以 {{ user.first_name|default:user.email }} 身份報名
+                            </p>
+                        {% else %}
+                            <a href="/accounts/google/login/?next={{ request.path }}"
+                            class="btn-register" style="background:var(--green-mid);">
+                                <i class="bi bi-google me-2"></i>登入後報名
+                            </a>
+                        {% endif %}
+                    {% else %}
+                        <!-- 沒外部連結 → 本站內報名 -->
+                        {% if activity.is_past %}
+                            <a class="btn-register disabled">活動已結束</a>
+                        {% elif not activity.is_registration_open %}
+                            <a class="btn-register disabled">報名已截止</a>
+                        {% elif user.is_authenticated %}
+                            <a href="{% url 'event_register' activity.pk %}"
+                            class="btn-register">填寫報名表 →</a>
+                            <p style="font-size:0.75rem;color:#9A8070;text-align:center;margin-top:8px;">
+                                以 {{ user.first_name|default:user.email }} 身份報名
+                            </p>
+                        {% else %}
+                            <a href="/accounts/google/login/?next={{ request.path }}"
+                            class="btn-register" style="background:var(--green-mid);">
+                                <i class="bi bi-google me-2"></i>登入後報名
+                            </a>
+                        {% endif %}
+                    {% endif %}
+                </div>
+
+                <!-- 聯絡資訊 -->
+                {% if activity.contact_name or activity.contact_phone or activity.contact_email %}
+                <div class="contact-card">
+                    <p class="info-section-title">聯絡資訊</p>
+                    {% if activity.contact_name %}
+                    <div class="info-row">
+                        <span class="info-icon">👤</span>
+                        <div>
+                            <p class="info-label">聯絡人</p>
+                            <p class="info-value">{{ activity.contact_name }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if activity.contact_phone %}
+                    <div class="info-row">
+                        <span class="info-icon">📞</span>
+                        <div>
+                            <p class="info-label">電話</p>
+                            <p class="info-value">
+                                <a href="tel:{{ activity.contact_phone }}"
+                                   style="color:var(--bamboo-light);text-decoration:none;">
+                                    {{ activity.contact_phone }}
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if activity.contact_email %}
+                    <div class="info-row">
+                        <span class="info-icon">✉️</span>
+                        <div>
+                            <p class="info-label">信箱</p>
+                            <p class="info-value">
+                                <a href="mailto:{{ activity.contact_email }}"
+                                   style="color:var(--bamboo-light);text-decoration:none;">
+                                    {{ activity.contact_email }}
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===================== 相關活動 ===================== -->
+{% if related %}
+<section class="related-section">
+    <div class="container">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <div class="divider-bamboo"></div>
+            <p class="section-subtitle mb-2">MORE EVENTS</p>
+            <h3 class="section-title" style="font-size:1.3rem;">更多活動</h3>
+        </div>
+        <div class="row g-3">
+            {% for item in related %}
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter0 }}00">
+                <a href="{% url 'event_detail' item.pk %}" class="related-card">
+                    <p class="related-date">{{ item.date|date:"Y.m.d" }}</p>
+                    <p class="related-title">{{ item.title }}</p>
+                    {% if item.location %}
+                    <p style="font-size:0.75rem;color:var(--text-muted);margin-top:8px;">
+                        📍 {{ item.location }}
+                    </p>
+                    {% endif %}
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% endblock %}

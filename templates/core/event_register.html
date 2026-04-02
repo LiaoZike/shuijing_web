@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% block title %}報名・{{ activity.title }}{% endblock %}
+{% load static %}
+
+{% block link_css %}
+    <link rel="stylesheet" href="{% static 'css/core/event.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="register-wrap">
+    <div class="container">
+        <div class="register-card" data-aos="fade-up">
+
+            <p style="font-size:0.75rem;color:var(--text-muted);letter-spacing:0.2em;margin-bottom:12px;">
+                REGISTRATION
+            </p>
+            <h2 class="register-title">活動報名</h2>
+            <p class="register-subtitle">{{ activity.title }}</p>
+
+            {% if activity.max_participants %}
+            <div class="quota-info">
+                <i class="bi bi-people"></i>
+                名額上限 {{ activity.max_participants }} 人・
+                已報名 {{ activity.registration_count }} 人・
+                剩餘 {{ activity.remaining_spots }} 人
+            </div>
+            {% endif %}
+
+            <form method="post" id="registerForm">
+                {% csrf_token %}
+
+                <!-- ── 報名者本人 ── -->
+                <div class="section-divider"><span>報名人資料</span></div>
+
+                <div class="mb-3">
+                    <label class="form-label">姓名 <span class="required">*</span></label>
+                    <input type="text" name="name" class="form-control"
+                           value="{{ user.first_name }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">電話 <span class="required">*</span></label>
+                    <input type="tel" name="phone" class="form-control"
+                           placeholder="09xxxxxxxx" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">信箱</label>
+                    <input type="email" name="email" class="form-control"
+                           value="{{ user.email }}">
+                    <p class="form-hint">留空則使用 Google 帳號信箱</p>
+                </div>
+
+                <!-- ── 同行人 ── -->
+                <div class="section-divider"><span>同行人員</span></div>
+
+                <div id="companions-container"></div>
+
+                <button type="button" class="btn-add-companion" onclick="addCompanion()">
+                    <i class="bi bi-plus-circle"></i> 新增同行人
+                </button>
+
+                <!-- ── 備註 ── -->
+                <div class="mb-4">
+                    <label class="form-label">備註</label>
+                    <textarea name="note" class="form-control" rows="3"
+                              placeholder="如有特殊需求、飲食限制等"></textarea>
+                </div>
+
+                <button type="submit" class="btn-submit">確認報名 →</button>
+            </form>
+
+            <a href="{% url 'event_detail' activity.pk %}"
+               style="display:block;text-align:center;margin-top:16px;
+                      font-size:0.82rem;color:var(--text-muted);text-decoration:none;">
+                ← 返回活動頁面
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let companionCount = 0;
+
+function addCompanion() {
+    companionCount++;
+    const container = document.getElementById('companions-container');
+    const block = document.createElement('div');
+    block.className = 'companion-block';
+    block.id = `companion-${companionCount}`;
+    block.innerHTML = `
+        <p class="companion-num">同行人 ${companionCount}</p>
+        <button type="button" class="btn-remove" onclick="removeCompanion(${companionCount})">移除</button>
+        <div class="mb-3">
+            <label class="form-label">姓名 <span class="required">*</span></label>
+            <input type="text" name="companion_name_${companionCount}"
+                   class="form-control" placeholder="請輸入姓名" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">電話 <span class="required">*</span></label>
+            <input type="tel" name="companion_phone_${companionCount}"
+                   class="form-control" placeholder="09xx-xxxxxx" required>
+        </div>
+        <div class="mb-0">
+            <label class="form-label">信箱</label>
+            <input type="email" name="companion_email_${companionCount}"
+                   class="form-control" placeholder="選填">
+        </div>
+    `;
+    container.appendChild(block);
+    updateNumbers();
+}
+
+function removeCompanion(id) {
+    const block = document.getElementById(`companion-${id}`);
+    if (block) block.remove();
+    updateNumbers();
+    reindexCompanions();
+}
+
+function updateNumbers() {
+    const blocks = document.querySelectorAll('.companion-block');
+    blocks.forEach((block, idx) => {
+        block.querySelector('.companion-num').textContent = `同行人 ${idx + 1}`;
+    });
+}
+
+function reindexCompanions() {
+    // 重新編號 name 屬性，確保後端能連續讀取
+    const blocks = document.querySelectorAll('.companion-block');
+    blocks.forEach((block, idx) => {
+        const n = idx + 1;
+        block.id = `companion-${n}`;
+        block.querySelector('input[type="text"]').name   = `companion_name_${n}`;
+        block.querySelector('input[type="tel"]').name    = `companion_phone_${n}`;
+        block.querySelector('input[type="email"]').name  = `companion_email_${n}`;
+        block.querySelector('.btn-remove').setAttribute('onclick', `removeCompanion(${n})`);
+    });
+    companionCount = blocks.length;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% block title %}活動資訊・水井村{% endblock %}
+{% load static %}
+
+{% block link_css %}
+    <link rel="stylesheet" href="{% static 'css/core/event.css' %}">
+{% endblock %}
+
+
+{% block content %}
+
+<!-- ===================== PAGE HERO ===================== -->
+<section class="page-hero">
+    <div class="container">
+        <p class="page-hero-label">EVENTS & ACTIVITIES</p>
+        <h1>活動資訊</h1>
+        <p>水井村最新活動・體驗課程・社區消息</p>
+    </div>
+</section>
+
+<!-- ===================== 篩選列 ===================== -->
+<div class="filter-bar">
+    <div class="container">
+        <div class="d-flex flex-wrap align-items-center gap-3">
+
+            <!-- 搜尋框 -->
+            <form method="get" action="{% url 'event_list' %}" class="d-flex align-items-center gap-2 flex-grow-1">
+                <div class="search-box flex-grow-1" style="max-width:360px;">
+                    <input type="text" name="q" value="{{ query }}"
+                           placeholder="搜尋活動名稱、地點、標籤…">
+                    <button type="submit"><i class="bi bi-search"></i></button>
+                </div>
+                <!-- 保留其他篩選參數 -->
+                {% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
+            </form>
+
+            <!-- 狀態篩選 -->
+            <div class="status-tabs ms-auto">
+                <a href="?status=upcoming{% if query %}&q={{ query }}{% endif %}"
+                   class="status-tab {% if status == 'upcoming' %}active{% endif %}">即將舉辦</a>
+                <a href="?status=past{% if query %}&q={{ query }}{% endif %}"
+                   class="status-tab {% if status == 'past' %}active{% endif %}">已結束</a>
+                <a href="?status=all{% if query %}&q={{ query }}{% endif %}"
+                   class="status-tab {% if status == 'all' %}active{% endif %}">全部</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== 活動列表 ===================== -->
+<section class="events-page">
+    <div class="container">
+
+        <!-- 結果統計 -->
+        <div class="result-info">
+            共 <strong>{{ page_obj.paginator.count }}</strong> 筆活動
+            {% if query %}・搜尋「<strong>{{ query }}</strong>」{% endif %}
+            {% if status == 'upcoming' %}・即將舉辦
+            {% elif status == 'past' %}・已結束
+            {% endif %}
+        </div>
+
+        {% if page_obj.object_list %}
+        <div class="events-grid">
+            {% for activity in page_obj %}
+            <a href="{% url 'event_detail' activity.pk %}"
+               class="event-item {% if activity.is_past %}is-past{% endif %}"
+               data-aos="fade-up" data-aos-delay="{{ forloop.counter0|add:1 }}00">
+
+                <!-- 圖片 -->
+                {% if activity.cover_image %}
+                <div class="event-cover">
+                    <img src="{{ activity.cover_image.url }}" alt="{{ activity.title }}">
+                    {% if activity.is_featured %}<span class="event-featured-badge">推薦</span>{% endif %}
+                    {% if activity.is_past %}<span class="event-past-badge">已結束</span>{% endif %}
+                </div>
+                {% else %}
+                <div class="event-cover-placeholder">
+                    🌾
+                    {% if activity.is_featured %}<span class="event-featured-badge">推薦</span>{% endif %}
+                    {% if activity.is_past %}<span class="event-past-badge">已結束</span>{% endif %}
+                </div>
+                {% endif %}
+
+                <!-- 內容 -->
+                <div class="event-body">
+                    <div class="event-meta">
+                        <span class="event-meta-date">
+                            {{ activity.date|date:"Y.m.d" }}
+                            {% if activity.end_date %}
+                                ～ {{ activity.end_date|date:"m.d" }}
+                            {% endif %}
+                        </span>
+                        {% if activity.location %}
+                        <span class="event-meta-loc">{{ activity.location }}</span>
+                        {% endif %}
+                    </div>
+
+                    <h3 class="event-title">{{ activity.title }}</h3>
+                    {% if activity.title_2 %}
+                    <p class="event-subtitle">{{ activity.title_2 }}</p>
+                    {% endif %}
+                    <p class="event-desc">{{ activity.description }}</p>
+
+                    {% if activity.tag_list %}
+                    <div class="event-tags">
+                        {% for tag in activity.tag_list %}
+                        <span class="event-tag">{{ tag }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <div class="event-footer">
+                        <span>
+                            {% if activity.time %}🕐 {{ activity.time }}{% endif %}
+                        </span>
+                        <span class="view-detail-btn">查看詳情 →</span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+
+        <!-- ===================== 分頁 ===================== -->
+        {% if page_obj.paginator.num_pages > 1 %}
+        <div class="pagination-wrap">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&status={{ status }}&q={{ query }}"
+               class="page-btn">‹</a>
+            {% else %}
+            <span class="page-btn disabled">‹</span>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <span class="page-btn active">{{ num }}</span>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <a href="?page={{ num }}&status={{ status }}&q={{ query }}"
+                       class="page-btn">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&status={{ status }}&q={{ query }}"
+               class="page-btn">›</a>
+            {% else %}
+            <span class="page-btn disabled">›</span>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% else %}
+        <!-- 空狀態 -->
+        <div class="empty-state">
+            <div class="empty-icon">🌿</div>
+            <p>
+                {% if query %}找不到「{{ query }}」相關活動
+                {% elif status == 'upcoming' %}目前暫無即將舉辦的活動
+                {% else %}尚無活動資料
+                {% endif %}
+            </p>
+            {% if query or status != 'upcoming' %}
+            <a href="{% url 'event_list' %}" class="btn-login mt-4" style="display:inline-block;">
+                查看所有活動
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+    </div>
+</section>
+
+{% endblock %}

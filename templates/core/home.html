@@ -2,7 +2,7 @@
 {% block title %}水井村三生共好・雲林口湖{% endblock %}
 {% load static %}
 {% block link_css %}
-    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'css/core/home.css' %}">
 {% endblock %}
 {% block extra_css %}
 .parallax-section {
@@ -50,68 +50,6 @@
     ↓ 探索水井村
 </div>
 
-<!-- ===================== 三生 CARDS ===================== -->
-<section class="sansheng-section">
-    <div class="container">
-        <div class="text-center mb-5" data-aos="fade-up">
-            <div class="divider-bamboo"></div>
-            <p class="section-subtitle mb-3">THREE HARMONIES</p>
-            <h2 class="section-title">三生共好</h2>
-            <p style="color:var(--text-muted);font-size:0.88rem;margin-top:12px;letter-spacing:0.1em;">
-                生產・生態・生活，三者相輔相成，共創永續村莊
-            </p>
-        </div>
-        <div class="row g-4">
-            <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
-                <div class="sansheng-card">
-                    <span class="card-icon">🌾</span>
-                    <div class="card-cn">生 產</div>
-                    <div class="card-en">PRODUCTION</div>
-                    <p class="card-desc">水井村土地肥沃，農漁資源豐富。在地農民世代耕耘，孕育出獨特的沿海農產，承載著口湖鄉的風土記憶。</p>
-                    <div class="card-tags">
-                        <span class="tag-pill">在地農產</span>
-                        <span class="tag-pill">特色商品</span>
-                        <span class="tag-pill">農業體驗</span>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
-                <div class="sansheng-card">
-                    <span class="card-icon">🌿</span>
-                    <div class="card-cn">生 態</div>
-                    <div class="card-en">ECOLOGY</div>
-                    <p class="card-desc">緊鄰沿海濕地，是候鳥遷徙的重要棲息地。豐富的生態資源讓水井村成為自然與人文共存的生態寶地。</p>
-                    <div class="card-tags">
-                        <span class="tag-pill">沿海濕地</span>
-                        <span class="tag-pill">候鳥生態</span>
-                        <span class="tag-pill">生態攝影</span>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
-                <div class="sansheng-card">
-                    <span class="card-icon">🏮</span>
-                    <div class="card-cn">生 活</div>
-                    <div class="card-en">LIFE</div>
-                    <p class="card-desc">村民之間人情味濃厚，傳統節慶與在地文化世代相傳。這裡的生活，是台灣鄉村最真實的樣貌。</p>
-                    <div class="card-tags">
-                        <span class="tag-pill">社區活動</span>
-                        <span class="tag-pill">文化傳承</span>
-                        <span class="tag-pill">生活互動</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- ===================== 視差區塊 ===================== -->
-<section class="parallax-section">
-    <div class="parallax-content container" data-aos="fade-up">
-        <blockquote>「這片土地，靜靜守護著世代的記憶」</blockquote>
-        <cite>— 雲林縣口湖鄉・水井村</cite>
-    </div>
-</section>
 
 <!-- ===================== 服務項目 ===================== -->
 <section class="services-section">
@@ -182,11 +120,18 @@
                             {% endif %}
                         </p>
                     </div>
+
+                    <div class="event-arrow-btn">
+                        <span class="arrow-text">查看</span>
+                        <i class="bi bi-arrow-right"></i>
+                    </div>
                     {% if activity.link_url %}
                     <a href="{{ activity.link_url }}" style="margin-left:auto;">
+                        <span class="arrow-text">查看</span>
                         <i class="bi bi-arrow-right" style="color:var(--bamboo-light);"></i>
                     </a>
                     {% else %}
+                    <span class="arrow-text">查看</span>
                     <i class="bi bi-arrow-right ms-auto" style="color:var(--bamboo-light);opacity:0.25;"></i>
                     {% endif %}
                 </div>
@@ -204,6 +149,69 @@
             </a>
         </div>
         {% endif %}
+    </div>
+</section>
+
+<!-- ===================== 視差區塊 ===================== -->
+<section class="parallax-section">
+    <div class="parallax-content container" data-aos="fade-up">
+        <blockquote>「這片土地，靜靜守護著世代的記憶」</blockquote>
+        <cite>— 雲林縣口湖鄉・水井村</cite>
+    </div>
+</section>
+
+<!-- ===================== 三生 CARDS ===================== -->
+<section class="sansheng-section">
+    <div class="container">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <div class="divider-bamboo"></div>
+            <p class="section-subtitle mb-3">THREE HARMONIES</p>
+            <h2 class="section-title">三生共好</h2>
+            <p style="color:var(--text-muted);font-size:0.88rem;margin-top:12px;letter-spacing:0.1em;">
+                生產・生態・生活，三者相輔相成，共創永續村莊
+            </p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="sansheng-card">
+                    <span class="card-icon">🌾</span>
+                    <div class="card-cn">生 產</div>
+                    <div class="card-en">PRODUCTION</div>
+                    <p class="card-desc">水井村土地肥沃，農漁資源豐富。在地農民世代耕耘，孕育出獨特的沿海農產，承載著口湖鄉的風土記憶。</p>
+                    <div class="card-tags">
+                        <span class="tag-pill">在地農產</span>
+                        <span class="tag-pill">特色商品</span>
+                        <span class="tag-pill">農業體驗</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="sansheng-card">
+                    <span class="card-icon">🌿</span>
+                    <div class="card-cn">生 態</div>
+                    <div class="card-en">ECOLOGY</div>
+                    <p class="card-desc">緊鄰沿海濕地，是候鳥遷徙的重要棲息地。豐富的生態資源讓水井村成為自然與人文共存的生態寶地。</p>
+                    <div class="card-tags">
+                        <span class="tag-pill">沿海濕地</span>
+                        <span class="tag-pill">候鳥生態</span>
+                        <span class="tag-pill">生態攝影</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
+                <div class="sansheng-card">
+                    <span class="card-icon">🏮</span>
+                    <div class="card-cn">生 活</div>
+                    <div class="card-en">LIFE</div>
+                    <p class="card-desc">村民之間人情味濃厚，傳統節慶與在地文化世代相傳。這裡的生活，是台灣鄉村最真實的樣貌。</p>
+                    <div class="card-tags">
+                        <span class="tag-pill">社區活動</span>
+                        <span class="tag-pill">文化傳承</span>
+                        <span class="tag-pill">生活互動</span>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </section>
 
