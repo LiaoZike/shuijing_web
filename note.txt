@@ -1,4 +1,6 @@
 source ./.venv/bin/activate
+pip install python-dotenv
+
 
 
 
@@ -23,3 +25,24 @@ python manage.py collectstatic
 
 
 pip freeze > requirements.txt
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+https://maps.app.goo.gl/zAnk8h1Wubn4pu9q8

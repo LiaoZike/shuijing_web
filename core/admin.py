@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import HeroSlide, ServiceItem, Activity, Registration, Participant
+from .models import HeroSlide, ServiceItem, Activity, Registration, Participant, ContactMessage
 
 #################################################
 # Admin:首頁輪播資料管理
@@ -30,10 +30,10 @@ class ActivityAdmin(admin.ModelAdmin):
         'title', 'date', 'end_date',
         'register_deadline', 'location',
         'is_registration_open', 'is_past',
-        'is_featured', 'is_active'
+        'is_featured', 'is_active','is_registration_closed'
     ]
     list_editable = ['is_featured', 'is_active']
-    list_filter   = ['is_active', 'is_featured']
+    list_filter   = ['is_active', 'is_featured','is_registration_closed']
     search_fields = ['title', 'location', 'tags', 'contact_name']
     ordering      = ['date']
 
@@ -45,13 +45,13 @@ class ActivityAdmin(admin.ModelAdmin):
             'fields': ('date', 'end_date', 'register_deadline', 'time', 'location')
         }),
         ('報名設定', {
-            'fields': ('link_url', 'max_participants')
+            'fields': ('link_url', 'max_participants','max_per_user')
         }),
         ('聯絡資訊', {
             'fields': ('contact_name', 'contact_phone', 'contact_email')
         }),
         ('狀態', {
-            'fields': ('is_active', 'is_featured')
+            'fields': ('is_featured','is_registration_closed','is_active')
         }),
     )
 
@@ -70,3 +70,14 @@ class RegistrationAdmin(admin.ModelAdmin):
     search_fields = ['name', 'phone', 'email']
     readonly_fields = ['created_at']
     ordering      = ['-created_at']
+
+    
+@admin.register(ContactMessage)
+class ContactMessageAdmin(admin.ModelAdmin):
+    list_display       = ['created_at', 'name', 'email', 'subject', 'status']
+    list_display_links = [ 'name', 'email','subject']
+    list_editable      = ['status']
+    list_filter        = ['status']
+    search_fields      = ['name', 'email', 'subject']
+    readonly_fields    = ['name', 'email', 'phone', 'subject', 'message', 'created_at']
+    ordering           = ['-created_at']

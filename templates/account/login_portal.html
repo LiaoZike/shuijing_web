@@ -219,12 +219,14 @@
 {% block content %}
 <div class="login-bg"></div>
 
-<!-- popup 等待遮罩 -->
+<!-- 彈窗方式用到的遮罩（目前未使用，保留備用） -->
+<!-- 
 <div id="popup-mask">
     <div class="big-spinner"></div>
     <p class="mask-text">正在開啟 Google 登入</p>
     <p class="mask-sub">請在彈出視窗完成授權</p>
 </div>
+-->
 
 <div class="login-page">
     <div class="glass-card">
@@ -243,8 +245,10 @@
         <p class="login-heading">會員登入</p>
         <p class="login-desc">加入三生共好社群</p>
 
-        <button class="btn-google" id="btnGoogle" onclick="startGoogleLogin()">
+        <button class="btn-google" id="btnGoogle" onclick="goToGoogleLogin()">
+            <!-- 彈窗方式用到的 spinner（目前未使用，保留備用）
             <div class="spinner"></div>
+            -->
             <svg class="g-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
                 <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -268,6 +272,14 @@
 {% block extra_js %}
 <script>
 const nextUrl = new URLSearchParams(window.location.search).get('next') || '/';
+
+// 方式 1: 直接重導向到 Google 登入（目前使用此方式）
+function goToGoogleLogin() {
+    window.location.href = "/accounts/google/login/?process=login&next=" + encodeURIComponent(nextUrl);
+}
+
+// 方式 2: 彈窗方式（已註解，若要使用則取消註解並改變 onclick 為 startGoogleLogin）
+/*
 let popupWin = null;
 let pollTimer = null;
 
@@ -323,5 +335,6 @@ window.addEventListener("message", function(event) {
         window.location.href = nextUrl;
     }
 });
+*/
 </script>
 {% endblock %}

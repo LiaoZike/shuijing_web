@@ -131,54 +131,78 @@
                     </div>
                     {% endif %}
 
-                    {% if activity.max_participants %}
+                    {% if not activity.link_url and activity.max_participants %}
                     <div class="info-row">
-                        <span class="info-icon">👥</span>
+                        <span class="info-icon">📊</span>
                         <div>
-                            <p class="info-label">人數上限</p>
-                            <p class="info-value">{{ activity.max_participants }} 人</p>
+                            <p class="info-label">報名狀況</p>
+                            <p class="info-value">
+                                {{ displayed_count }} / {{ activity.max_participants }} 人
+                                {% if is_full %}
+                                <br><small style="color:#E07060;">名額已額滿</small>
+                                {% elif activity.is_registration_open %}
+                                <br><small style="color:var(--green-mid);">
+                                    尚餘 {{ activity.remaining_spots }} 名額
+                                </small>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    {% elif max_participants %}
+                    <div class="info-row">
+                        <span class="info-icon">📊</span>
+                        <div>
+                            <p class="info-label">報名限制</p>
+                            <p class="info-value">
+                                總額 {{ activity.max_participants }} 人
+                            </p>
                         </div>
                     </div>
                     {% endif %}
-
                     <!-- 報名按鈕 -->
                     {% if activity.link_url %}
-                        <!-- 有外部連結 → Google 表單 -->
-                        {% if activity.is_past %}
-                            <a class="btn-register disabled">活動已結束</a>
-                        {% elif not activity.is_registration_open %}
-                            <a class="btn-register disabled">報名已截止</a>
-                        {% elif user.is_authenticated %}
-                            <a href="{{ activity.link_url }}" target="_blank"
-                            class="btn-register">立即報名 →</a>
-                            <p style="font-size:0.75rem;color:#9A8070;text-align:center;margin-top:8px;">
-                                以 {{ user.first_name|default:user.email }} 身份報名
-                            </p>
-                        {% else %}
-                            <a href="/accounts/google/login/?next={{ request.path }}"
-                            class="btn-register" style="background:var(--green-mid);">
-                                <i class="bi bi-google me-2"></i>登入後報名
-                            </a>
-                        {% endif %}
+                    {% if activity.is_past %}
+                        <a class="btn-register disabled">活動已結束</a>
+                    {% elif user_registration %}
+                        <a href="{% url 'my_registration_detail' user_registration.pk %}" class="btn-register" style="background:var(--green-mid);">
+                            ✓ 已報名・查看紀錄
+                        </a>
+                    {% elif not activity.is_registration_open %}
+                        <a class="btn-register disabled">報名已截止</a>
+                    {% elif is_full %}
+                        <a class="btn-register disabled">名額已額滿</a>
+                    {% elif user.is_authenticated %}
+                        <a href="{% url 'event_register' activity.pk %}" class="btn-register">填寫報名表 →</a>
+                        <p style="font-size:0.75rem;color:#9A8070;text-align:center;margin-top:8px;">
+                            以 {{ user.first_name|default:user.email }} 身份報名
+                        </p>
                     {% else %}
-                        <!-- 沒外部連結 → 本站內報名 -->
-                        {% if activity.is_past %}
-                            <a class="btn-register disabled">活動已結束</a>
-                        {% elif not activity.is_registration_open %}
-                            <a class="btn-register disabled">報名已截止</a>
-                        {% elif user.is_authenticated %}
-                            <a href="{% url 'event_register' activity.pk %}"
-                            class="btn-register">填寫報名表 →</a>
-                            <p style="font-size:0.75rem;color:#9A8070;text-align:center;margin-top:8px;">
-                                以 {{ user.first_name|default:user.email }} 身份報名
-                            </p>
-                        {% else %}
-                            <a href="/accounts/google/login/?next={{ request.path }}"
-                            class="btn-register" style="background:var(--green-mid);">
-                                <i class="bi bi-google me-2"></i>登入後報名
-                            </a>
-                        {% endif %}
+                        <a href="{% url 'login_portal' %}?next={{ request.path }}" class="btn-register" style="background:var(--green-mid);">
+                            <i class="bi bi-google me-2"></i>登入後報名
+                        </a>
                     {% endif %}
+                {% else %}
+                    {% if activity.is_past %}
+                        <a class="btn-register disabled">活動已結束</a>
+                    {% elif user_registration %}
+                        <a href="{% url 'my_registration_detail' user_registration.pk %}" class="btn-register" style="background:var(--green-mid);">
+                            ✓ 已報名・查看紀錄
+                        </a>
+                    {% elif not activity.is_registration_open %}
+                        <a class="btn-register disabled">報名已截止</a>
+                    {% elif is_full %}
+                        <a class="btn-register disabled">名額已額滿</a>
+                    {% elif user.is_authenticated %}
+                        <a href="{% url 'event_register' activity.pk %}" class="btn-register">填寫報名表 →</a>
+                        <p style="font-size:0.75rem;color:#9A8070;text-align:center;margin-top:8px;">
+                            以 {{ user.first_name|default:user.email }} 身份報名
+                        </p>
+                    {% else %}
+                        <a href="{% url 'login_portal' %}?next={{ request.path }}" class="btn-register" style="background:var(--green-mid);">
+                            <i class="bi bi-google me-2"></i>登入後報名
+                        </a>
+                    {% endif %}
+                {% endif %}
                 </div>
 
                 <!-- 聯絡資訊 -->

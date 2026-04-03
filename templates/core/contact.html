@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% block title %}聯絡我們・水井村{% endblock %}
+{% load static %}
+
+{% block link_css %}
+<link rel="stylesheet" href="{% static 'css/core/contact.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<!-- ===================== PAGE HERO ===================== -->
+<section class="contact-hero">
+    <div class="container">
+        <p class="contact-hero-label">CONTACT US</p>
+        <h1 class="contact-hero-title">聯絡我們</h1>
+        <p class="contact-hero-sub">有任何問題或合作邀請，歡迎與我們聯繫</p>
+    </div>
+</section>
+<!-- ===================== 主要內容 ===================== -->
+<section class="contact-body">
+    <div class="container">
+        <div class="row g-5">
+
+            <!-- 左側：聯絡資訊 -->
+            <div class="col-lg-4" data-aos="fade-right">
+                <div class="contact-info-block">
+                    <div class="contact-info-title">風雲客棧數位入口平台</div>
+                    <div class="contact-divider"></div>
+
+                    <div class="contact-info-row">
+                        <div class="contact-info-icon">📍</div>
+                        <div>
+                            <div class="contact-info-label">地址</div>
+                            <div class="contact-info-value">雲林縣口湖鄉水井村</div>
+                        </div>
+                    </div>
+
+                    <div class="contact-info-row">
+                        <div class="contact-info-icon">📞</div>
+                        <div>
+                            <div class="contact-info-label">電話</div>
+                            <div class="contact-info-value">05-6313058</div>
+                        </div>
+                    </div>
+
+                    <div class="contact-info-row">
+                        <div class="contact-info-icon">✉️</div>
+                        <div>
+                            <div class="contact-info-label">信箱</div>
+                            <div class="contact-info-value">lcm@nfu.edu.tw</div>
+                        </div>
+                    </div>
+
+                    <div class="contact-info-row">
+                        <div class="contact-info-icon">🕐</div>
+                        <div>
+                            <div class="contact-info-label">服務時間</div>
+                            <div class="contact-info-value">週一至週五 09:00 – 17:00</div>
+                        </div>
+                    </div>
+
+                    <!-- 綠色點綴分隔 -->
+                    <div class="contact-green-bar"></div>
+
+                    <p class="contact-info-note">
+                        本平台由虎科大電機資訊學院 USR 計畫支持，
+                        致力推動風雲客棧永續發展。
+                    </p>
+                </div>
+            </div>
+
+            <!-- 右側：表單 -->
+            <div class="col-lg-8" data-aos="fade-left">
+                <div class="contact-form-card">
+                    <div class="contact-form-title">傳送訊息</div>
+                    <div class="contact-form-sub">填寫以下表單，我們將盡快回覆您</div>
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="contact-label">姓名 <span class="required">*</span></label>
+                                <input type="text" name="name" class="contact-input"
+                                       value="{{ form_data.name|default:'' }}"
+                                       placeholder="請輸入您的姓名" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="contact-label">電話</label>
+                                <input type="tel" name="phone" class="contact-input"
+                                       value="{{ form_data.phone|default:'' }}"
+                                       placeholder="09xx-xxxxxx（選填）">
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            <label class="contact-label">信箱 <span class="required">*</span></label>
+                            <input type="email" name="email" class="contact-input"
+                                   value="{% if form_data.email %}{{ form_data.email }}{% elif user.is_authenticated %}{{ user.email }}{% endif %}"
+                                   placeholder="your@email.com" required>
+                        </div>
+
+                        <div class="mt-3">
+                            <label class="contact-label">主旨 <span class="required">*</span></label>
+                            <input type="text" name="subject" class="contact-input"
+                                   value="{{ form_data.subject|default:'' }}"
+                                   placeholder="請簡述您的問題或需求" required>
+                        </div>
+
+                        <div class="mt-3">
+                            <label class="contact-label">訊息內容 <span class="required">*</span></label>
+                            <textarea name="message" class="contact-input contact-textarea"
+                                      rows="6" placeholder="請詳細描述您的問題或想法…"
+                                      required>{{ form_data.message|default:'' }}</textarea>
+                        </div>
+
+                        <div class="mt-4">
+                            <button type="submit" class="contact-submit-btn">
+                                送出訊息 →
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+{% endblock %}

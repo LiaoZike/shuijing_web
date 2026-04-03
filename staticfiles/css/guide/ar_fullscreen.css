@@ -1,0 +1,300 @@
+*{margin:0;padding:0;box-sizing:border-box}
+
+html,body{
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    font-family:'Noto Sans TC',sans-serif;
+}
+
+a-scene{
+    position:fixed!important;
+    top:0!important;
+    left:0!important;
+    width:100vw!important;
+    height:100vh!important;
+    height:100dvh!important;
+    z-index:1!important;
+    display:block!important;
+}
+
+a-scene canvas.a-canvas{
+    position:fixed!important;
+    top:0!important;
+    left:0!important;
+    width:100vw!important;
+    height:100vh!important;
+    height:100dvh!important;
+    z-index:1!important;
+}
+
+.ar-back-btn{
+    position:fixed;
+    top:12px;
+    left:12px;
+    z-index:9999;
+    background:rgba(0,0,0,.65);
+    color:#fff;
+    border:1px solid rgba(255,255,255,.25);
+    padding:7px 14px;
+    font-size:.78rem;
+    letter-spacing:.1em;
+    text-decoration:none;
+    backdrop-filter:blur(8px);
+    -webkit-backdrop-filter:blur(8px);
+    border-radius:4px;
+    white-space:nowrap;
+}
+
+.ar-status-bar{
+    position:fixed;
+    top:12px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:9999;
+    display:flex;
+    gap:6px;
+    flex-wrap:nowrap;
+    justify-content:center;
+    max-width:calc(100vw - 120px);
+    overflow:hidden;
+}
+
+@media(orientation:landscape)and(max-height:500px){
+    .ar-status-bar{
+        display:none;
+    }
+}
+
+@media(max-width:768px){
+    .ar-status-bar{
+        flex-wrap:wrap;
+        gap:4px;
+        max-width:calc(100vw - 40px);
+        overflow:visible;
+    }
+}
+
+@media(max-width:480px)and(orientation:portrait){
+    .ar-status-bar{
+        top:56px;
+        left:50%;
+        transform:translateX(-50%);
+        flex-direction:column;
+        align-items:center;
+        gap:3px;
+        max-width:calc(100vw - 24px);
+    }
+}
+
+.ar-pill{
+    background:rgba(0,0,0,.65);
+    color:rgba(255,255,255,.7);
+    border:1px solid rgba(255,255,255,.18);
+    padding:5px 11px;
+    font-size:.7rem;
+    letter-spacing:.06em;
+    backdrop-filter:blur(8px);
+    -webkit-backdrop-filter:blur(8px);
+    border-radius:20px;
+    white-space:nowrap;
+    transition:border-color .2s,color .2s;
+    max-width:90vw;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+@media(max-width:480px){
+    .ar-pill{
+        font-size:.65rem;
+        padding:4px 9px;
+        max-width:calc(100vw - 28px);
+    }
+}
+
+.ar-pill.is-active{
+    border-color:rgba(80,200,80,.55);
+    color:#90ee90;
+}
+
+.ar-pill.is-warn{
+    border-color:rgba(220,120,80,.55);
+    color:#ffb199;
+}
+
+.ar-bottom-status{
+    position:fixed;
+    bottom:max(20px,env(safe-area-inset-bottom,20px));
+    left:50%;
+    transform:translateX(-50%);
+    z-index:9999;
+    background:rgba(0,0,0,.65);
+    color:rgba(255,255,255,.9);
+    padding:9px 22px;
+    font-size:.8rem;
+    letter-spacing:.1em;
+    backdrop-filter:blur(8px);
+    -webkit-backdrop-filter:blur(8px);
+    border:1px solid rgba(196,160,82,.4);
+    border-radius:24px;
+    white-space:nowrap;
+    transition:border-color .3s,color .3s;
+    max-width:calc(100vw - 32px);
+    text-align:center;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+.ar-bottom-status.found{
+    border-color:rgba(80,180,80,.6);
+    color:#90ee90;
+}
+
+@media(orientation:landscape)and(max-height:500px){
+    .ar-bottom-status{
+        bottom:8px;
+        font-size:.7rem;
+        padding:5px 16px;
+        opacity:.8;
+    }
+}
+
+@media(max-width:480px)and(orientation:portrait){
+    .ar-bottom-status{
+        bottom:12px;
+        font-size:.75rem;
+        padding:8px 16px;
+    }
+}
+
+.ar-tap-hint{
+    position:fixed;
+    inset:0;
+    z-index:9998;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(0,0,0,.84);
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+}
+
+.ar-tap-hint-box{
+    text-align:center;
+    color:#fff;
+    padding:32px 36px;
+    border:1px solid rgba(196,160,82,.5);
+    background:rgba(20,12,4,.94);
+    max-width:340px;
+    width:88%;
+    margin:auto;
+}
+
+.ar-tap-hint-box h2{
+    font-size:1.1rem;
+    letter-spacing:.2em;
+    margin-bottom:10px;
+    color:#c4a052;
+}
+
+.ar-tap-hint-box p{
+    font-size:.82rem;
+    letter-spacing:.07em;
+    color:rgba(255,255,255,.68);
+    line-height:1.9;
+}
+
+@media(orientation:landscape)and(max-height:500px){
+    .ar-tap-hint-box{
+        padding:16px 24px;
+        width:min(520px,92vw);
+        max-width:none;
+        display:flex;
+        align-items:center;
+        gap:20px;
+        text-align:left;
+    }
+    .ar-tap-hint-box h2{
+        margin-bottom:4px;
+        font-size:.95rem;
+        white-space:nowrap;
+    }
+    .ar-tap-hint-box p{
+        font-size:.75rem;
+        line-height:1.55;
+    }
+}
+
+.ar-tap-btn{
+    display:block;
+    width:100%;
+    margin-top:22px;
+    padding:12px;
+    background:#8b6914;
+    color:#fff;
+    font-size:.88rem;
+    letter-spacing:.18em;
+    border:none;
+    cursor:pointer;
+    transition:background .2s;
+    border-radius:2px;
+}
+
+.ar-tap-btn:hover{background:#c4a052;color:#1a120a}
+.ar-tap-btn:disabled{opacity:.55;cursor:not-allowed}
+
+@media(orientation:landscape)and(max-height:500px){
+    .ar-tap-btn{
+        margin-top:0;
+        flex-shrink:0;
+        width:auto;
+        padding:10px 18px;
+        white-space:nowrap;
+    }
+}
+
+.ar-debug-log{
+    position:fixed;
+    right:12px;
+    bottom:80px;
+    z-index:9999;
+    width:min(340px,calc(100vw - 24px));
+    max-height:160px;
+    overflow:auto;
+    background:rgba(0,0,0,.72);
+    border:1px solid rgba(255,255,255,.12);
+    color:#ccc;
+    padding:10px;
+    font-size:11px;
+    line-height:1.55;
+    white-space:pre-wrap;
+    border-radius:4px;
+    pointer-events:none;
+}
+
+@media(max-width:768px){
+    .ar-debug-log{
+        display:none;
+    }
+}
+
+.ar-no-asset{
+    position:fixed;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    gap:16px;
+    color:rgba(255,255,255,.7);
+    font-size:.88rem;
+    letter-spacing:.14em;
+    background:#000;
+    z-index:9999;
+}
+
+.ar-no-asset a{
+    color:#c4a052;
+    text-decoration:none;
+    font-size:.8rem;
+}

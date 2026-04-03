@@ -19,6 +19,8 @@ from django.urls import path
 from django.urls import path, include
 from accounts import views  # 或 from your_app import views
 from allauth.socialaccount.providers.google.views import oauth2_login, oauth2_callback
+from django.conf.urls.static import static
+from django.conf import settings
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -28,10 +30,11 @@ urlpatterns = [
     path('accounts/google/login/', oauth2_login, name='google_login'),
     path('accounts/google/login/callback/', oauth2_callback, name='google_callback'),
     path('accounts/logout/', views.logout_view, name='logout'),
+    path('accounts/profile/', views.my_profile, name='my_profile'),
 
     path('', include('core.urls')),
     path('login/', views.login_portal, name='login_portal'),
     path('login/popup-done/', views.popup_done, name='popup_done'),
     path('auth-status/', views.auth_status, name='auth_status'),
     # path('auth/google/popup/', views.google_popup_start, name='google_popup_start'),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

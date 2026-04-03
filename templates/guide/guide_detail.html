@@ -3,118 +3,226 @@
 
 {% block title %}{{ page_title }}{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'guide/guide.css' %}">
+{% block link_css %}
+<link rel="stylesheet" href="{% static 'css/guide/guide.css' %}">
 {% endblock %}
 
 {% block content %}
 <div class="guide-page">
   <section class="guide-detail-wrap">
     <div class="container">
-      <div class="mb-4">
-        <a href="{% url 'guide:home' %}" class="guide-btn-secondary">← 回導覽列表</a>
-      </div>
 
-      <div class="row g-4 align-items-stretch">
-        <div class="col-lg-6">
-          {% if spot.cover_image %}
-          <div class="guide-detail-cover">
-            <img src="{{ spot.cover_image.url }}" alt="{{ spot.title }}">
-          </div>
-          {% else %}
-          <div class="guide-detail-panel d-flex align-items-center justify-content-center">
-            <div>目前尚無封面圖片</div>
-          </div>
+      <a href="{% url 'guide:home' %}" class="guide-btn-secondary mb-4">← 回導覽列表</a>
+
+      <div class="guide-detail-top">
+        <span class="guide-badge">{{ spot.get_category_display }}</span>
+        <h1 class="guide-detail-title">{{ spot.title }}</h1>
+
+        {% if spot.short_intro %}
+        <p class="guide-detail-intro">{{ spot.short_intro }}</p>
+        {% endif %}
+
+        <div class="guide-detail-meta">
+          {% if spot.location_name %}
+          <div class="guide-detail-meta-item">📍 {{ spot.location_name }}</div>
+          {% endif %}
+          <div class="guide-detail-meta-item">{{ spot.updated_at|date:"Y.m.d" }} 更新</div>
+        </div>
+
+        <div class="guide-detail-actions">
+          {% if ar_assets %}
+          <a href="{% url 'guide:ar' spot.slug %}" class="guide-btn-primary guide-btn-ar">▶ 啟動 AR 體驗</a>
+          {% endif %}
+          {% if spot.maps_url %}
+            {% if "maps.app" in spot.maps_url %}
+            <a href="{{ spot.maps_url }}" target="_blank" rel="noopener" class="guide-btn-secondary guide-btn-maps">查看Google Maps地點</a>
+            {% else %}
+            <a href="{{ spot.maps_url }}" target="_blank" rel="noopener" class="guide-btn-secondary guide-btn-maps">前往連結</a>
+            {% endif %}
           {% endif %}
         </div>
+      </div>
 
-        <div class="col-lg-6">
-          <div class="guide-detail-panel">
-            <span class="guide-badge">{{ spot.get_category_display }}</span>
-            <h1 class="guide-detail-title">{{ spot.title }}</h1>
+      {% if spot.cover_image %}
+      <div class="guide-cover-frame">
+        <img src="{{ spot.cover_image.url }}" alt="{{ spot.title }}">
+        {% if spot.cover_image_credit %}
+        <div class="guide-cover-credit">圖片來源: {{ spot.cover_image_credit }}</div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <div class="row g-4">
+        <div class="col-lg-8">
+
+          <div class="guide-main-card">
+            <div class="guide-section-label">INTRODUCTION</div>
+            <h2 class="guide-main-card-title">導覽介紹</h2>
+            <div class="guide-detail-content">
+              {{ spot.content|default:"目前尚未補上詳細介紹。"|linebreaks }}
+            </div>
+          </div>
+
+          {% if history_facts %}
+          <div class="guide-main-card">
+            <div class="guide-section-label">HISTORY</div>
+            <h2 class="guide-main-card-title">文史資料</h2>
+            <div class="guide-fact-stack">
+              {% for fact in history_facts %}
+              <div class="guide-fact-item">
+                <h3>{{ fact.title }}</h3>
+                <div>{{ fact.content|linebreaks }}</div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+          {% if legend_facts %}
+          <div class="guide-main-card">
+            <div class="guide-section-label">LEGEND</div>
+            <h2 class="guide-main-card-title">地方傳說</h2>
+            <div class="guide-fact-stack">
+              {% for fact in legend_facts %}
+              <div class="guide-fact-item">
+                <h3>{{ fact.title }}</h3>
+                <div>{{ fact.content|linebreaks }}</div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+          {% if guide_facts %}
+          <div class="guide-main-card">
+            <div class="guide-section-label">GUIDE NOTES</div>
+            <h2 class="guide-main-card-title">導覽補充</h2>
+            <div class="guide-fact-stack">
+              {% for fact in guide_facts %}
+              <div class="guide-fact-item">
+                <h3>{{ fact.title }}</h3>
+                <div>{{ fact.content|linebreaks }}</div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+          {% if fun_facts %}
+          <div class="guide-main-card">
+            <div class="guide-section-label">FUN FACTS</div>
+            <h2 class="guide-main-card-title">趣味小知識</h2>
+            <div class="guide-fact-stack">
+              {% for fact in fun_facts %}
+              <div class="guide-fact-item">
+                <h3>{{ fact.title }}</h3>
+                <div>{{ fact.content|linebreaks }}</div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+          {% if ar_assets %}
+          <div class="guide-main-card">
+            <div class="guide-section-label">INTERACTIVE ASSETS</div>
+            <h2 class="guide-main-card-title">AR 互動素材</h2>
+            <div class="guide-ar-list">
+              {% for asset in ar_assets %}
+              <div class="guide-ar-item">
+                <div class="guide-ar-item-title">{{ asset.title }}</div>
+                <div class="guide-ar-item-meta">{{ asset.get_asset_type_display }}</div>
+
+                {% if asset.marker_image %}
+                <div class="guide-ar-marker">
+                    <p class="guide-ar-marker-label">辨識圖 <span class="guide-ar-marker-hint">（點擊放大）</span></p>
+                    <img src="{{ asset.marker_image.url }}" alt="{{ asset.title }}"
+                        class="guide-ar-marker-img"
+                        onclick="openLightbox(this.src, '{{ asset.title }}')">
+                </div>
+                {% endif %}
+
+                <div class="guide-ar-actions">
+                  {% if asset.target_file and asset.video_file %}
+                  <a href="{% url 'guide:ar' spot.slug %}" class="guide-btn-primary">▶ 啟動 AR 體驗</a>
+                  {% endif %}
+                  {% if asset.video_file %}
+                  <a href="{{ asset.video_file.url }}" target="_blank" class="guide-btn-secondary">影片檔</a>
+                  {% endif %}
+                  {% if asset.audio_file %}
+                  <a href="{{ asset.audio_file.url }}" target="_blank" class="guide-btn-secondary">音訊檔</a>
+                  {% endif %}
+                  {% if asset.model_file %}
+                  <a href="{{ asset.model_file.url }}" target="_blank" class="guide-btn-secondary">3D 模型</a>
+                  {% endif %}
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+        </div>
+
+        <div class="col-lg-4">
+          <div class="guide-info-card">
+            <div class="guide-info-title">導覽資訊</div>
+
+            <div class="guide-info-row">
+              <div class="guide-info-label">主題分類</div>
+              <div class="guide-info-value">{{ spot.get_category_display }}</div>
+            </div>
 
             {% if spot.location_name %}
-            <div class="guide-info-box">
-              <strong>地點：</strong>{{ spot.location_name }}
+            <div class="guide-info-row">
+              <div class="guide-info-label">地點名稱</div>
+              <div class="guide-info-value">{{ spot.location_name }}</div>
             </div>
             {% endif %}
 
-            {% if spot.short_intro %}
-            <p class="guide-detail-intro mt-4">{{ spot.short_intro }}</p>
-            {% endif %}
-
-            {% if spot.content %}
-            <div class="mt-4">
-              {{ spot.content|linebreaks }}
+            <div class="guide-info-row">
+              <div class="guide-info-label">內容更新</div>
+              <div class="guide-info-value">{{ spot.updated_at|date:"Y.m.d" }}</div>
             </div>
-            {% endif %}
+
+            <div class="guide-info-actions">
+              {% if ar_assets %}
+              <a href="{% url 'guide:ar' spot.slug %}" class="guide-btn-primary">▶ 啟動 AR 體驗</a>
+              {% endif %}
+              {% if spot.maps_url %}
+              <a href="{{ spot.maps_url }}" target="_blank" rel="noopener" class="guide-btn-secondary">📍 Google Maps</a>
+              {% endif %}
+              <a href="{% url 'guide:home' %}" class="guide-btn-secondary">返回導覽首頁</a>
+            </div>
           </div>
         </div>
       </div>
 
-      {% if facts %}
-      <div class="mt-5">
-        <h2 class="guide-section-title">導覽內容</h2>
-        <div class="row g-4">
-          {% for fact in facts %}
-          <div class="col-md-6">
-            <div class="guide-content-card">
-              <span class="guide-badge">{{ fact.get_fact_type_display }}</span>
-              <h3>{{ fact.title }}</h3>
-              <div>{{ fact.content|linebreaks }}</div>
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-      {% endif %}
-
-      {% if ar_assets %}
-      <div class="mt-5">
-        <h2 class="guide-section-title">AR / 互動素材</h2>
-        <div class="row g-4">
-          {% for asset in ar_assets %}
-          <div class="col-md-6">
-            <div class="guide-content-card">
-              <span class="guide-badge">{{ asset.get_asset_type_display }}</span>
-              <h3>{{ asset.title }}</h3>
-
-              {% if asset.marker_image %}
-              <div class="mb-3">
-                <p class="mb-2">辨識圖：</p>
-                <img src="{{ asset.marker_image.url }}" alt="{{ asset.title }}" class="img-fluid rounded">
-              </div>
-              {% endif %}
-
-              {% if asset.video_file %}
-              <p><a href="{{ asset.video_file.url }}" target="_blank" class="guide-btn-secondary">查看影片檔</a></p>
-              {% endif %}
-
-              {% if asset.audio_file %}
-              <p><a href="{{ asset.audio_file.url }}" target="_blank" class="guide-btn-secondary">查看音訊檔</a></p>
-              {% endif %}
-
-              {% if asset.image_file %}
-              <div class="mb-3">
-                <p class="mb-2">圖片素材：</p>
-                <img src="{{ asset.image_file.url }}" alt="{{ asset.title }}" class="img-fluid rounded">
-              </div>
-              {% endif %}
-
-              {% if asset.target_file %}
-              <p><a href="{{ asset.target_file.url }}" target="_blank" class="guide-btn-secondary">下載 Target 檔</a></p>
-              {% endif %}
-
-              {% if asset.model_file %}
-              <p><a href="{{ asset.model_file.url }}" target="_blank" class="guide-btn-secondary">查看 3D 模型檔</a></p>
-              {% endif %}
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-      {% endif %}
     </div>
   </section>
 </div>
+<!-- Lightbox -->
+<div class="guide-lightbox" id="guide-lightbox" onclick="closeLightbox()">
+    <span class="guide-lightbox-close" onclick="closeLightbox()">✕</span>
+    <img id="lightbox-img" src="" alt="">
+    <p class="guide-lightbox-caption" id="lightbox-caption"></p>
+</div>
+
+<script>
+function openLightbox(src, caption) {
+    document.getElementById('lightbox-img').src = src;
+    document.getElementById('lightbox-caption').textContent = caption;
+    document.getElementById('guide-lightbox').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+    document.getElementById('guide-lightbox').classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeLightbox();
+});
+</script>
 {% endblock %}

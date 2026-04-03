@@ -16,7 +16,7 @@ class HeroSlide(models.Model):
     title        = models.CharField('標題', max_length=100)
     subtitle     = models.CharField('副標題', max_length=200, blank=True)
     description  = models.CharField('說明', max_length=300, blank=True)
-    image        = models.ImageField('圖片', upload_to='static/image/slides/')
+    image        = models.ImageField('圖片', upload_to='slides/')
     cc_credit    = models.CharField('創用CC來源標註', max_length=300, blank=True,
                                     help_text='例：攝影 © 王小明 / CC BY 4.0，留空表示無需標註')
     is_active    = models.BooleanField('顯示', default=True)
@@ -73,13 +73,13 @@ class Activity(models.Model):
     time        = models.CharField('活動時間', max_length=50, blank=True,
                                    help_text='例如：09:00 - 17:00')
     location    = models.CharField('地點', max_length=100)  # 必填拿掉 blank=True
-    cover_image = models.ImageField('宣傳圖片', upload_to='static/image/activities/',
+    cover_image = models.ImageField('宣傳圖片', upload_to='activities/',
                                     blank=True, null=True)
     link_url    = models.CharField('報名/詳情連結', max_length=200, blank=True)
-    max_participants = models.PositiveIntegerField('人數上限', blank=True, null=True,
-                                                   help_text='留空表示不限人數')
-    max_per_user      = models.PositiveIntegerField('每人限報名次數', default=1,
-                                                    help_text='同一活動每人最多報名幾次')
+    max_participants = models.PositiveIntegerField('總人數上限', blank=True, null=True,
+                                                   help_text='留空表示不限總人數')
+    max_per_user      = models.PositiveIntegerField('每帳號限報名人數', blank=True, null=True,
+                                                    help_text='留空表示不限制')
     contact_name  = models.CharField('聯絡人', max_length=50)       # 必填
     contact_phone = models.CharField('聯絡電話', max_length=20)     # 必填
     contact_email = models.EmailField('聯絡信箱', blank=True)
@@ -107,12 +107,13 @@ class Activity(models.Model):
         return self.date < today
 
     def is_registration_open(self):
-        """報名是否開放中"""
-        today = timezone.now().date()
+        from django.utils import timezone
         if self.is_past():
             return False
+        if self.is_registration_closed:
+            return False
         if self.register_deadline:
-            return today <= self.register_deadline
+            return timezone.now() <= self.register_deadline
         return True
     def registration_count(self):
         """實際報名總人數（加總每筆的人數）"""
@@ -122,8 +123,12 @@ class Activity(models.Model):
     def remaining_spots(self):
         if not self.max_participants:
             return None
-        return self.max_participants - self.registration_count()
-
+        return max(0, self.max_participants - self.registration_count())
+    is_registration_closed = models.BooleanField(
+        '強制關閉報名',
+        default=False,
+        help_text='勾選後立即停止報名，不論截止日期'
+    )
     is_past.boolean = True
     is_past.short_description = '已結束'
     is_registration_open.boolean = True
@@ -153,6 +158,8 @@ class Registration(models.Model):
         verbose_name_plural = '報名記錄'
     def __str__(self):
         return f"{self.activity.title} - {self.name}（{self.participant_count}人）"
+    def get_date(self):
+        return self.activity.date
     
 ##################################################
 # Function: 同行人員資料模型
@@ -174,3 +181,31 @@ class Participant(models.Model):
 
     def __str__(self):
         return f"{self.name}（{self.registration.activity.title}）"
+    
+##################################################
+# Function: 聯絡我們表單
+##################################################
+class ContactMessage(models.Model):
+    STATUS_CHOICES = [
+        ('new',     '未讀'),
+        ('read',    '已讀'),
+        ('replied', '已回覆'),
+    ]
+ 
+    name       = models.CharField('姓名', max_length=50)
+    email      = models.EmailField('信箱')
+    phone      = models.CharField('電話', max_length=20, blank=True)
+    subject    = models.CharField('主旨', max_length=100)
+    message    = models.TextField('訊息內容')
+    status     = models.CharField('狀態', max_length=10,
+                                  choices=STATUS_CHOICES, default='new')
+    created_at = models.DateTimeField('送出時間', auto_now_add=True)
+ 
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = '聯絡訊息'
+        verbose_name_plural = '聯絡訊息'
+ 
+    def __str__(self):
+        return f"{self.name}・{self.subject}（{self.get_status_display()}）"
+ 

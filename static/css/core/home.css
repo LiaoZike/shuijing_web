@@ -237,7 +237,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: rgba(10, 6, 2, 0.85);
+    background: rgba(10, 6, 2, 0.50);
 }
 
 .parallax-content {

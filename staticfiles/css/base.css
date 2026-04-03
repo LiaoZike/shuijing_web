@@ -44,6 +44,12 @@ body {
     padding: 10px 0;
     border-bottom: 1px solid rgba(139, 105, 20, 0.4);
 }
+.nav-link.active {
+    color: var(--bamboo-light) !important;
+}
+.nav-link.active::after {
+    width: calc(100% - 32px);
+}
 
 .navbar-brand {
     font-family: 'Noto Serif TC', serif;
@@ -238,7 +244,32 @@ footer .footer-bottom {
     line-height: 1;
 }
 .site-toast button:hover { color: var(--cream); }
-@keyframes toastIn {
-    from { opacity: 0; transform: translateX(20px); }
-    to   { opacity: 1; transform: translateX(0); }
+
+
+
+
+#mainNav .container {
+    flex-wrap: wrap;
+}
+
+.navbar-brand {
+    min-width: 0;
+    max-width: calc(100% - 70px);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.navbar-toggler {
+    flex-shrink: 0;
+}
+
+.navbar-collapse {
+    flex-basis: 100%;
+}
+
+@media (max-width: 991.98px) {
+    .brand-en {
+        display: none;
+    }
 }

@@ -43,10 +43,10 @@ class StorySpotAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('基本資料', {
-            'fields': ('title', 'slug', 'category', 'location_name')
+            'fields': ('title', 'slug', 'category', 'location_name', 'maps_url')
         }),
         ('內容', {
-            'fields': ('short_intro', 'content', 'cover_image')
+            'fields': ('short_intro', 'content', 'cover_image', 'cover_image_credit')
         }),
         ('顯示設定', {
             'fields': ('sort_order', 'is_featured', 'is_active')

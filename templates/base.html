@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {% load static %}
-    <title>{% block title %}水井村三生共好{% endblock %}</title>
+    <title>{% block title %}風雲客棧數位平台{% endblock %}</title>
     <link rel="shortcut icon" href="{% static 'image/favicon.ico' %}" type="image/x-icon">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,13 +22,15 @@
     {% block link_css %}{% endblock %}
 </head>
 <body>
-
+<style>
+    {% block extra_css %}{% endblock %}
+</style>
 <!-- ===================== NAVBAR ===================== -->
 <nav class="navbar navbar-expand-lg fixed-top" id="mainNav">
     <div class="container">
         <a class="navbar-brand" href="{% url 'home' %}">
-            水井村
-            <span class="brand-en">SHUIJING VILLAGE</span>
+            風雲客棧數位平台
+            <span class="brand-en">FENG YUN GUESTHOUSE</span>
         </a>
         <button class="navbar-toggler" type="button"
                 data-bs-toggle="collapse"
@@ -41,7 +43,7 @@
         <div class="collapse navbar-collapse" id="navbarMain">
         <ul class="navbar-nav mx-auto">
             <li class="nav-item">
-                <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}"
+                <a class="nav-link {% if request.resolver_match.url_name == 'home' and request.resolver_match.app_name != 'guide' %}active{% endif %}"
                 href="{% url 'home' %}">首 頁</a>
             </li>
             <li class="nav-item">
@@ -53,7 +55,7 @@
                 href="{% url 'event_list' %}">活 動</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if 'guide' in request.resolver_match.url_name %}active{% endif %}"
+                <a class="nav-link {% if request.resolver_match.app_name == 'guide' %}active{% endif %}"
                 href="{% url 'guide:home' %}">互動導覽</a>
             </li>
             <li class="nav-item">
@@ -66,11 +68,11 @@
                 {% if user.is_authenticated %}
                     <div class="dropdown">
                         <button class="btn-login dropdown-toggle" data-bs-toggle="dropdown">
-                            {{ user.first_name|default:user.email }}
+                            {{ user_display_name }}
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#">個人資料</a></li>
-                            <li><a class="dropdown-item" href="#">我的紀錄</a></li>
+                            <li><a class="dropdown-item" href="{% url 'my_profile' %}">個人資料</a></li>
+                            <li><a class="dropdown-item" href="{% url 'my_registrations' %}">報名紀錄</a></li>
                             <li><hr class="dropdown-divider" style="border-color:rgba(139,105,20,0.2);"></li>
                             <li>
                                 <form method="post" action="/accounts/logout/">
@@ -112,7 +114,7 @@
     <div class="container">
         <div class="row">
             <div class="col-lg-4 mb-4">
-                <div class="footer-brand">水井村</div>
+                <div class="footer-brand">風雲客棧數位平台</div>
                 <div class="footer-divider"></div>
                 <p style="font-size:0.83rem;line-height:1.9;color:var(--text-muted);">
                     位於雲林縣口湖鄉沿海地帶，<br>

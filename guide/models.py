@@ -1,6 +1,6 @@
 from django.db import models
 
-#導覽說明
+
 class StorySpot(models.Model):
     CATEGORY_CHOICES = [
         ('treasure', '三寶'),
@@ -31,10 +31,21 @@ class StorySpot(models.Model):
         null=True,
         verbose_name='封面圖片'
     )
+    cover_image_credit = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='圖片來源',
+        help_text='例：CC BY 2.0 / 攝影：王小明 / Wikimedia Commons'
+    )
     location_name = models.CharField(
         max_length=100,
         blank=True,
         verbose_name='地點名稱'
+    )
+    maps_url = models.URLField(
+        blank=True,
+        verbose_name='Google Maps 連結',
+        help_text='建議貼完整長網址 https://www.google.com/maps/place/... 而非短網址'
     )
     sort_order = models.PositiveIntegerField(default=0, verbose_name='排序')
     is_featured = models.BooleanField(default=False, verbose_name='是否精選')
@@ -106,44 +117,42 @@ class ARAsset(models.Model):
         default='video',
         verbose_name='素材類型'
     )
-
     marker_image = models.ImageField(
-        upload_to='static/image/guide/ar/markers/',
+        upload_to='guide/ar/markers/',
         blank=True,
         null=True,
         verbose_name='辨識圖片(marker)'
     )
     target_file = models.FileField(
-        upload_to='static/image/guide/ar/targets/',
+        upload_to='guide/ar/targets/',
         blank=True,
         null=True,
         verbose_name='MindAR target 檔'
     )
     video_file = models.FileField(
-        upload_to='static/image/guide/ar/videos/',
+        upload_to='guide/ar/videos/',
         blank=True,
         null=True,
         verbose_name='影片檔'
     )
     audio_file = models.FileField(
-        upload_to='static/image/guide/ar/audios/',
+        upload_to='guide/ar/audios/',
         blank=True,
         null=True,
         verbose_name='音訊檔'
     )
     image_file = models.ImageField(
-        upload_to='static/image/guide/ar/images/',
+        upload_to='guide/ar/images/',
         blank=True,
         null=True,
         verbose_name='圖片素材'
     )
     model_file = models.FileField(
-        upload_to='static/image/guide/ar/models/',
+        upload_to='guide/ar/models/',
         blank=True,
         null=True,
         verbose_name='3D模型檔'
     )
-
     is_active = models.BooleanField(default=True, verbose_name='是否啟用')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='建立時間')
 

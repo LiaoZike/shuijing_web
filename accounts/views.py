@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.http import Http404
+from django.contrib.auth.decorators import login_required
 
 # Create your views here.
 from django.http import JsonResponse
@@ -33,3 +34,10 @@ def logout_view(request):
     if request.method == 'POST':
         logout(request)
     return redirect('home')
+
+
+@login_required(login_url='/accounts/google/login/')
+def my_profile(request):
+    return render(request, 'account/my_profile.html', {
+        'user': request.user,
+    })

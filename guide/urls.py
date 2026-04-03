@@ -6,5 +6,6 @@ app_name = 'guide'
 urlpatterns = [
     path('', views.guide_home, name='home'),
     path('category/<str:category>/', views.guide_category, name='category'),
+    path('<slug:slug>/ar/', views.guide_ar, name='ar'),
     path('<slug:slug>/', views.guide_detail, name='detail'),
 ]

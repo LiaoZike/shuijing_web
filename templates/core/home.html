@@ -1,11 +1,10 @@
 {% extends 'base.html' %}
-{% block title %}水井村三生共好・雲林口湖{% endblock %}
 {% load static %}
 {% block link_css %}
     <link rel="stylesheet" href="{% static 'css/core/home.css' %}">
 {% endblock %}
 {% block extra_css %}
-.parallax-section {
+.parallax-section{
     background-image: url('{% static "image/background.jpg" %}');
 }
 {% endblock %}
@@ -90,7 +89,7 @@
                 <p class="section-subtitle mb-3">EVENTS</p>
                 <h2 class="section-title">近期活動</h2>
                 <p style="color:var(--text-muted);font-size:0.87rem;line-height:1.9;margin-top:16px;">
-                    水井村定期舉辦各類社區活動，
+                    風雲客棧數位平台定期舉辦各類社區活動，
                     歡迎外地朋友前來體驗
                     最道地的台灣鄉村生活。
                 </p>
@@ -268,7 +267,7 @@
             雲林縣口湖鄉・感受台灣鄉村最真實的三生共好
         </p>
         {% if user.is_authenticated %}
-            <a href="#" class="btn-login" style="font-size:0.9rem;padding:12px 36px;">瀏覽活動</a>
+            <a href="{% url 'event_list' %}" class="btn-login" style="font-size:0.9rem;padding:12px 36px;">瀏覽活動</a>
         {% else %}
             <a href="{% url 'login_portal' %}?next=/" class="btn-login" style="font-size:0.9rem;padding:12px 36px;">
                 <i class="bi bi-google me-2"></i>登入加入我們

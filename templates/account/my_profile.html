@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% block title %}個人資料・水井村{% endblock %}
+{% load static %}
+
+{% block link_css %}
+<link rel="stylesheet" href="{% static 'css/core/event.css' %}">
+{% endblock %}
+
+{% block extra_css %}
+.my-profile-wrap {
+    padding: 140px 0 100px;
+    min-height: 100vh;
+    background: #F5F0E8;
+}
+
+.my-profile-title {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 1.6rem;
+    color: #2E1F0F;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+}
+
+.my-profile-sub {
+    font-size: 0.85rem;
+    color: #9A8070;
+    letter-spacing: 0.06em;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(139,105,20,0.15);
+}
+
+.profile-card {
+    background: white;
+    border: 1px solid rgba(139,105,20,0.15);
+    padding: 32px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.profile-field {
+    margin-bottom: 24px;
+}
+
+.profile-label {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 0.9rem;
+    color: #2E1F0F;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.profile-value {
+    font-size: 1rem;
+    color: #5A4A3A;
+    padding: 12px 16px;
+    background: #F8F5F0;
+    border: 1px solid rgba(139,105,20,0.1);
+    border-radius: 4px;
+}
+
+.profile-actions {
+    margin-top: 32px;
+    text-align: center;
+}
+
+.btn-edit-profile {
+    background: #8B6914;
+    color: white;
+    border: none;
+    padding: 12px 32px;
+    border-radius: 25px;
+    font-size: 0.9rem;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-edit-profile:hover {
+    background: #6B5110;
+    color: white;
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(139,105,20,0.3);
+}
+{% endblock %}
+
+{% block content %}
+<section class="my-profile-wrap">
+    <div class="container">
+        <div style="max-width:600px;margin:0 auto;">
+
+            <h1 class="my-profile-title">您的個人資料</h1>
+            <p class="my-profile-sub">
+            </p>
+
+            <div class="profile-card" data-aos="fade-up">
+                <div class="profile-field">
+                    <label class="profile-label">姓名</label>
+                    <div class="profile-value">{{ user_display_name }}</div>
+                </div>
+
+                <div class="profile-field">
+                    <label class="profile-label">電子郵件</label>
+                    <div class="profile-value">{{ user.email }}</div>
+                </div>
+
+                <div class="profile-field">
+                    <label class="profile-label">帳號類型</label>
+                    <div class="profile-value">
+                        {% if user.socialaccount_set.all %}
+                            Google 帳號
+                        {% else %}
+                            一般帳號
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="profile-field">
+                    <label class="profile-label">加入時間</label>
+                    <div class="profile-value">{{ user.date_joined|date:"Y年m月d日" }}</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+{% endblock %}

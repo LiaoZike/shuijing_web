@@ -1,64 +1,76 @@
 from django.shortcuts import get_object_or_404, redirect, render
-from .models import HeroSlide, Registration,ServiceItem,Activity,Participant
 from django.utils import timezone
 from django.db.models import Case, When, Value, IntegerField, Q
-from allauth.account.signals import user_logged_in, user_logged_out
 from django.contrib import messages
 from django.dispatch import receiver
 from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
+from django.core.mail import send_mail
+from allauth.account.signals import user_logged_in, user_logged_out
+
+from .models import (
+    HeroSlide,
+    Registration,
+    ServiceItem,
+    Activity,
+    Participant,
+    ContactMessage,
+)
+
+import threading
+
 
 @receiver(user_logged_in)
 def on_login(request, user, **kwargs):
+    """使用者登入後顯示歡迎訊息。"""
     storage = messages.get_messages(request)
     storage.used = True
     name = user.first_name or user.email
     messages.success(request, f'歡迎回來，{name}！')
 
+
 @receiver(user_logged_out)
 def on_logout(request, user, **kwargs):
+    """使用者登出後顯示提示訊息。"""
     messages.success(request, '已成功登出，期待您再次造訪。')
 
-def home(request):
-    slides   = HeroSlide.objects.filter(is_active=True)
-    services = ServiceItem.objects.filter(is_active=True)
-    today    = timezone.now().date()
 
-    activities = Activity.objects.filter(is_active=True).annotate(
-        is_past=Case(
-            # 有結束日期 → 看結束日期是否已過
-            When(end_date__isnull=False, end_date__lt=today, then=Value(1)),
-            # 沒結束日期 → 看開始日期是否已過
-            When(end_date__isnull=True, date__lt=today, then=Value(1)),
-            default=Value(0),
-            output_field=IntegerField(),
+def home(request):
+    """首頁：顯示輪播圖、服務項目與近期活動。"""
+    today = timezone.now().date()
+
+    slides = HeroSlide.objects.filter(is_active=True)
+    services = ServiceItem.objects.filter(is_active=True)
+    activities = (
+        Activity.objects.filter(is_active=True)
+        .annotate(
+            is_past=Case(
+                When(end_date__isnull=False, end_date__lt=today, then=Value(1)),
+                When(end_date__isnull=True, date__lt=today, then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
         )
-    ).order_by(
-        'is_past',
-        '-is_featured',
-        '-date',
-    )[:4]
+        .order_by('is_past', '-is_featured', '-date')[:4]
+    )
 
     return render(request, 'core/home.html', {
-        'slides':     slides,
-        'services':   services,
+        'slides': slides,
+        'services': services,
         'activities': activities,
-        'today':      today,
+        'today': today,
     })
 
 
-
-
 def event_list(request):
+    """活動列表頁：支援關鍵字搜尋、狀態篩選與分頁。"""
     today = timezone.now().date()
-    # 搜尋
-    query    = request.GET.get('q', '')
-    status   = request.GET.get('status', 'all')
+    query = request.GET.get('q', '')
+    status = request.GET.get('status', 'upcoming')
 
     activities = Activity.objects.filter(is_active=True)
 
-    # 關鍵字搜尋（標題、描述、地點、標籤）
     if query:
         activities = activities.filter(
             Q(title__icontains=query) |
@@ -67,140 +79,303 @@ def event_list(request):
             Q(tags__icontains=query)
         )
 
-    # 狀態篩選
     if status == 'upcoming':
         activities = activities.filter(
             Q(end_date__gte=today) | Q(end_date__isnull=True, date__gte=today)
         ).order_by('date')
+
     elif status == 'past':
         activities = activities.filter(
             Q(end_date__lt=today) | Q(end_date__isnull=True, date__lt=today)
         ).order_by('-date')
+
     else:
         activities = activities.annotate(
             is_past_flag=Case(
-                When(Q(end_date__lt=today) | Q(end_date__isnull=True, date__lt=today), then=Value(1)),
+                When(
+                    Q(end_date__lt=today) | Q(end_date__isnull=True, date__lt=today),
+                    then=Value(1)
+                ),
                 default=Value(0),
                 output_field=IntegerField(),
             )
         ).order_by('is_past_flag', '-is_featured', 'date')
 
-    # 分頁
     paginator = Paginator(activities, settings.ACTIVITIES_PER_PAGE)
-    page_num  = request.GET.get('page', 1)
-    page_obj  = paginator.get_page(page_num)
-    return render(request, 'core/event_list.html', {
-        'page_obj':  page_obj,
-        'query':     query,
-        'status':    status,
-        'today':     today,
-    })
+    page_obj = paginator.get_page(request.GET.get('page', 1))
 
+    return render(request, 'core/event_list.html', {
+        'page_obj': page_obj,
+        'query': query,
+        'status': status,
+        'today': today,
+    })
 
 def event_detail(request, pk):
-    from django.shortcuts import get_object_or_404
     activity = get_object_or_404(Activity, pk=pk, is_active=True)
-    today    = timezone.now().date()
+    today = timezone.now().date()
+
+    user_registration = None
+    is_full = False
+
+    if request.user.is_authenticated:
+        user_registration = Registration.objects.filter(
+            activity=activity, user=request.user
+        ).first()
+
+    # 已報名的人不受額滿影響，所以在確認 user_registration 之後再判斷
+    if activity.max_participants:
+        is_full = activity.remaining_spots() <= 0
+
+    # 顯示用的報名人數，不超過上限
+    displayed_count = None
+    if activity.max_participants:
+        displayed_count = min(activity.registration_count(), activity.max_participants)
+
+    related = Activity.objects.filter(
+        is_active=True
+    ).exclude(pk=pk).order_by('-is_featured', 'date')[:3]
 
     return render(request, 'core/event_detail.html', {
-        'activity': activity,
-        'today':    today
+        'activity':          activity,
+        'today':             today,
+        'is_full':           is_full,
+        'user_registration': user_registration,
+        'related':           related,
+        'displayed_count':   displayed_count,
     })
+
+
+def _get_companions_from_post(request):
+    """從表單中整理同行人資料。"""
+    companions = []
+    i = 1
+
+    while True:
+        name = request.POST.get(f'companion_name_{i}', '').strip()
+        phone = request.POST.get(f'companion_phone_{i}', '').strip()
+        email = request.POST.get(f'companion_email_{i}', '').strip()
+
+        if not name:
+            break
+
+        companions.append({
+            'name': name,
+            'phone': phone,
+            'email': email,
+        })
+        i += 1
+
+    return companions
+
+
+def _validate_event_registration(activity, user, name, phone, companions):
+    """檢查活動報名資料是否合法，若不合法則回傳錯誤訊息。"""
+    if not name or not phone:
+        return '抱歉! 姓名和電話為必填。'
+
+    max_per_user = activity.max_per_user
+    if max_per_user and len(companions) + 1 > max_per_user:
+        return f'抱歉! 每帳號最多報名 {max_per_user} 人。'
+    for idx, companion in enumerate(companions, start=1):
+        if not companion['phone']:
+            return f'抱歉! 第 {idx} 位同行人電話為必填。'
+
+    if activity.is_past():
+        return '抱歉! 此活動已結束，無法報名。'
+
+    if not activity.is_registration_open():
+        return '抱歉! 報名已截止。'
+
+    if Registration.objects.filter(activity=activity, user=user).exists():
+        return '抱歉! 你已經報名過此活動了！'
+
+    participant_count = 1 + len(companions)
+    if activity.max_participants:
+        remaining = activity.remaining_spots()
+        if participant_count > remaining:
+            return f'抱歉! 剩餘名額只剩 {remaining} 位，無法報名 {participant_count} 人。'
+
+    return None
+
 
 @login_required(login_url='/accounts/google/login/')
 def event_register(request, pk):
+    """活動報名頁：GET 顯示表單，POST 建立報名與同行人資料。"""
     activity = get_object_or_404(Activity, pk=pk, is_active=True)
 
-    # GET → 顯示表單
     if request.method == 'GET':
-        # 先做基本檢查，不能報名就跳回去
-        if activity.is_past():
-            messages.error(request, '此活動已結束，無法報名。')
+        error_message = _validate_event_registration(
+            activity=activity,
+            user=request.user,
+            name='temp',
+            phone='temp',
+            companions=[],
+        )
+        if error_message and error_message != '姓名和電話為必填。':
+            if '已經報名過' in error_message:
+                messages.warning(request, error_message)
+            else:
+                messages.error(request, error_message)
             return redirect('event_detail', pk=pk)
-        if not activity.is_registration_open():
-            messages.error(request, '報名已截止。')
-            return redirect('event_detail', pk=pk)
-        if Registration.objects.filter(activity=activity, user=request.user).exists():
-            messages.warning(request, '你已經報名過此活動了！')
-            return redirect('event_detail', pk=pk)
+
         return render(request, 'core/event_register.html', {
             'activity': activity,
             'user': request.user,
         })
+
     if request.method != 'POST':
         return redirect('event_detail', pk=pk)
-    # ── 報名者本人資料 ──
-    name              = request.POST.get('name', '').strip()
-    phone             = request.POST.get('phone', '').strip()
-    email             = request.POST.get('email', '').strip()
-    note              = request.POST.get('note', '').strip()
-    # ── 同行人資料（動態列）──
-    # 前端傳來 companion_name_1, companion_phone_1, companion_email_1 ...
-    companions = []
-    i = 1
-    while True:
-        c_name  = request.POST.get(f'companion_name_{i}', '').strip()
-        c_phone = request.POST.get(f'companion_phone_{i}', '').strip()
-        c_email = request.POST.get(f'companion_email_{i}', '').strip()
-        if not c_name:
-            break
-        companions.append({'name': c_name, 'phone': c_phone, 'email': c_email})
-        i += 1
 
-    participant_count = 1 + len(companions)  # 本人 + 同行人
+    name = request.POST.get('name', '').strip()
+    phone = request.POST.get('phone', '').strip()
+    email = request.POST.get('email', '').strip()
+    note = request.POST.get('note', '').strip()
+    companions = _get_companions_from_post(request)
 
-    # ── 驗證 ──
-    if not name or not phone:
-        messages.error(request, '姓名和電話為必填。')
-        return redirect('event_detail', pk=pk)
-    for idx, c in enumerate(companions, 1):
-        if not c['phone']:
-            messages.error(request, f'第 {idx} 位同行人電話為必填。')
-            return redirect('event_detail', pk=pk)
-    if activity.is_past():
-        messages.error(request, '此活動已結束，無法報名。')
-        return redirect('event_detail', pk=pk)
-    if not activity.is_registration_open():
-        messages.error(request, '報名已截止。')
-        return redirect('event_detail', pk=pk)
-    if Registration.objects.filter(activity=activity, user=request.user).exists():
-        messages.warning(request, '你已經報名過此活動了！')
-        return redirect('event_detail', pk=pk)
-    if activity.max_participants:
-        remaining = activity.remaining_spots()
-        if participant_count > remaining:
-            messages.error(request, f'剩餘名額只剩 {remaining} 位，無法報名 {participant_count} 人。')
-            return redirect('event_detail', pk=pk)
-
-    # ── 建立報名記錄 ──
-    registration = Registration.objects.create(
-        activity          = activity,
-        user              = request.user,
-        name              = name,
-        phone             = phone,
-        email             = email or request.user.email,
-        participant_count = participant_count,
-        note              = note,
+    error_message = _validate_event_registration(
+        activity=activity,
+        user=request.user,
+        name=name,
+        phone=phone,
+        companions=companions,
     )
 
-    # ── 建立同行人記錄 ──
-    for c in companions:
+    if error_message:
+        if '已經報名過' in error_message:
+            messages.warning(request, error_message)
+        else:
+            messages.error(request, error_message)
+        return redirect('event_detail', pk=pk)
+
+    participant_count = 1 + len(companions)
+
+    registration = Registration.objects.create(
+        activity=activity,
+        user=request.user,
+        name=name,
+        phone=phone,
+        email=email or request.user.email,
+        participant_count=participant_count,
+        note=note,
+    )
+
+    for companion in companions:
         Participant.objects.create(
-            registration = registration,
-            name         = c['name'],
-            phone        = c['phone'],
-            email        = c['email'],
+            registration=registration,
+            name=companion['name'],
+            phone=companion['phone'],
+            email=companion['email'],
         )
 
     messages.success(request, f'已成功報名「{activity.title}」，共 {participant_count} 人！')
     return redirect('event_detail', pk=pk)
 
+
 def story(request):
+    """故事頁。"""
     return render(request, 'core/story.html')
+
+
 def usr_page(request):
+    """使用者相關頁面。"""
     return render(request, 'core/usr.html')
 
+
 def about(request):
+    """關於我們頁面。"""
     return render(request, 'core/about.html')
-def contact(request):    
-    return render(request, 'core/contact.html')
+
+
+def send_contact_email_async(name, email, phone, subject, message_text):
+    """背景寄送聯絡表單通知信，避免阻塞使用者請求。"""
+    try:
+        send_mail(
+            subject=f'【風雲客棧數位平台聯絡表單】{subject}',
+            message=(
+                f'姓名：{name}\n'
+                f'信箱：{email}\n'
+                f'電話：{phone or "未填"}\n'
+                f'主旨：{subject}\n\n'
+                f'訊息內容：\n{message_text}'
+            ),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[settings.CONTACT_EMAIL],
+            fail_silently=False,
+        )
+    except Exception as e:
+        print(f'Error sending email: {e}')
+
+
+def contact(request):
+    """聯絡我們頁面：接收表單、寫入資料庫，並背景寄送通知信。"""
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        email = request.POST.get('email', '').strip()
+        phone = request.POST.get('phone', '').strip()
+        subject = request.POST.get('subject', '').strip()
+        message_text = request.POST.get('message', '').strip()
+
+        if not name or not email or not subject or not message_text:
+            messages.error(request, '請填寫所有必填欄位。')
+            return render(request, 'core/contact.html', {
+                'form_data': request.POST
+            })
+
+        ContactMessage.objects.create(
+            name=name,
+            email=email,
+            phone=phone,
+            subject=subject,
+            message=message_text,
+        )
+
+        threading.Thread(
+            target=send_contact_email_async,
+            args=(name, email, phone, subject, message_text),
+            daemon=True,
+        ).start()
+
+        messages.success(request, '訊息已送出，我們會盡快與您聯繫！')
+        return redirect('contact')
+
+    return render(request, 'core/contact.html', {
+        'form_data': {}
+    })
+
+
+
+@login_required(login_url='/accounts/google/login/')
+def my_registrations(request):
+    filter_param = request.GET.get('filter', 'all')
+    today = timezone.now().date()
+ 
+    registrations = Registration.objects.filter(
+        user=request.user
+    ).select_related('activity').order_by('activity__date')
+ 
+    if filter_param == 'upcoming':
+        registrations = registrations.filter(
+            Q(activity__end_date__gte=today) |
+            Q(activity__end_date__isnull=True, activity__date__gte=today)
+        )
+    elif filter_param == 'past':
+        registrations = registrations.filter(
+            Q(activity__end_date__lt=today) |
+            Q(activity__end_date__isnull=True, activity__date__lt=today)
+        )
+ 
+    return render(request, 'core/my_registrations.html', {
+        'registrations': registrations,
+        'filter': filter_param,
+    })
+ 
+
+@login_required(login_url='/accounts/google/login/')
+def my_registration_detail(request, pk):
+    registration = get_object_or_404(Registration, pk=pk, user=request.user)
+    participants = registration.participants.all()
+    return render(request, 'core/my_registration_detail.html', {
+        'registration': registration,
+        'participants': participants,
+    })
