@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>{{ page_title }}・水井村</title>
+
+    {% if has_assets and has_target %}
+    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    {% endif %}
+
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/guide/ar_fullscreen.css' %}">
+
+    <style>
+        .ar-debug-log {
+            position: fixed;
+            left: 12px;
+            right: 12px;
+            bottom: 90px;
+            z-index: 9999;
+            max-height: 140px;
+            overflow-y: auto;
+            font-size: 12px;
+            line-height: 1.5;
+            background: rgba(0, 0, 0, 0.58);
+            color: #fff;
+            padding: 10px 12px;
+            border-radius: 12px;
+            white-space: pre-wrap;
+            display: none;
+        }
+
+        .ar-bottom-status.found {
+            background: rgba(52, 168, 83, 0.92);
+        }
+    </style>
+</head>
+<body>
+
+<a href="{% url 'guide:home' %}" class="ar-back-btn">← 返回導覽首頁</a>
+
+{% if has_assets and has_target %}
+
+<div class="ar-bottom-status" id="ar-bottom-status">點擊啟動後，將鏡頭對準三寶辨識圖卡</div>
+
+<div class="ar-tap-hint" id="ar-tap-hint">
+    <div class="ar-tap-hint-box">
+        <h2>{{target_name}} AR體驗</h2>
+        <p>
+            本頁可掃描「{{target_name}}」素材<br>
+            請先允許相機權限<br>
+            再將鏡頭對準辨識圖卡
+        </p>
+        <button class="ar-tap-btn" id="ar-start-btn">載入中…</button>
+    </div>
+</div>
+
+<div class="ar-debug-log" id="ar-debug-log">[AR] 等待場景初始化...</div>
+
+<a-scene
+    id="main-ar-scene"
+    mindar-image="imageTargetSrc: {{ target_file_url }}; autoStart: false; uiError: no; uiLoading: no; uiScanning: no; videoTexture: true; maxTrack: 1;"
+    color-space="sRGB"
+    renderer="colorManagement: true; physicallyCorrectLights: false;"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false"
+>
+    <a-assets>
+        {% for asset in ar_assets %}
+            {% if asset.video_file %}
+            <video
+                id="asset-video-{{ forloop.counter0 }}"
+                src="{{ asset.video_file.url }}"
+                preload="metadata"
+                loop
+                playsinline
+                webkit-playsinline
+                crossorigin="anonymous"
+            ></video>
+            {% endif %}
+
+            {% if asset.image_file %}
+            <img
+                id="asset-image-{{ forloop.counter0 }}"
+                src="{{ asset.image_file.url }}"
+                crossorigin="anonymous"
+                alt="{{ asset.title }}"
+            >
+            {% endif %}
+        {% endfor %}
+    </a-assets>
+
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+    {% for asset in ar_assets %}
+    <a-entity
+        class="ar-target"
+        id="ar-target-{{ forloop.counter0 }}"
+        data-index="{{ forloop.counter0 }}"
+        data-title="{{ asset.title|escape }}"
+        data-spot-title="{{ asset.spot.title|escape }}"
+        data-has-video="{% if asset.video_file %}1{% else %}0{% endif %}"
+        data-has-image="{% if asset.image_file %}1{% else %}0{% endif %}"
+        mindar-image-target="targetIndex: {{ forloop.counter0 }}"
+    >
+        {% if asset.video_file %}
+        <a-video
+            id="ar-video-plane-{{ forloop.counter0 }}"
+            src="#asset-video-{{ forloop.counter0 }}"
+            position="0 0 0"
+            width="1"
+            height="0.5625"
+        ></a-video>
+        {% elif asset.image_file %}
+        <a-plane
+            id="ar-image-plane-{{ forloop.counter0 }}"
+            src="#asset-image-{{ forloop.counter0 }}"
+            position="0 0 0"
+            width="1"
+            height="0.75"
+        ></a-plane>
+        {% else %}
+        <a-plane
+            color="#C4A052"
+            position="0 0 0"
+            width="1"
+            height="0.5"
+        ></a-plane>
+        <a-text
+            value="{{ asset.title }}"
+            align="center"
+            color="#FFF"
+            width="2"
+            position="0 0 0.01"
+        ></a-text>
+        {% endif %}
+    </a-entity>
+    {% endfor %}
+</a-scene>
+
+<script>
+(function () {
+    var bottomStatus = document.getElementById('ar-bottom-status');
+    var tapHint = document.getElementById('ar-tap-hint');
+    var startBtn = document.getElementById('ar-start-btn');
+    var scene = document.getElementById('main-ar-scene');
+    var debugLog = document.getElementById('ar-debug-log');
+
+    var arSystem = null;
+    var isStarting = false;
+    var hasARReady = false;
+
+    var assetCount = {{ ar_assets|length }};
+    var videoMap = {};
+    var imageModeMap = {};
+    var titleMap = {};
+
+    function log(msg, obj) {
+        var line = obj != null ? msg + ' ' + JSON.stringify(obj) : msg;
+        console.log(line);
+        if (debugLog) {
+            debugLog.textContent += '\n' + line;
+            debugLog.scrollTop = debugLog.scrollHeight;
+        }
+    }
+
+    function collectAssets() {
+        for (var i = 0; i < assetCount; i++) {
+            var videoEl = document.getElementById('asset-video-' + i);
+            var targetEl = document.getElementById('ar-target-' + i);
+
+            if (videoEl) {
+                videoEl.pause();
+                // videoEl.currentTime = 0;
+                videoEl.muted = true;
+                videoEl.defaultMuted = true;
+                videoEl.volume = 1.0;
+                videoMap[i] = videoEl;
+            }
+
+            if (targetEl) {
+                var title = targetEl.dataset.spotTitle || targetEl.dataset.title || ('素材 ' + (i + 1));
+                titleMap[i] = title;
+                imageModeMap[i] = targetEl.dataset.hasImage === '1';
+            }
+        }
+    }
+
+    function stopAllVideos() {
+        Object.keys(videoMap).forEach(function (key) {
+            var video = videoMap[key];
+            if (!video) return;
+            try {
+                video.pause();
+                video.muted = true;
+                video.defaultMuted = true;
+                // 拿掉 currentTime = 0
+            } catch (e) {}
+        });
+    }
+
+    function playMatchedVideo(index) {
+    var video = videoMap[index];
+    if (!video) return;
+
+    // 先停所有影片
+    stopAllVideos();
+
+    video.muted = true;
+    video.volume = 1.0;
+
+    // 延遲 200ms 再播，讓手機有時間釋放資源
+    setTimeout(function () {
+        var playPromise = video.play();
+        if (playPromise && typeof playPromise.then === 'function') {
+            playPromise.then(function () {
+                video.muted = false;
+                log('[AR] playing video', { index: index });
+            }).catch(function (err) {
+                log('[AR] play failed, retry...', err && err.message ? err.message : null);
+                // 失敗再等 300ms retry 一次
+                setTimeout(function () {
+                    video.muted = true;
+                    var retry = video.play();
+                    if (retry && typeof retry.then === 'function') {
+                        retry.then(function () {
+                            video.muted = false;
+                            log('[AR] playing video (retry ok)', { index: index });
+                        }).catch(function (e) {
+                            log('[AR] play failed after retry', e && e.message ? e.message : null);
+                        });
+                    }
+                }, 300);
+            });
+        }
+    }, 200);
+}
+
+    function stopMatchedVideo(index) {
+        var video = videoMap[index];
+        if (!video) return;
+        try {
+            video.pause();
+            video.muted = true;
+            video.defaultMuted = true;
+            // 不要 currentTime = 0，讓影片保持在當前位置
+        } catch (e) {}
+    }
+
+    function updateVideoPlanes() {
+        for (var i = 0; i < assetCount; i++) {
+            (function(index) {
+                var videoEl = document.getElementById('asset-video-' + index);
+                var plane = document.getElementById('ar-video-plane-' + index);
+                if (!videoEl || !plane) return;
+
+                function applyRatio() {
+                    var videoNativeW = videoEl.videoWidth;
+                    var videoNativeH = videoEl.videoHeight;
+                    if (!videoNativeW || !videoNativeH) return;
+                    var ratio = videoNativeH / videoNativeW;
+                    plane.setAttribute('width', 1);
+                    plane.setAttribute('height', ratio);
+                    log('[AR] update plane ratio', { index: index, ratio: ratio });
+                }
+
+                videoEl.addEventListener('loadedmetadata', applyRatio);
+                if (videoEl.readyState >= 1) {
+                    applyRatio();
+                }
+            })(i);
+        }
+    }
+
+    collectAssets();
+
+    startBtn.disabled = true;
+    startBtn.textContent = '載入中…';
+    bottomStatus.textContent = '正在初始化 AR 場景...';
+
+    scene.addEventListener('loaded', function () {
+        arSystem = scene.systems['mindar-image-system'];
+        log('[AR] scene loaded');
+        updateVideoPlanes();
+        startBtn.disabled = false;
+        startBtn.textContent = '啟動 AR 體驗';
+        bottomStatus.textContent = '點擊按鈕後啟動相機';
+    });
+
+    scene.addEventListener('arReady', function () {
+        hasARReady = true;
+        log('[AR] arReady');
+        bottomStatus.textContent = '請將鏡頭對準「{{target_name}}」辨識圖卡';
+    });
+
+    scene.addEventListener('arError', function (event) {
+        log('[AR] arError', event && event.detail ? event.detail : null);
+        isStarting = false;
+        hasARReady = false;
+        bottomStatus.textContent = '相機無法啟動，請檢查權限或是否被其他程式占用';
+        tapHint.style.display = 'flex';
+        startBtn.disabled = false;
+        startBtn.textContent = '重新啟動 AR';
+    });
+
+    startBtn.addEventListener('click', function () {
+
+        // 在使用者點擊的當下，預播所有影片取得授權
+        Object.keys(videoMap).forEach(function (key) {
+            var video = videoMap[key];
+            if (!video) return;
+            video.muted = true;
+            video.play().then(function () {
+                video.pause();
+            }).catch(function () {});
+        });
+        
+        if (isStarting) return;
+
+        if (!arSystem) {
+            log('[AR] arSystem not ready');
+            bottomStatus.textContent = 'AR 系統尚未準備完成，請稍後再試';
+            return;
+        }
+
+        isStarting = true;
+        hasARReady = false;
+        startBtn.disabled = true;
+        startBtn.textContent = '啟動中…';
+        bottomStatus.textContent = '正在請求相機權限...';
+        tapHint.style.display = 'none';
+
+        var startResult = arSystem.start();
+
+        if (startResult && typeof startResult.then === 'function') {
+            startResult
+                .then(function () {
+                    setTimeout(function () {
+                        if (!hasARReady) {
+                            log('[AR] start ok but no arReady yet');
+                        }
+                    }, 1500);
+                })
+                .catch(function (err) {
+                    log('[AR] start exception', err && err.message ? err.message : null);
+                    isStarting = false;
+                    hasARReady = false;
+                    bottomStatus.textContent = '無法啟動相機，請檢查瀏覽器權限';
+                    tapHint.style.display = 'flex';
+                    startBtn.disabled = false;
+                    startBtn.textContent = '重新啟動 AR';
+                })
+                .finally(function () {
+                    isStarting = false;
+                    if (!hasARReady) {
+                        startBtn.disabled = false;
+                        startBtn.textContent = '重新啟動 AR';
+                    }
+                });
+        } else {
+            isStarting = false;
+            log('[AR] start called (no promise)');
+        }
+    });
+
+    var targetEntities = document.querySelectorAll('.ar-target');
+
+    targetEntities.forEach(function (targetEntity) {
+        var index = targetEntity.dataset.index;
+        var title = titleMap[index] || targetEntity.dataset.title || ('素材 ' + (parseInt(index, 10) + 1));
+
+        targetEntity.addEventListener('targetFound', function () {
+            log('[AR] targetFound', { index: index, title: title });
+            bottomStatus.textContent = '✓ 已辨識到：' + title;
+            bottomStatus.classList.add('found');
+
+            if (videoMap[index]) {
+                playMatchedVideo(index);
+            } else if (imageModeMap[index]) {
+                stopAllVideos();
+                log('[AR] image asset shown', { index: index, title: title });
+            } else {
+                stopAllVideos();
+                log('[AR] no media for target', { index: index, title: title });
+            }
+        });
+
+        targetEntity.addEventListener('targetLost', function () {
+            log('[AR] targetLost', { index: index, title: title });
+            bottomStatus.textContent = '將鏡頭對準三寶辨識圖卡';
+            bottomStatus.classList.remove('found');
+            stopMatchedVideo(index);
+        });
+    });
+
+    document.body.addEventListener('click', function () {
+        log('[AR] first user interaction');
+    }, { once: true });
+})();
+</script>
+
+{% else %}
+<div class="ar-no-asset">
+    <p>尚未設定三寶 AR 素材或辨識檔</p>
+    <a href="{% url 'guide:home' %}">← 返回導覽首頁</a>
+</div>
+{% endif %}
+
+</body>
+</html>

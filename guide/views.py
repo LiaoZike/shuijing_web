@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404
-from .models import StorySpot
+from .models import StorySpot, ARAsset
 
 
 def guide_home(request):
@@ -76,8 +76,7 @@ def guide_detail(request, slug):
         'page_title': spot.title,
     }
     return render(request, 'guide/guide_detail.html', context)
-
-
+"""
 def guide_ar(request, slug):
     spot = get_object_or_404(
         StorySpot.objects.prefetch_related('ar_assets'),
@@ -106,3 +105,36 @@ def guide_ar(request, slug):
         'page_title': f'{spot.title} AR 體驗',
     }
     return render(request, 'guide/ar_experience.html', context)
+"""
+
+def guide_ar_treasures(request, slug):
+    # 用 slug 找到入口 spot
+    spot = get_object_or_404(
+        StorySpot,
+        slug=slug,
+        is_active=True
+    )
+    # 用這個 spot 的 category 撈同類所有 spot 的 AR assets
+    ar_assets = ARAsset.objects.filter(
+        spot__category=spot.category,
+        spot__is_active=True,
+        is_active=True
+    ).select_related('spot').order_by('spot__sort_order', 'spot__id', 'id')
+
+    # 取第一個有 target_file 的（合併檔）
+    target_file_url = None
+    for asset in ar_assets:
+        if asset.target_file:
+            target_file_url = asset.target_file.url
+            break
+
+    context = {
+        'target_name': spot.title,
+        'page_title': f'{spot.title} AR 體驗',
+        'ar_assets': ar_assets,
+        'target_file_url': target_file_url,
+        'has_assets': ar_assets.exists(),
+        'has_target': bool(target_file_url),
+        'spot': spot,
+    }
+    return render(request, 'guide/ar_treasures.html', context)

@@ -31,7 +31,7 @@
 
         <div class="guide-detail-actions">
           {% if ar_assets %}
-          <a href="{% url 'guide:ar' spot.slug %}" class="guide-btn-primary guide-btn-ar">▶ 啟動 AR 體驗</a>
+          <a href="{% url 'guide:ar_treasures' spot.slug %}" class="guide-btn-primary guide-btn-ar" target="_blank">▶ 啟動 AR 體驗</a>
           {% endif %}
           {% if spot.maps_url %}
             {% if "maps.app" in spot.maps_url %}
@@ -144,7 +144,7 @@
 
                 <div class="guide-ar-actions">
                   {% if asset.target_file and asset.video_file %}
-                  <a href="{% url 'guide:ar' spot.slug %}" class="guide-btn-primary">▶ 啟動 AR 體驗</a>
+                  <a href="{% url 'guide:ar_treasures' spot.slug %}" class="guide-btn-primary" target="_blank">▶ 啟動 AR 體驗</a>
                   {% endif %}
                   {% if asset.video_file %}
                   <a href="{{ asset.video_file.url }}" target="_blank" class="guide-btn-secondary">影片檔</a>
@@ -187,7 +187,7 @@
 
             <div class="guide-info-actions">
               {% if ar_assets %}
-              <a href="{% url 'guide:ar' spot.slug %}" class="guide-btn-primary">▶ 啟動 AR 體驗</a>
+              <a href="{% url 'guide:ar_treasures' spot.slug %}" class="guide-btn-primary" target="_blank">▶ 啟動 AR 體驗</a>
               {% endif %}
               {% if spot.maps_url %}
               <a href="{{ spot.maps_url }}" target="_blank" rel="noopener" class="guide-btn-secondary">📍 Google Maps</a>
@@ -202,27 +202,23 @@
   </section>
 </div>
 <!-- Lightbox -->
-<div class="guide-lightbox" id="guide-lightbox" onclick="closeLightbox()">
-    <span class="guide-lightbox-close" onclick="closeLightbox()">✕</span>
-    <img id="lightbox-img" src="" alt="">
-    <p class="guide-lightbox-caption" id="lightbox-caption"></p>
+<!-- Lightbox -->
+<div class="guide-lightbox" id="guide-lightbox">
+    <div class="guide-lightbox-toolbar">
+        <span class="guide-lightbox-caption-text" id="lightbox-caption"></span>
+        <div class="guide-lightbox-controls">
+            <button onclick="zoomIn()">＋</button>
+            <button onclick="zoomOut()">－</button>
+            <button onclick="resetTransform()">⟳</button>
+            <button onclick="closeLightbox()">✕</button>
+        </div>
+    </div>
+    <div class="guide-lightbox-stage" id="lightbox-stage">
+        <img id="lightbox-img" src="" alt="">
+    </div>
 </div>
+{% endblock%}
 
-<script>
-function openLightbox(src, caption) {
-    document.getElementById('lightbox-img').src = src;
-    document.getElementById('lightbox-caption').textContent = caption;
-    document.getElementById('guide-lightbox').classList.add('open');
-    document.body.style.overflow = 'hidden';
-}
-
-function closeLightbox() {
-    document.getElementById('guide-lightbox').classList.remove('open');
-    document.body.style.overflow = '';
-}
-
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeLightbox();
-});
-</script>
-{% endblock %}
+{% block link_js %}
+<script src="{% static 'js/guide/guide_detail.js' %}"></script>
+{% endblock%}
