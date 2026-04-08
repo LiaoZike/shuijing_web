@@ -13,4 +13,5 @@ urlpatterns = [
 
     path('story/', views.story, name='story'),
     path('usr/', views.usr_page, name='usr'),
+    path('search/', views.global_search, name='global_search'),
 ]

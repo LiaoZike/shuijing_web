@@ -1,0 +1,320 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title|default:"虎科大 USR 成果・水井村" }}{% endblock %}
+{% load static %}
+
+{% block link_css %}
+<link rel="stylesheet" href="{% static 'css/core/usr.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="usr-page-wrapper">
+    <!-- HERO -->
+    <section class="usr-hero">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-7" data-aos="fade-up">
+                    <span class="usr-hero-label">NFU USR PROJECT</span>
+                    <h1>
+                        國立虎尾科技大學<br>
+                        水井村 USR 社會實踐計畫
+                    </h1>
+                    <p>
+                        「水井村智慧減碳節水三生一體社會實踐計畫」<br>
+                        電機資訊學院與口湖鄉水井村攜手合作，<br>
+                        以智慧科技為偏鄉漁村注入新活力，實現三生共好的永續目標。
+                    </p>
+                    <div class="mt-4">
+                        <a href="#aiot-section" class="usr-btn-primary me-3">探索智慧科技</a>
+                        <a href="https://ossr.nfu.edu.tw/zh_tw/usr/-30060411" target="_blank" class="usr-btn-outline">官方計畫介紹</a>
+                    </div>
+                </div>
+                <div class="col-lg-5 text-center mt-5 mt-lg-0" data-aos="fade-up" data-aos-delay="200">
+                    <div class="usr-hero-info-box">
+                        <p style="font-size:0.8rem;color:var(--c-gold);letter-spacing:0.2em;margin-bottom:12px;font-weight:700;text-transform:uppercase;">
+                            教育部 USR 計畫
+                        </p>
+                        <p style="font-family:var(--font-serif-tc);font-size:1.4rem;
+                                color:var(--c-ink);letter-spacing:0.06em;line-height:1.6;margin:0;font-weight:700;">
+                            大學特色類<br>萌芽型計畫
+                        </p>
+                        <div style="margin:24px 0;height:1px;background:rgba(0,0,0,0.06);"></div>
+                        <p style="font-size:0.95rem;color:var(--c-muted);margin:0;line-height:1.8;">
+                            <strong>實踐場域：</strong>雲林縣水井村<br>
+                            <strong>SDGs：</strong>6・7・11・12・13
+                        </p>
+                    </div>
+        </div>
+        
+        <!-- 創意點綴：USR 三生共好意象 -->
+        <div class="usr-hero-decor">
+            <div class="usr-tech-grid"></div>
+            <div class="usr-blob ecology" title="環境生態"></div>
+            <div class="usr-blob water" title="水資源"></div>
+            <div class="usr-blob harvest" title="豐收與經濟"></div>
+        </div>
+    </section>
+
+    <!-- 計畫目標 -->
+    <section class="usr-section">
+        <div class="container">
+            <div class="text-center mb-5" data-aos="fade-up">
+                <p class="section-subtitle-light">PROJECT GOALS</p>
+                <h2 class="section-title-dark">三大發展目標</h2>
+            </div>
+            <div class="row g-4 d-flex align-items-stretch">
+                <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+                    <div class="modern-card">
+                        <div class="modern-card-body text-center">
+                            <span class="plan-icon">🌿</span>
+                            <h4 class="plan-title">環境生態保護</h4>
+                            <p class="plan-desc">
+                                減少碳排放和水資源浪費，發展淨水技術，
+                                改善當地生態環境，保護水下和陸上生物。
+                                以智慧科技監控水質，守護沿海濕地生態。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+                    <div class="modern-card">
+                        <div class="modern-card-body text-center">
+                            <span class="plan-icon">🌾</span>
+                            <h4 class="plan-title">生產效率提升</h4>
+                            <p class="plan-desc">
+                                發展低成本、低碳和節水的智慧養殖技術，
+                                提高養殖業的生產效率和品質，
+                                促進當地漁農業經濟發展，增加村民收入。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
+                    <div class="modern-card">
+                        <div class="modern-card-body text-center">
+                            <span class="plan-icon">🏮</span>
+                            <h4 class="plan-title">生活品質改善</h4>
+                            <p class="plan-desc">
+                                用藝文提高村民生活品質，透過智慧科技教育
+                                和工藝產品設計技術，提升水井村的品牌形象，
+                                讓更多外地人認識這個美麗的漁村。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 三大推動策略 -->
+    <section class="usr-section-alt">
+        <div class="container">
+            <div class="text-center mb-5" data-aos="fade-up">
+                <p class="section-subtitle-light">STRATEGIES</p>
+                <h2 class="section-title-dark">三大推動策略</h2>
+            </div>
+            <div class="row g-5">
+                <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+                    <div class="strategy-num">01</div>
+                    <h4 class="strategy-title">低碳智慧養殖監控系統</h4>
+                    <ul class="strategy-items">
+                        <li>智慧科技養殖課程推廣</li>
+                        <li>智慧養殖監控系統建置</li>
+                        <li>低碳海洋教育活動</li>
+                        <li>AIoT 感測器水質即時監測</li>
+                        <li>智慧行銷平台建立</li>
+                    </ul>
+                </div>
+                <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+                    <div class="strategy-num">02</div>
+                    <h4 class="strategy-title">水資源循環監控次系統</h4>
+                    <ul class="strategy-items">
+                        <li>綠色農業課程</li>
+                        <li>節水生態監控系統</li>
+                        <li>生物淨水技術研究</li>
+                        <li>水資源循環再利用</li>
+                        <li>智慧灌溉系統導入</li>
+                    </ul>
+                </div>
+                <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
+                    <div class="strategy-num">03</div>
+                    <h4 class="strategy-title">三生共好永續發展平台</h4>
+                    <ul class="strategy-items">
+                        <li>社會實踐課程</li>
+                        <li>永續工藝產品開發</li>
+                        <li>尚虎雲產銷網建立</li>
+                        <li>水井三寶文化推廣</li>
+                        <li>地方創生品牌建立</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- AIoT 智慧科技展示 -->
+    <section id="aiot-section" class="usr-section">
+        <div class="container">
+            <div class="text-center mb-5" data-aos="fade-up">
+                <p class="section-subtitle-light">AIOT TECHNOLOGY</p>
+                <h2 class="section-title-dark">AIoT 智慧科技應用</h2>
+                <p style="color:var(--c-muted);font-size:1.05rem;margin-top:12px;letter-spacing:0.05em;max-width:600px;margin: 0 auto;">
+                    虎科大電機資訊學院將先進科技與人文關懷帶入水井村，落實智慧農漁業並翻轉偏鄉科技教育。
+                </p>
+            </div>
+            <div class="row g-4 d-flex align-items-stretch">
+                {% for project in aiot_projects %}
+                <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:'1' }}00">
+                    <div class="modern-card">
+                        {% if project.image %}
+                        <img src="{{ project.image.url }}" alt="{{ project.title }}" class="modern-card-img">
+                        {% else %}
+                        <div class="modern-card-img-placeholder">{{ project.icon|default:"🔍" }}</div>
+                        {% endif %}
+                        <div class="modern-card-body">
+                            <h4 class="aiot-title">
+                                {% if not project.image %}<span class="me-2">{{ project.icon|default:"📌" }}</span>{% endif %}
+                                {{ project.title }}
+                            </h4>
+                            <p class="aiot-desc">{{ project.description }}</p>
+                            
+                            {% if project.tags %}
+                            <div class="aiot-tags">
+                                {% for tag in project.tag_list %}
+                                    <span class="aiot-tag">{{ tag }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+
+                            {% if project.link_url %}
+                            <div class="mt-auto pt-3 border-top" style="border-color: rgba(0,0,0,0.04)!important">
+                                <a href="{{ project.link_url }}" class="aiot-link">了解更多區塊</a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12 text-center text-muted"><p>目前沒有資料</p></div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <!-- 師生實踐成果 -->
+    <section class="usr-section-alt">
+        <div class="container">
+            <div class="row mb-5">
+                <div class="col-lg-6" data-aos="fade-right">
+                    <p class="section-subtitle-light">ACHIEVEMENTS</p>
+                    <h2 class="section-title-dark">專案里程碑與師生成果</h2>
+                    <p style="color:var(--c-muted);font-size:1.05rem;line-height:1.8;margin-top:16px;max-width:500px;">
+                        虎科大電資學院師生深入水井村，以智慧科技與在地交流，陪伴村民共同打造三生共好的美好生活。每一次工作坊與系統建置，都是永續的腳印。
+                    </p>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    {% for item in achievements %}
+                    <div class="achievement-row" data-aos="fade-up">
+                        {% if item.image %}
+                        <div class="achievement-img-wrapper">
+                            <img src="{{ item.image.url }}" alt="{{ item.title }}" class="achievement-img">
+                        </div>
+                        {% endif %}
+                        <div class="achievement-content">
+                            <p class="achievement-date">
+                                {{ item.date|date:"Y/m/d" }} 
+                                <span class="mx-2 px-2 py-1 bg-light rounded-pill" style="font-size:0.75rem; letter-spacing:0; color:var(--c-ink);">{{ item.category }}</span>
+                            </p>
+                            <h5 class="achievement-title">{{ item.title }}</h5>
+                            <p class="achievement-desc">{{ item.description }}</p>
+                            {% if item.link_url %}
+                            <div class="mt-4">
+                                <a href="{{ item.link_url }}" target="_blank" class="usr-btn-outline" style="padding: 8px 24px; font-size:0.85rem;">詳細報導</a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-5 text-muted"><p>尚無成果紀錄</p></div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 相關影音 -->
+    <section class="usr-section">
+        <div class="container">
+            <div class="text-center mb-5" data-aos="fade-up">
+                <p class="section-subtitle-light">VIDEO RECORDS</p>
+                <h2 class="section-title-dark">影音紀錄</h2>
+                <p style="color:var(--c-muted);margin-bottom:32px;font-size:1rem;" data-aos="fade-up">記錄師生在水井村的實踐過程與成果發表。</p>
+            </div>
+            
+            <div class="usr-video-grid mb-5">
+              {% for video in videos %}
+              <div class="usr-video-item" data-aos="fade-up" data-aos-delay="{{ forloop.counter }}00">
+                  {% if "youtube.com/embed" in video.link_url %}
+                  <iframe src="{{ video.link_url }}" allowfullscreen class="usr-video-embed"></iframe>
+                  {% else %}
+                  <a href="{{ video.link_url }}" target="_blank" style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--c-gold);text-decoration:none;min-height:200px;">{{ video.title }}</a>
+                  {% endif %}
+                  <div class="usr-video-title">{{ video.title }}</div>
+              </div>
+              {% empty %}
+              <div class="usr-video-item" style="display:flex;align-items:center;justify-content:center;color:#666;font-size:14px;background:#e2ddd3;min-height:200px;">
+                  尚無影音資料
+              </div>
+              {% endfor %}
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8 mx-auto text-center" data-aos="fade-up">
+                    <a href="https://ossr.nfu.edu.tw/zh_tw/practices/getVideoList" target="_blank" class="usr-btn-primary">
+                        前往觀看全部影音
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 新聞報導 -->
+    <section class="usr-section-alt">
+      <div class="container">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <p class="section-subtitle-light">NEWS</p>
+            <h2 class="section-title-dark">媒體與校園報導</h2>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-10 mx-auto">
+                <div class="usr-news-list">
+                  <a href="https://ossr.nfu.edu.tw/news.php?pa=getNewsList&category=7" target="_blank" rel="noopener" class="usr-news-item" data-aos="fade-up">
+                    <div class="usr-news-source">虎科大永續處</div>
+                    <div class="usr-news-text">
+                      <div class="usr-news-title">永續處 USR－水井村智慧減碳節水三生一體社會實踐計畫「三寶奇緣」活動圓滿成功</div>
+                      <div class="usr-news-date">虎科大永續發展暨社會責任處</div>
+                    </div>
+                  </a>
+                  <a href="https://www.cheers.com.tw/article/article.action?id=5103756" target="_blank" rel="noopener" class="usr-news-item" data-aos="fade-up" data-aos-delay="100">
+                    <div class="usr-news-source">Cheers</div>
+                    <div class="usr-news-text">
+                      <div class="usr-news-title">返鄉種田也科技感十足？虎尾科大學生用 AI 讓農業變潮流</div>
+                      <div class="usr-news-date">2025 · Cheers 快樂工作人</div>
+                    </div>
+                  </a>
+                  <a href="https://www.nfu.edu.tw/zh/approved-news-nfu/approved-news-nfu-news/11695" target="_blank" rel="noopener" class="usr-news-item" data-aos="fade-up" data-aos-delay="200">
+                    <div class="usr-news-source">虎科大</div>
+                    <div class="usr-news-text">
+                      <div class="usr-news-title">全台大學搶開 AI 系，這間科大卻選開「農業系」！為什麼？</div>
+                      <div class="usr-news-date">2024 · 國立虎尾科技大學</div>
+                    </div>
+                  </a>
+                </div>
+            </div>
+        </div>
+      </div>
+    </section>
+
+{% endblock %}

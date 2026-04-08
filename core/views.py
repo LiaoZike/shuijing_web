@@ -16,6 +16,8 @@ from .models import (
     Activity,
     Participant,
     ContactMessage,
+    AiotProject,
+    UsrAchievement,
 )
 
 import threading
@@ -277,9 +279,21 @@ def story(request):
     return render(request, 'core/story.html')
 
 
+# USR
+
 def usr_page(request):
-    """使用者相關頁面。"""
-    return render(request, 'core/usr.html')
+    context = {
+        'page_title': 'USR 成果・虎科大 × 水井村',
+    }
+    # return render(request, 'usr/usr.html', context)
+    # return render(request, 'usr/usr_home_1.html', context)
+    return render(request, 'usr/usr_home2.html', context)
+
+# def usr_page(request):
+#     """使用者相關頁面。"""
+#     # return render(request, 'core/usr_home2.html')
+#     return render(request, 'core/usr_home_1.html')
+#     # return render(request, 'core/usr.html')
 
 
 def about(request):
@@ -378,4 +392,73 @@ def my_registration_detail(request, pk):
     return render(request, 'core/my_registration_detail.html', {
         'registration': registration,
         'participants': participants,
+    })
+
+# USR
+def usr_page(request):
+    from .models import AiotProject, UsrAchievement, UsrVideo, UsrTeamMember
+
+    aiot_projects = AiotProject.objects.filter(is_active=True).order_by('order')
+    achievements = UsrAchievement.objects.filter(is_active=True).order_by('-date')
+    videos = UsrVideo.objects.filter(is_active=True).order_by('-date')
+    team_members = UsrTeamMember.objects.filter(is_active=True).order_by('order')
+
+    context = {
+        'page_title': 'USR 成果・虎科大 × 水井村',
+        'aiot_projects': aiot_projects,
+        'achievements': achievements,
+        'videos': videos,
+        'team_members': team_members,
+    }
+    return render(request, 'usr/usr.html', context)
+
+
+def global_search(request):
+    """全站搜尋：跨資料表查詢活動、AIoT 計畫、USR 師生成果。"""
+    query = request.GET.get('q', '').strip()
+    today = timezone.now().date()
+
+    activities = []
+    aiot_results = []
+    usr_results = []
+
+    if query:
+        # 搜尋：活動 (Activity)
+        activities = Activity.objects.filter(
+            is_active=True
+        ).filter(
+            Q(title__icontains=query) |
+            Q(title_2__icontains=query) |
+            Q(description__icontains=query) |
+            Q(location__icontains=query) |
+            Q(tags__icontains=query)
+        ).order_by('-date')[:10]
+
+        # 搜尋：AIoT 科技計畫 (AiotProject)
+        aiot_results = AiotProject.objects.filter(
+            is_active=True
+        ).filter(
+            Q(title__icontains=query) |
+            Q(description__icontains=query) |
+            Q(tags__icontains=query)
+        ).order_by('order')[:8]
+
+        # 搜尋：USR 師生實踐成果 (UsrAchievement)
+        usr_results = UsrAchievement.objects.filter(
+            is_active=True
+        ).filter(
+            Q(title__icontains=query) |
+            Q(description__icontains=query) |
+            Q(category__icontains=query)
+        ).order_by('-date')[:8]
+
+    total_count = len(activities) + len(aiot_results) + len(usr_results)
+
+    return render(request, 'core/search_results.html', {
+        'query': query,
+        'activities': activities,
+        'aiot_results': aiot_results,
+        'usr_results': usr_results,
+        'total_count': total_count,
+        'today': today,
     })

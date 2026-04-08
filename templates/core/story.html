@@ -261,25 +261,25 @@ body { background: #F5F0E8; color: #2E1F0F; }
         <div class="row g-0">
             <div class="col-6 col-md-3" data-aos="fade-up" data-aos-delay="100">
                 <div class="stat-item">
-                    <div class="stat-num">300<span class="stat-unit">+</span></div>
-                    <div class="stat-label">年開發歷史</div>
+                    <div class="stat-num" data-count="300">0<span class="stat-unit">+年</span></div>
+                    <div class="stat-label">全台鑿井技術歷史</div>
                 </div>
             </div>
             <div class="col-6 col-md-3" data-aos="fade-up" data-aos-delay="200">
                 <div class="stat-item">
-                    <div class="stat-num">95<span class="stat-unit">%</span></div>
-                    <div class="stat-label">全台鑿井技術源自水井村</div>
+                    <div class="stat-num" data-count="3500">0<span class="stat-unit">公尺</span></div>
+                    <div class="stat-label">距海</div>
                 </div>
             </div>
             <div class="col-6 col-md-3" data-aos="fade-up" data-aos-delay="300">
                 <div class="stat-item">
-                    <div class="stat-num">300<span class="stat-unit">年</span></div>
+                    <div class="stat-num" data-count="300">0<span class="stat-unit">年</span></div>
                     <div class="stat-label">百年雞蛋花樹樹齡</div>
                 </div>
             </div>
             <div class="col-6 col-md-3" data-aos="fade-up" data-aos-delay="400">
                 <div class="stat-item">
-                    <div class="stat-num">40<span class="stat-unit">戶</span></div>
+                    <div class="stat-num" data-count="338">0<span class="stat-unit">戶</span></div>
                     <div class="stat-label">現存村民戶數</div>
                 </div>
             </div>
@@ -539,4 +539,59 @@ body { background: #F5F0E8; color: #2E1F0F; }
     </div>
 </section>
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Stats CountUp Animation ──
+(function() {
+    const counters = document.querySelectorAll('.stat-num[data-count]');
+    if (!counters.length) return;
+
+    const observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const el = entry.target;
+                const target = +el.getAttribute('data-count');
+                const duration = 2000;
+                let startTime = null;
+
+                const step = currentTime => {
+                    if (!startTime) startTime = currentTime;
+                    const progress = Math.min((currentTime - startTime) / duration, 1);
+                    // easeOutQuart curve
+                    const easeProgress = 1 - Math.pow(1 - progress, 4);
+                    const currentVal = Math.floor(easeProgress * target);
+                    
+                    // preserve inner elements if they exist (like units)
+                    if (el.childNodes.length > 0 && el.childNodes[0].nodeType === 3) {
+                        el.childNodes[0].nodeValue = currentVal;
+                    }
+
+                    if (progress < 1) {
+                        window.requestAnimationFrame(step);
+                    } else {
+                        if (el.childNodes.length > 0 && el.childNodes[0].nodeType === 3) {
+                            el.childNodes[0].nodeValue = target;
+                        }
+                    }
+                };
+
+                window.requestAnimationFrame(step);
+                obs.unobserve(el);
+            }
+        });
+    }, { threshold: 0.2 });
+
+    counters.forEach(c => {
+        // Set initial text node
+        if (c.childNodes.length > 0 && c.childNodes[0].nodeType === 3) {
+            c.childNodes[0].nodeValue = '0';
+        } else {
+            c.prepend(document.createTextNode('0'));
+        }
+        observer.observe(c);
+    });
+})();
+</script>
 {% endblock %}

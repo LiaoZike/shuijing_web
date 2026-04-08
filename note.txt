@@ -1,40 +1,31 @@
 source ./.venv/bin/activate
 pip install python-dotenv
 
+# 0.先產生靜態檔案
+python manage.py collectstatic
 
 
+# 1.壓縮檔案
+cd ..
+rm .\shuijing.zip
 
-cd ..   # 到專案資料夾的上一層
-zip -r shuijing.zip shuijing/ \
-    --exclude "shuijing/.venv/*" \
-    --exclude "shuijing/__pycache__/*" \
-    --exclude "shuijing/*/__pycache__/*" \
-    --exclude "shuijing/*.pyc" \
-    --exclude "shuijing/db.sqlite3" \
-    --exclude "shuijing/.env"
+robocopy shuijing_web shuijing_web_clean /E /XD .venv __pycache__ static
+Compress-Archive -Path shuijing_web_clean\* -DestinationPath shuijing.zip -Force
+Remove-Item -Recurse -Force shuijing_web_clean
 
 
-上傳後解壓
+# 2.上傳zip到文件區
+https://www.pythonanywhere.com/user/web41243166/files/home/web41243166
+
+# 3.將檔案解壓
 cd ~
+rm -rf shuijing
 unzip shuijing.zip -d shuijing
 
 
-python manage.py collectstatic
 
 /static/ => /home/web41243166/shuijing/staticfiles/
-
-
 pip freeze > requirements.txt
-
-
-
-
-
-
-
-
-
-
 
 
 

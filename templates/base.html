@@ -48,7 +48,11 @@
             </li>
             <li class="nav-item">
                 <a class="nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}"
-                href="{% url 'about' %}">關 於</a>
+                href="{% url 'about' %}">關於風雲客棧</a>
+            </li>
+             <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'usr' %}active{% endif %}"
+                href="{% url 'usr' %}">USR 成果</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {% if 'event' in request.resolver_match.url_name %}active{% endif %}"
@@ -63,6 +67,26 @@
                 href="{% url 'contact' %}">聯絡我們</a>
             </li>
         </ul>
+            <!-- 搜尋列 -->
+            <div class="d-flex align-items-center gap-2 me-2">
+                <form id="navSearchForm" action="{% url 'global_search' %}" method="GET"
+                      class="d-flex align-items-center nav-search-form"
+                      role="search">
+                    <div class="nav-search-wrap" id="navSearchWrap">
+                        <input type="text" name="q" id="navSearchInput"
+                               class="nav-search-input"
+                               placeholder="搜尋活動、USR成果..."
+                               value="{{ request.GET.q|default:'' }}"
+                               autocomplete="off">
+                    </div>
+                    <button type="button" class="nav-search-btn" id="navSearchToggle" aria-label="搜尋">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="M21 21l-4.35-4.35"></path>
+                        </svg>
+                    </button>
+                </form>
+            </div>
             <!-- 登入 / 用戶 -->
             <div class="d-flex align-items-center gap-3">
                 {% if user.is_authenticated %}
@@ -114,49 +138,56 @@
     <div class="container">
         <div class="row">
             <div class="col-lg-4 mb-4">
-                <div class="footer-brand">風雲客棧數位平台</div>
-                <div class="footer-divider"></div>
-                <p style="font-size:0.83rem;line-height:1.9;color:var(--text-muted);">
-                    位於雲林縣口湖鄉沿海地帶，<br>
-                    一個充滿自然生命力的靜謐村莊。<br>
-                    三生共好・永續共存。
+                <div class="footer-brand" style="font-family: 'Noto Serif TC', serif; font-weight: 700; color: var(--cream); font-size: 1.25rem;">風雲客棧數位平台</div>
+                <div class="footer-divider" style="width: 40px; height: 2px; background: var(--bamboo); margin: 15px 0;"></div>
+                <p style="font-size:0.85rem;line-height:1.9;color:var(--text-muted); max-width: 320px;">
+                    國立虎尾科技大學水井村 USR 社會實踐計畫，「智慧減碳節水・三生一體」社會發展目標。透過智慧科技守護沿海濕地與農業生態，實現永續共榮。
                 </p>
+                <div class="d-flex gap-3 mt-4">
+                    <a href="https://ossr.nfu.edu.tw/" target="_blank" title="USR 官網"><i class="bi bi-globe" style="color: var(--text-muted); font-size: 1.1rem;"></i></a>
+                    <a href="https://www.facebook.com/nfuusr/" target="_blank" title="Facebook"><i class="bi bi-facebook" style="color: var(--text-muted); font-size: 1.1rem;"></i></a>
+                    <a href="{% url 'contact' %}" title="聯絡我們"><i class="bi bi-envelope-fill" style="color: var(--text-muted); font-size: 1.1rem;"></i></a>
+                </div>
             </div>
             <div class="col-6 col-lg-2 mb-4">
-                <p style="color:var(--cream-dark);font-size:0.8rem;letter-spacing:0.15em;margin-bottom:14px;">生 產</p>
+                <p style="color:var(--cream-dark);font-size:0.8rem;letter-spacing:0.15em;margin-bottom:18px; font-weight: 600;">USR 成果</p>
                 <ul class="list-unstyled">
-                    <li class="mb-2"><a href="#">在地農產</a></li>
-                    <li class="mb-2"><a href="#">特色商品</a></li>
-                    <li class="mb-2"><a href="#">農業體驗</a></li>
+                    <li class="mb-2"><a href="{% url 'usr' %}#aiot-section" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">AIoT 智慧計畫</a></li>
+                    <li class="mb-2"><a href="{% url 'usr' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">師生成果紀錄</a></li>
+                    <li class="mb-2"><a href="{% url 'usr' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">影音紀錄中心</a></li>
                 </ul>
             </div>
             <div class="col-6 col-lg-2 mb-4">
-                <p style="color:var(--cream-dark);font-size:0.8rem;letter-spacing:0.15em;margin-bottom:14px;">生 態</p>
+                <p style="color:var(--cream-dark);font-size:0.8rem;letter-spacing:0.15em;margin-bottom:18px; font-weight: 600;">探索水井</p>
                 <ul class="list-unstyled">
-                    <li class="mb-2"><a href="#">沿海濕地</a></li>
-                    <li class="mb-2"><a href="#">候鳥生態</a></li>
-                    <li class="mb-2"><a href="#">生態相簿</a></li>
+                    <li class="mb-2"><a href="{% url 'guide:home' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">互動導覽地圖</a></li>
+                    <li class="mb-2"><a href="{% url 'event_list' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">近期活動詳情</a></li>
+                    <li class="mb-2"><a href="{% url 'about' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">關於風雲客棧</a></li>
                 </ul>
             </div>
             <div class="col-6 col-lg-2 mb-4">
-                <p style="color:var(--cream-dark);font-size:0.8rem;letter-spacing:0.15em;margin-bottom:14px;">生 活</p>
+                <p style="color:var(--cream-dark);font-size:0.8rem;letter-spacing:0.15em;margin-bottom:18px; font-weight: 600;">帳戶服務</p>
                 <ul class="list-unstyled">
-                    <li class="mb-2"><a href="#">社區活動</a></li>
-                    <li class="mb-2"><a href="#">文化傳承</a></li>
-                    <li class="mb-2"><a href="#">生活互動</a></li>
+                    {% if user.is_authenticated %}
+                        <li class="mb-2"><a href="{% url 'my_profile' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">個人基本資料</a></li>
+                        <li class="mb-2"><a href="{% url 'my_registrations' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">活動報名紀錄</a></li>
+                    {% else %}
+                        <li class="mb-2"><a href="{% url 'login_portal' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">登入/註冊系統</a></li>
+                    {% endif %}
+                    <li class="mb-2"><a href="{% url 'contact' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">聯絡我們</a></li>
                 </ul>
             </div>
             <div class="col-6 col-lg-2 mb-4">
-                <p style="color:var(--cream-dark);font-size:0.8rem;letter-spacing:0.15em;margin-bottom:14px;">關 於</p>
+                <p style="color:var(--cream-dark);font-size:0.8rem;letter-spacing:0.15em;margin-bottom:18px; font-weight: 600;">官方連結</p>
                 <ul class="list-unstyled">
-                    <li class="mb-2"><a href="#">村莊介紹</a></li>
-                    <li class="mb-2"><a href="#">聯絡我們</a></li>
+                    <li class="mb-2"><a href="https://www.nfu.edu.tw/" target="_blank" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">國立虎尾科大</a></li>
+                    <li class="mb-2"><a href="https://ossr.nfu.edu.tw/" target="_blank" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">虎科大永續處</a></li>
                 </ul>
             </div>
         </div>
 
-        <div class="footer-bottom pt-3 mt-3 text-center">
-            © 2025 水井村三生共好平台・雲林縣口湖鄉・Liao-Zike
+        <div class="footer-bottom pt-4 mt-4 text-center" style="border-top: 1px solid rgba(139,105,20,0.15); color: var(--text-muted); font-size: 0.8rem; letter-spacing: 0.05em;">
+            © 2025 ALL RIGHTS RESERVED. 國立虎尾科技大學 USR 水井村社會實踐計畫團隊・Liao-Zike
         </div>
     </div>
 </footer>
@@ -172,6 +203,20 @@
         const nav = document.getElementById('mainNav');
         nav.classList.toggle('scrolled', window.scrollY > 50);
     });
+
+    // ── 手機版輪播自訂指示點同步 ──
+    const heroCarousel = document.getElementById('heroCarousel');
+    if (heroCarousel) {
+        heroCarousel.addEventListener('slide.bs.carousel', (e) => {
+            // 更新所有 carousel-item 內的 mobile-dot
+            heroCarousel.querySelectorAll('.carousel-item').forEach((item, idx) => {
+                item.querySelectorAll('.mobile-dot').forEach((dot, dotIdx) => {
+                    dot.classList.toggle('active', dotIdx === e.to);
+                });
+            });
+        });
+    }
+
     // Toast 自動消失
     document.querySelectorAll('.site-toast').forEach((toast, i) => {
         setTimeout(() => {
@@ -181,6 +226,48 @@
             setTimeout(() => toast.remove(), 400);
         }, 3500 + i * 500);  // 多個 toast 錯開消失
     });
+
+    // ── 全站搜尋列切換 ──
+    const searchToggle = document.getElementById('navSearchToggle');
+    const searchWrap   = document.getElementById('navSearchWrap');
+    const searchInput  = document.getElementById('navSearchInput');
+    const searchForm   = document.getElementById('navSearchForm');
+
+    if (searchToggle) {
+        searchToggle.addEventListener('click', () => {
+            const isOpen = searchWrap.classList.toggle('open');
+            if (isOpen) {
+                searchInput.focus();
+            } else {
+                searchInput.value = '';
+            }
+        });
+
+        // Enter 鍵送出表單
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                if (searchInput.value.trim()) {
+                    searchForm.submit();
+                }
+            }
+            if (e.key === 'Escape') {
+                searchWrap.classList.remove('open');
+                searchInput.value = '';
+            }
+        });
+
+        // 點外部關閉
+        document.addEventListener('click', (e) => {
+            if (!searchForm.contains(e.target)) {
+                searchWrap.classList.remove('open');
+            }
+        });
+
+        // 如果是搜尋結果頁，自動展開
+        if (searchInput.value) {
+            searchWrap.classList.add('open');
+        }
+    }
 </script>
 
 {% block extra_js %}{% endblock %}

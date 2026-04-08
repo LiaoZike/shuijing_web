@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import HeroSlide, ServiceItem, Activity, Registration, Participant, ContactMessage
+from .models import (HeroSlide, ServiceItem, Activity, Registration, Participant, ContactMessage,
+                     AiotProject, UsrAchievement, UsrVideo, UsrTeamMember)
 
 #################################################
 # Admin:首頁輪播資料管理
@@ -81,3 +82,28 @@ class ContactMessageAdmin(admin.ModelAdmin):
     search_fields      = ['name', 'email', 'subject']
     readonly_fields    = ['name', 'email', 'phone', 'subject', 'message', 'created_at']
     ordering           = ['-created_at']
+
+@admin.register(AiotProject)
+class AiotProjectAdmin(admin.ModelAdmin):
+    list_display = ['order', 'icon', 'title', 'tags', 'is_active']
+    list_display_links = ['title']
+    list_editable = ['order', 'is_active']
+    search_fields = ['title', 'tags']
+
+@admin.register(UsrAchievement)
+class UsrAchievementAdmin(admin.ModelAdmin):
+    list_display = ['date', 'category', 'title', 'is_active']
+    list_filter = ['category', 'is_active']
+    search_fields = ['title', 'description']
+
+@admin.register(UsrVideo)
+class UsrVideoAdmin(admin.ModelAdmin):
+    list_display = ['date', 'title', 'is_active']
+    search_fields = ['title']
+
+@admin.register(UsrTeamMember)
+class UsrTeamMemberAdmin(admin.ModelAdmin):
+    list_display = ['order', 'name', 'role', 'is_active']
+    list_display_links = ['name']
+    list_editable = ['order', 'is_active']
+    search_fields = ['name', 'role', 'description']

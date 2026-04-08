@@ -31,7 +31,7 @@
 
         <div class="guide-detail-actions">
           {% if ar_assets %}
-          <a href="{% url 'guide:ar_treasures' spot.slug %}" class="guide-btn-primary guide-btn-ar" target="_blank">▶ 啟動 AR 體驗</a>
+          <a href="{% url 'guide:ar_treasures' spot.slug %}" class="guide-btn-primary guide-btn-ar">▶ 啟動 AR 體驗</a>
           {% endif %}
           {% if spot.maps_url %}
             {% if "maps.app" in spot.maps_url %}
@@ -144,7 +144,7 @@
 
                 <div class="guide-ar-actions">
                   {% if asset.target_file and asset.video_file %}
-                  <a href="{% url 'guide:ar_treasures' spot.slug %}" class="guide-btn-primary" target="_blank">▶ 啟動 AR 體驗</a>
+                  <a href="{% url 'guide:ar_treasures' spot.slug %}" class="guide-btn-primary">▶ 啟動 AR 體驗</a>
                   {% endif %}
                   {% if asset.video_file %}
                   <a href="{{ asset.video_file.url }}" target="_blank" class="guide-btn-secondary">影片檔</a>
@@ -187,7 +187,7 @@
 
             <div class="guide-info-actions">
               {% if ar_assets %}
-              <a href="{% url 'guide:ar_treasures' spot.slug %}" class="guide-btn-primary" target="_blank">▶ 啟動 AR 體驗</a>
+              <a href="{% url 'guide:ar_treasures' spot.slug %}" class="guide-btn-primary">▶ 啟動 AR 體驗</a>
               {% endif %}
               {% if spot.maps_url %}
               <a href="{{ spot.maps_url }}" target="_blank" rel="noopener" class="guide-btn-secondary">📍 Google Maps</a>
@@ -202,19 +202,24 @@
   </section>
 </div>
 <!-- Lightbox -->
-<!-- Lightbox -->
-<div class="guide-lightbox" id="guide-lightbox">
-    <div class="guide-lightbox-toolbar">
-        <span class="guide-lightbox-caption-text" id="lightbox-caption"></span>
-        <div class="guide-lightbox-controls">
-            <button onclick="zoomIn()">＋</button>
-            <button onclick="zoomOut()">－</button>
-            <button onclick="resetTransform()">⟳</button>
-            <button onclick="closeLightbox()">✕</button>
+<div id="guide-lightbox" class="guide-lightbox">
+    <div class="lightbox-toolbar" onclick="event.stopPropagation()">
+        <div class="lightbox-title" id="lightbox-caption">圖片預覽</div>
+
+        <div class="lightbox-actions">
+            <button type="button" onclick="zoomIn()" aria-label="放大">+</button>
+            <button type="button" onclick="zoomOut()" aria-label="縮小">−</button>
+            <button type="button" onclick="resetTransform()" aria-label="重設">⟳</button>
+            <button type="button" onclick="closeLightbox()" aria-label="關閉">×</button>
         </div>
     </div>
-    <div class="guide-lightbox-stage" id="lightbox-stage">
-        <img id="lightbox-img" src="" alt="">
+
+    <div id="lightbox-stage" class="lightbox-stage">
+        <div id="lightbox-viewport" class="lightbox-viewport">
+            <div id="lightbox-media" class="lightbox-media">
+                <img id="lightbox-img" src="" alt="預覽圖片">
+            </div>
+        </div>
     </div>
 </div>
 {% endblock%}

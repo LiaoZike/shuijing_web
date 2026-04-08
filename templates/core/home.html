@@ -15,70 +15,219 @@
 <div id="heroCarousel" class="carousel slide hero-carousel" data-bs-ride="carousel" data-bs-interval="4000">
     <div class="carousel-indicators">
         {% for slide in slides %}
-        <button type="button" data-bs-target="#heroCarousel"
+        <button type="button"
+                data-bs-target="#heroCarousel"
                 data-bs-slide-to="{{ forloop.counter0 }}"
-                {% if forloop.first %}class="active"{% endif %}></button>
+                {% if forloop.first %}class="active"{% endif %}
+                {% if forloop.first %}aria-current="true"{% endif %}
+                aria-label="Slide {{ forloop.counter }}">
+        </button>
         {% endfor %}
     </div>
+
     <div class="carousel-inner">
         {% for slide in slides %}
         <div class="carousel-item {% if forloop.first %}active{% endif %}">
-            <div class="hero-bg" style="background-image: url('{{ slide.image.url }}');">
+            <!-- 桌面版：圖片 + 文字疊加在一起 -->
+            <div class="hero-bg d-none d-md-block" style="background-image: url('{{ slide.image.url }}');">
                 <div class="hero-caption">
-                    <div class="tag">{{ slide.get_category_display|upper }}</div>
-                    <h1>{{ slide.title }}</h1>
-                    <p>{{ slide.subtitle }}</p>
+                    <h1 class="hero-title">{{ slide.title }}</h1>
+                    {% if slide.description %}
                     <p class="hero-description">{{ slide.description }}</p>
+                    {% endif %}
                 </div>
                 {% if slide.cc_credit %}
                 <small class="cc_sentence">{{ slide.cc_credit }}</small>
                 {% endif %}
             </div>
+
+            <!-- 手機版：圖片獨立一行，文字在下方獨立區塊 -->
+            <div class="d-md-none">
+                <div class="mobile-slide-img"
+                     style="background-image: url('{{ slide.image.url }}');"
+                     role="img" aria-label="{{ slide.title }}">
+                    {% if slide.cc_credit %}
+                    <small class="cc_sentence">{{ slide.cc_credit }}</small>
+                    {% endif %}
+                    <!-- 手機版自訂 indicators （嵌入圖片內） -->
+                    <div class="mobile-indicators d-flex justify-content-center">
+                        {% for s in slides %}
+                        <span class="mobile-dot {% if forloop.counter0 == forloop.parentloop.counter0 %}active{% endif %}"></span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="mobile-slide-caption">
+                    <h2 class="mobile-slide-title">{{ slide.title }}</h2>
+                    {% if slide.description %}
+                    <p class="mobile-slide-desc">{{ slide.description }}</p>
+                    {% endif %}
+                </div>
+            </div>
         </div>
         {% endfor %}
     </div>
-    <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
-        <span class="carousel-control-prev-icon"></span>
+
+    <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev" aria-label="上一張">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
     </button>
-    <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
-        <span class="carousel-control-next-icon"></span>
+    <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next" aria-label="下一張">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
     </button>
 </div>
 
-<div class="scroll-down" onclick="document.querySelector('.sansheng-section').scrollIntoView({behavior:'smooth'})">
-    ↓ 探索水井村
+<div class="scroll-down d-none d-md-block" onclick="document.querySelector('.sansheng-section').scrollIntoView({behavior:'smooth'})">
+    ↓ 探索風雲客棧
 </div>
+
 
 
 <!-- ===================== 服務項目 ===================== -->
 <section class="services-section">
     <div class="container">
-        <div class="text-center mb-5" data-aos="fade-up">
-            <div class="divider-bamboo"></div>
-            <p class="section-subtitle mb-3">OUR SERVICES</p>
-            <h2 class="section-title">我們能為你做什麼</h2>
-        </div>
-        <div class="row g-4">
-            {% for service in services %}
-            <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="{{ forloop.counter }}00">
-                <div class="service-card {% if service.is_featured %}service-card-featured{% endif %}">
-                    {% if service.badge_text %}
-                    <div class="service-badge">{{ service.badge_text }}</div>
-                    {% endif %}
-                    <div class="service-icon">{{ service.icon }}</div>
-                    <div class="service-num">{{ forloop.counter|stringformat:"02d" }}</div>
-                    <h4 class="service-title">{{ service.title }}</h4>
-                    <p class="service-desc">{{ service.description }}</p>
-                    <a href="{{ service.link_url }}" class="service-link">{{ service.link_text }} →</a>
+        <div class="services-header" data-aos="fade-up">
+            <div class="services-header-left">
+                <div class="divider-bamboo"></div>
+                <p class="section-subtitle mt-3">OUR SERVICES</p>
+                <h2 class="section-title">我們能為你做什麼</h2>
+            </div>
+            <div class="services-header-right" data-aos="fade-left" data-aos-delay="150">
+                <p class="services-intro-text">
+                    風雲客棧與虎科大 USR 計畫攜手，<br>
+                    深耕水井村・匯聚科技與人文
+                </p>
+                <div class="usr-pill-badge">
+                    <span class="usr-pill-dot"></span>
+                    NFU × 水井村 USR 計畫
                 </div>
             </div>
-            {% empty %}
-            <p style="color:var(--text-muted);text-align:center;">服務項目建置中，敬請期待。</p>
-            {% endfor %}
         </div>
+        <!-- Bento Grid -->
+        <div class="services-bento">
+
+            <!-- Hero Card: 互動導覽 -->
+            <div class="svc-hero-card" data-aos="fade-right" data-aos-delay="150">
+                <div class="svc-hero-bg"></div>
+                <div class="svc-hero-badge">熱門推薦</div>
+                <div class="svc-hero-content">
+                    <div class="svc-hero-num">02</div>
+                    <div class="svc-hero-icon">
+                        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M24 4C15.163 4 8 11.163 8 20C8 31 24 44 24 44C24 44 40 31 40 20C40 11.163 32.837 4 24 4Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>
+                            <circle cx="24" cy="20" r="5" stroke="currentColor" stroke-width="2.2"/>
+                        </svg>
+                    </div>
+                    <h3 class="svc-hero-title">互動導覽地圖</h3>
+                    <p class="svc-hero-desc">透過數位互動地圖探索水井村的隱藏角落，認識在地三寶、文化起源與特色景點。</p>
+                    <a href="{% url 'guide:home' %}" class="svc-hero-link">
+                        <span>開始探索</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M5 12H19M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </a>
+                </div>
+                <div class="svc-hero-deco-ring"></div>
+                <div class="svc-hero-deco-line"></div>
+            </div>
+
+            <!-- Right column: 3 stacked cards -->
+            <div class="svc-stack">
+
+                <!-- USR 成果 -->
+                <a href="{% url 'usr' %}" class="svc-card svc-card--usr" data-aos="fade-left" data-aos-delay="200">
+                    <div class="svc-card-left">
+                        <div class="svc-card-num">01</div>
+                        <div class="svc-card-icon svc-card-icon--usr">
+                            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M8 34L24 10L40 34H8Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>
+                                <path d="M16 34v4M32 34v4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                                <circle cx="24" cy="8" r="3" stroke="currentColor" stroke-width="2"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="svc-card-body">
+                        <div class="svc-card-tag">University Social Responsibility</div>
+                        <h4 class="svc-card-title">USR 成果展示</h4>
+                        <p class="svc-card-desc">深入了解虎科大師生在水井村的社會實踐紀錄，包含 AIoT 科技應用與在地服務成果。</p>
+                    </div>
+                    <span class="svc-card-link">了解更多 →</span>
+                </a>
+
+                <!-- 近期活動 -->
+                <a href="{% url 'event_list' %}" class="svc-card svc-card--events" data-aos="fade-left" data-aos-delay="280">
+                    <div class="svc-card-left">
+                        <div class="svc-card-num">03</div>
+                        <div class="svc-card-icon svc-card-icon--events">
+                            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="8" y="12" width="32" height="28" rx="3" stroke="currentColor" stroke-width="2.2"/>
+                                <path d="M8 20H40" stroke="currentColor" stroke-width="2.2"/>
+                                <path d="M16 8V14M32 8V14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                                <circle cx="18" cy="29" r="2" fill="currentColor"/>
+                                <circle cx="24" cy="29" r="2" fill="currentColor"/>
+                                <circle cx="30" cy="29" r="2" fill="currentColor"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="svc-card-body">
+                        <div class="svc-card-tag">Community Events</div>
+                        <h4 class="svc-card-title">近期活動報名</h4>
+                        <p class="svc-card-desc">歡迎參加社區工作坊、文化體驗與各類特色活動，與我們共同創造美好回憶。</p>
+                    </div>
+                    <span class="svc-card-link">查看活動 →</span>
+                </a>
+
+                <!-- 地方故事 -->
+                <a href="{% url 'story' %}" class="svc-card svc-card--story" data-aos="fade-left" data-aos-delay="360">
+                    <div class="svc-card-left">
+                        <div class="svc-card-num">04</div>
+                        <div class="svc-card-icon svc-card-icon--story">
+                            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 6H36C37.1 6 38 6.9 38 8V42L24 36L10 42V8C10 6.9 10.9 6 12 6Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>
+                                <path d="M18 18H30M18 24H26" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="svc-card-body">
+                        <div class="svc-card-tag">Local Heritage Stories</div>
+                        <h4 class="svc-card-title">地方故事探索</h4>
+                        <p class="svc-card-desc">細細品味水井村的歷史底蘊，從長輩口耳相傳的故事中感受沿海漁村的深厚生命力。</p>
+                    </div>
+                    <span class="svc-card-link">閱讀故事 →</span>
+                </a>
+
+            </div><!-- /.svc-stack -->
+        </div><!-- /.services-bento -->
     </div>
 </section>
 
+
+<!-- ===================== USR STATS BAR ===================== -->
+<section class="stats-bar-section">
+    <div class="container">
+        <div class="stats-bar-grid">
+            <div class="stat-item" data-aos="fade-up" data-aos-delay="0">
+                <div class="stat-num" data-count="3">0</div>
+                <div class="stat-unit">年</div>
+                <div class="stat-label">USR 深耕計畫</div>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item" data-aos="fade-up" data-aos-delay="80">
+                <div class="stat-num" data-count="150">0</div>
+                <div class="stat-unit">+</div>
+                <div class="stat-label">師生共同參與</div>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item" data-aos="fade-up" data-aos-delay="160">
+                <div class="stat-num" data-count="20">0</div>
+                <div class="stat-unit">+</div>
+                <div class="stat-label">在地服務項目</div>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item" data-aos="fade-up" data-aos-delay="240">
+                <div class="stat-num" data-count="1">0</div>
+                <div class="stat-unit"></div>
+                <div class="stat-label">水井村數位路徑</div>
+            </div>
+        </div>
+    </div>
+</section>
 
 <!-- ===================== 近期活動 ===================== -->
 <section class="events-section">
@@ -96,7 +245,7 @@
             </div>
             <div class="col-lg-8" data-aos="fade-left">
                 {% for activity in activities %}
-                <div class="event-card {% if activity.is_past %}event-past{% endif %}">
+                <a href="{% url 'event_detail' activity.pk %}" class="event-card {% if activity.is_past %}event-past{% endif %}" style="text-decoration:none; color:inherit; display:flex;">
                     <div class="event-date">
                         <div class="day">{{ activity.date|date:"d" }}</div>
                         <div class="month">{{ activity.date|date:"M"|upper }}</div>
@@ -120,18 +269,11 @@
                         </p>
                     </div>
 
-                    {% if activity.link_url %}
-                        <a href="{{ activity.link_url }}" target="_blank" rel="noreferrer" class="event-link" style="margin-left:auto;">
-                            <span class="arrow-text">查看</span>
-                            <i class="bi bi-arrow-right" style="color:var(--bamboo-light);"></i>
-                        </a>
-                    {% else %}
-                        <a href="{% url 'event_detail' activity.pk %}" class="event-link" style="margin-left:auto;">
-                            <span class="arrow-text">查看</span>
-                            <i class="bi bi-arrow-right" style="color:var(--bamboo-light);"></i>
-                        </a>
-                    {% endif %}
-                </div>
+                    <div class="event-link" style="margin-left:auto;">
+                        <span class="arrow-text">查看</span>
+                        <i class="bi bi-arrow-right" style="color:var(--bamboo-light);"></i>
+                    </div>
+                </a>
                 {% empty %}
                 <p style="color:var(--text-muted);font-size:0.85rem;padding-top:24px;">近期暫無活動，敬請期待。</p>
                 {% endfor %}
@@ -152,8 +294,73 @@
 <!-- ===================== 視差區塊 ===================== -->
 <section class="parallax-section">
     <div class="parallax-content container" data-aos="fade-up">
+        <div class="parallax-tag">SHUIJING VILLAGE</div>
         <blockquote>「這片土地，靜靜守護著世代的記憶」</blockquote>
         <cite>— 雲林縣口湖鄉・水井村</cite>
+    </div>
+</section>
+
+<!-- ===================== EFFORTS NEWS STRIP ===================== -->
+<section class="efforts-news-strip">
+    <div class="container">
+        <div class="efforts-header text-center" data-aos="fade-up">
+            <p class="section-subtitle">LATEST EFFORTS</p>
+            <h2 class="section-title">在地學生與師長的努力</h2>
+            <p style="color:var(--text-muted);font-size:0.88rem;margin-top:12px;letter-spacing:0.1em;">記錄每一點一滴的真實成果與地方軌跡</p>
+        </div>
+        
+        <div class="row g-4 pt-2">
+            <!-- News Card 1 -->
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+                <a href="{% url 'story' %}" class="news-img-card">
+                    <div class="news-img-wrap">
+                        <i class="bi bi-image" style="opacity:0.3; font-size:3rem;"></i>
+                    </div>
+                    <div class="news-card-body">
+                        <span class="news-card-tag">師生表現</span>
+                        <h4 class="news-card-title">卓越表現：許永和院長與師生團隊獲獎連連</h4>
+                        <p class="news-card-desc">許永和院長帶領的 USR 團隊不僅在地方服務上有成，其研究成果亦獲得多項國內外創新獎項肯定。學生團隊在「海洋科學節」及各大發明展中展示的系統，展現虎科大師生理論與實務並重的優點，也讓世界看見台灣智慧農業的實力。</p>
+                        <div class="news-card-more">繼續閱讀 <i class="bi bi-chevron-right"></i></div>
+                    </div>
+                </a>
+            </div>
+            
+            <!-- News Card 2 -->
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+                <a href="{% url 'story' %}" class="news-img-card">
+                    <div class="news-img-wrap">
+                        <i class="bi bi-image" style="opacity:0.3; font-size:3rem;"></i>
+                    </div>
+                    <div class="news-card-body">
+                        <span class="news-card-tag">USR成果</span>
+                        <h4 class="news-card-title">虎科大 USR 計畫：深耕在地，鏈結國際</h4>
+                        <p class="news-card-desc">推動「水井村智慧減碳節水三生一體社會實踐計畫」，不只是技術導入更是人心的鏈結。師生走入村落了解真實需求，從水質檢測到智慧行銷，將實驗室成果應用於魚塭農田，實現真正的社會價值。</p>
+                        <div class="news-card-more">繼續閱讀 <i class="bi bi-chevron-right"></i></div>
+                    </div>
+                </a>
+            </div>
+            
+            <!-- News Card 3 -->
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
+                <a href="{% url 'story' %}" class="news-img-card">
+                    <div class="news-img-wrap">
+                        <i class="bi bi-image" style="opacity:0.3; font-size:3rem;"></i>
+                    </div>
+                    <div class="news-card-body">
+                        <span class="news-card-tag">智慧科技</span>
+                        <h4 class="news-card-title">水井村：從鹽分地帶到智慧聚落的變遷</h4>
+                        <p class="news-card-desc">早期居民依賴傳統漁業維生，在氣候變遷下面臨挑戰。近年導入「三生共好」觀念與智慧養殖技術，不僅降低勞動強度，更加倍提升產品價值。每一口魚塭背後，都是對家鄉土地的深情。</p>
+                        <div class="news-card-more">繼續閱讀 <i class="bi bi-chevron-right"></i></div>
+                    </div>
+                </a>
+            </div>
+        </div>
+        
+        <div class="text-center mt-5" data-aos="fade-up">
+            <a href="{% url 'usr' %}" class="btn-login" style="font-size:0.82rem;padding:10px 32px;letter-spacing:0.15em; background: transparent; border: 1px solid #C4A052; color: #8B6914;">
+                查看所有成果紀錄 →
+            </a>
+        </div>
     </div>
 </section>
 
@@ -207,73 +414,67 @@
                         <span class="tag-pill">生活互動</span>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-    <div class="container">
-        <div class="guide-entry-box text-center">
-        <p class="guide-entry-kicker mb-2">SHUIJING INTERACTIVE GUIDE</p>
-        <h2 class="guide-entry-title mb-3">走進水井村的地方故事</h2>
-        <p class="guide-entry-text mb-4">
-            透過互動導覽認識水井村三寶、光雕牆、聚落起源與在地文化，
-            後續也將結合 AR 掃描體驗，讓地方故事更容易被看見。
-        </p>
-        <a href="{% url 'guide:home' %}" class="btn guide-entry-btn">
-            前往互動導覽
-        </a>
         </div>
     </div>
 </section>
 
-<!-- ===================== 相簿 GRID ===================== -->
-<section class="gallery-section">
-    <div class="container-fluid px-4">
-        <div class="text-center mb-5" data-aos="fade-up">
-            <div class="divider-bamboo"></div>
-            <p class="section-subtitle mb-3">GALLERY</p>
-            <h2 class="section-title">水井村印象</h2>
-        </div>
-        <div class="gallery-grid" data-aos="fade-up">
-            <div class="gallery-item gi-1">
-                <img src="https://images.unsplash.com/photo-1500964757637-c85e8a162699?w=800" alt="農田風光">
-                <div class="overlay"><span class="gallery-label">農田風光</span></div>
-            </div>
-            <div class="gallery-item gi-2">
-                <img src="https://images.unsplash.com/photo-1504701954957-2010ec3bcec1?w=600" alt="候鳥生態">
-                <div class="overlay"><span class="gallery-label">候鳥生態</span></div>
-            </div>
-            <div class="gallery-item gi-3">
-                <img src="https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=600" alt="沿海濕地">
-                <div class="overlay"><span class="gallery-label">沿海濕地</span></div>
-            </div>
-            <div class="gallery-item gi-4">
-                <img src="https://images.unsplash.com/photo-1470770841072-f978cf4d019e?w=600" alt="社區活動">
-                <div class="overlay"><span class="gallery-label">社區活動</span></div>
-            </div>
-            <div class="gallery-item gi-5">
-                <img src="https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=600" alt="在地生活">
-                <div class="overlay"><span class="gallery-label">在地生活</span></div>
-            </div>
-        </div>
-    </div>
-</section>
 
 <!-- ===================== CTA ===================== -->
 <section class="cta-section">
-    <div class="container" data-aos="fade-up">
+    <div class="cta-bg-overlay"></div>
+    <div class="container cta-inner" data-aos="fade-up">
+        <div class="cta-location-tag">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="currentColor"/></svg>
+            雲林縣口湖鄉水井村
+        </div>
         <p class="section-subtitle mb-3">COME VISIT US</p>
-        <h2 class="section-title mb-4">來水井村走走</h2>
-        <p style="color:var(--text-muted);font-size:0.9rem;letter-spacing:0.12em;margin-bottom:36px;">
-            雲林縣口湖鄉・感受台灣鄉村最真實的三生共好
+        <h2 class="section-title mb-3 cta-title">來水井村走走</h2>
+        <p class="cta-desc">
+            感受台灣鄉村最真實的三生共好，<br class="d-none d-md-block">
+            與我們一起守護這片美麗的土地。
         </p>
-        {% if user.is_authenticated %}
-            <a href="{% url 'event_list' %}" class="btn-login" style="font-size:0.9rem;padding:12px 36px;">瀏覽活動</a>
-        {% else %}
-            <a href="{% url 'login_portal' %}?next=/" class="btn-login" style="font-size:0.9rem;padding:12px 36px;">
-                <i class="bi bi-google me-2"></i>登入加入我們
-            </a>
-        {% endif %}
+        <div class="cta-actions">
+            {% if user.is_authenticated %}
+                <a href="{% url 'event_list' %}" class="cta-btn-primary">瀏覽活動 →</a>
+                <a href="{% url 'story' %}" class="cta-btn-secondary">認識水井村</a>
+            {% else %}
+                <a href="{% url 'login_portal' %}?next=/" class="cta-btn-primary">
+                    <i class="bi bi-google me-2"></i>登入加入我們
+                </a>
+                <a href="{% url 'story' %}" class="cta-btn-secondary">認識水井村</a>
+            {% endif %}
+        </div>
     </div>
 </section>
+
+{% block extra_js %}
+<script>
+// ── Stats CountUp Animation ──
+(function() {
+    const counters = document.querySelectorAll('.stat-num[data-count]');
+    if (!counters.length) return;
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (!entry.isIntersecting) return;
+            const el = entry.target;
+            const target = parseInt(el.dataset.count, 10);
+            const duration = 1400;
+            const start = performance.now();
+            function update(now) {
+                const elapsed = now - start;
+                const progress = Math.min(elapsed / duration, 1);
+                const ease = 1 - Math.pow(1 - progress, 3);
+                el.textContent = Math.floor(ease * target);
+                if (progress < 1) requestAnimationFrame(update);
+                else el.textContent = target;
+            }
+            requestAnimationFrame(update);
+            observer.unobserve(el);
+        });
+    }, { threshold: 0.4 });
+    counters.forEach(el => observer.observe(el));
+})();
+</script>
+{% endblock %}
 
 {% endblock %}

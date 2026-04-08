@@ -793,112 +793,171 @@
     color: var(--guide-muted);
     letter-spacing: 0.08em;
 }
-
 .guide-lightbox {
-    display: none;
     position: fixed;
     inset: 0;
     z-index: 9999;
-    background: rgba(0,0,0,0.88);
+    display: none;
+    background: rgba(0, 0, 0, 0.88);
+    backdrop-filter: blur(2px);
+}
+
+.guide-lightbox.open {
+    display: block;
+}
+
+.lightbox-toolbar {
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(96vw, 1200px);
+    display: flex;
     align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 16px;
-    cursor: zoom-out;
+    justify-content: space-between;
+    gap: 12px;
+    z-index: 10;
+    color: #fff;
 }
 
-.guide-lightbox.open { display: flex; }
-
-.guide-lightbox img {
-    max-width: 90vw;
-    max-height: 80vh;
-    object-fit: contain;
-    border: 1px solid rgba(196,160,82,0.3);
+.lightbox-title {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 65%;
 }
 
-.guide-lightbox-caption {
-    color: rgba(255,255,255,0.6);
-    font-size: 0.82rem;
-    letter-spacing: 0.12em;
+.lightbox-actions {
+    display: flex;
+    gap: 8px;
 }
 
-.guide-lightbox-close {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    color: rgba(255,255,255,0.6);
-    font-size: 1.5rem;
+.lightbox-actions button {
+    width: 42px;
+    height: 42px;
+    border: none;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+    font-size: 22px;
     cursor: pointer;
-    line-height: 1;
-    transition: color 0.2s;
+    transition: background 0.2s ease, transform 0.2s ease;
 }
 
-.guide-lightbox-close:hover { color: white; }
+.lightbox-actions button:hover {
+    background: rgba(255, 255, 255, 0.24);
+    transform: translateY(-1px);
+}
 
+.lightbox-stage {
+    position: absolute;
+    inset: 70px 20px 20px 20px;
+    overflow: hidden;
+}
 
+.lightbox-viewport {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    touch-action: none;
+    user-select: none;
+}
 
-.guide-lightbox {
+.lightbox-media {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform-origin: center center;
+    will-change: transform;
+}
+
+#lightbox-img {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: none;
+    max-height: none;
+    user-select: none;
+    -webkit-user-drag: none;
+    pointer-events: auto;
+    cursor: default;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    border-radius: 8px;
+}
+
+#lightbox-img.dragging {
+    cursor: grabbing !important;
+}
+
+@media (max-width: 768px) {
+    .lightbox-toolbar {
+        top: 10px;
+        width: calc(100vw - 16px);
+    }
+
+    .lightbox-title {
+        font-size: 15px;
+        max-width: 50%;
+    }
+
+    .lightbox-actions button {
+        width: 38px;
+        height: 38px;
+        font-size: 20px;
+    }
+
+    .lightbox-stage {
+        inset: 60px 8px 8px 8px;
+    }
+}
+.guide-video-lightbox {
     display: none;
     position: fixed;
     inset: 0;
     z-index: 9999;
     background: rgba(0,0,0,0.92);
-    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
-.guide-lightbox.open {
+.guide-video-lightbox.open {
     display: flex;
 }
-.guide-lightbox-toolbar {
+.guide-video-lightbox-inner {
+    width: 90vw;
+    max-width: 860px;
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+}
+.guide-video-lightbox-toolbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 10px 16px;
-    background: rgba(0,0,0,0.6);
-    flex-shrink: 0;
-    z-index: 2;
-}
-.guide-lightbox-caption-text {
+    background: rgba(255,255,255,0.08);
     color: #fff;
     font-size: 14px;
-    opacity: 0.8;
 }
-.guide-lightbox-controls {
-    display: flex;
-    gap: 8px;
-}
-.guide-lightbox-controls button {
+.guide-video-lightbox-toolbar button {
     background: rgba(255,255,255,0.15);
     border: none;
     color: #fff;
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     border-radius: 6px;
-    font-size: 18px;
+    font-size: 16px;
     cursor: pointer;
-    line-height: 1;
-    transition: background 0.2s;
 }
-.guide-lightbox-controls button:hover {
+.guide-video-lightbox-toolbar button:hover {
     background: rgba(255,255,255,0.3);
 }
-.guide-lightbox-stage {
-    flex: 1;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-}
-#lightbox-img {
-    max-width: 100%;
-    max-height: 100%;
-    transform-origin: center;
-    user-select: none;
-    -webkit-user-drag: none;
-    will-change: transform;
-    transition: transform 0.15s ease;
-}
-#lightbox-img.dragging {
-    transition: none;
-    cursor: grabbing !important;
+#video-lightbox-player {
+    width: 100%;
+    aspect-ratio: 16/9;
+    display: block;
+    background: #000;
 }

@@ -1,0 +1,431 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}搜尋「{{ query }}」－風雲客棧數位平台{% endblock %}
+
+{% block link_css %}
+<style>
+/* ─── 搜尋結果頁 CSS ─── */
+body { background:#F5F0E8; color:#2E1F0F; }
+
+.search-hero {
+    padding: 140px 0 64px;
+    background: #2E1F0F;
+    position: relative; overflow: hidden;
+}
+.search-hero::before {
+    content:'';
+    position:absolute; inset:0;
+    background: radial-gradient(circle at 70% 30%, rgba(139,105,20,.12), transparent 55%);
+}
+.search-hero::after {
+    content:'';
+    position:absolute; bottom:-80px; left:-60px;
+    width:320px; height:320px;
+    border:1px solid rgba(106,144,80,.18);
+    border-radius:50%;
+}
+.search-hero-label {
+    font-size:.8rem; letter-spacing:.28em; color:#C4A052;
+    font-weight:700; margin-bottom:16px; text-transform:uppercase;
+}
+.search-hero-q {
+    font-family:'Noto Serif TC',serif;
+    font-size:clamp(1.8rem,4vw,2.8rem);
+    color:#FDFBF7; font-weight:500; margin-bottom:12px;
+    letter-spacing:.06em; line-height:1.35;
+}
+.search-count-badge {
+    display:inline-block;
+    background:rgba(196,160,82,.15);
+    border:1px solid rgba(196,160,82,.3);
+    color:#C4A052; font-size:.85rem;
+    padding:5px 16px; letter-spacing:.1em; border-radius:100px;
+}
+
+/* ─── 大型搜尋列 (頂部) ─── */
+.search-form-wrap {
+    margin-top:32px;
+    display:flex; gap:0; max-width:560px;
+}
+.search-form-wrap input {
+    flex:1;
+    background:rgba(255,255,255,.07);
+    border:1px solid rgba(196,160,82,.4);
+    border-right:none;
+    border-radius:8px 0 0 8px;
+    color:#F5EDD8; font-size:1rem;
+    padding:11px 18px; outline:none;
+    transition:background .2s,border-color .2s;
+    letter-spacing:.04em;
+}
+.search-form-wrap input::placeholder { color:rgba(196,160,82,.5); }
+.search-form-wrap input:focus {
+    background:rgba(255,255,255,.12);
+    border-color:rgba(196,160,82,.7);
+}
+.search-form-wrap button {
+    background:rgba(139,105,20,.85);
+    border:1px solid rgba(196,160,82,.4);
+    border-radius:0 8px 8px 0;
+    color:#F2E8D0; font-size:.9rem;
+    padding:11px 24px; cursor:pointer;
+    letter-spacing:.1em;
+    transition:background .2s;
+    white-space:nowrap;
+}
+.search-form-wrap button:hover { background:#8B6914; }
+
+/* ─── 結果主體 ─── */
+.search-results-body {
+    padding:60px 0 100px;
+    background:#F5F0E8;
+    min-height:60vh;
+}
+
+.results-section { margin-bottom:56px; }
+
+.section-header {
+    display:flex; align-items:center; gap:14px;
+    margin-bottom:28px;
+    padding-bottom:14px;
+    border-bottom:1px solid rgba(139,105,20,.15);
+}
+.section-icon { font-size:1.4rem; }
+.section-heading {
+    font-family:'Noto Serif TC',serif;
+    font-size:1.3rem; color:#2E1F0F;
+    font-weight:700; letter-spacing:.05em;
+}
+.section-count {
+    font-size:.8rem; color:#8B6914;
+    background:rgba(139,105,20,.1);
+    border:1px solid rgba(139,105,20,.2);
+    padding:2px 12px; border-radius:100px;
+    letter-spacing:.08em;
+}
+
+/* 結果卡片：活動 */
+.result-card {
+    background:#FFF; text-decoration:none; color:inherit;
+    border:1px solid rgba(139,105,20,.15);
+    border-radius:10px;
+    box-shadow:0 2px 10px rgba(46,31,15,.04);
+    transition:all .28s;
+    display:flex; gap:0; overflow:hidden;
+    position:relative;
+}
+.result-card::after {
+    content:''; position:absolute;
+    bottom:0; left:0; width:0; height:2px;
+    background:linear-gradient(90deg,#3A5C30,#C4A052);
+    transition:width .4s;
+}
+.result-card:hover {
+    transform:translateY(-4px);
+    box-shadow:0 10px 28px rgba(46,31,15,.08);
+    color:inherit; text-decoration:none;
+}
+.result-card:hover::after { width:100%; }
+
+.result-card-img {
+    width:110px; min-width:110px;
+    background:#EDE5D0; overflow:hidden; flex-shrink:0;
+}
+.result-card-img img {
+    width:100%; height:100%; object-fit:cover;
+    filter:brightness(.95) saturate(.9);
+    transition:transform .4s;
+}
+.result-card:hover .result-card-img img { transform:scale(1.06); }
+.result-card-img-placeholder {
+    width:110px; min-width:110px; height:100%;
+    background:linear-gradient(135deg,#2E1F0F,#3A5C30);
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.8rem; opacity:.35;
+}
+
+.result-card-body {
+    padding:18px 20px; flex:1; min-width:0;
+    display:flex; flex-direction:column; justify-content:center;
+}
+.result-card-meta {
+    display:flex; flex-wrap:wrap; gap:8px;
+    align-items:center; margin-bottom:8px;
+}
+.result-date { font-size:.78rem; color:#8B6914; letter-spacing:.08em; }
+.result-tag {
+    font-size:.7rem; padding:2px 10px;
+    border:1px solid rgba(58,92,48,.4);
+    color:#6A9050; border-radius:100px;
+    letter-spacing:.06em;
+}
+.result-title {
+    font-family:'Noto Serif TC',serif;
+    font-size:1.05rem; font-weight:700;
+    color:#2E1F0F; margin-bottom:6px;
+    line-height:1.4;
+}
+.result-desc {
+    font-size:.84rem; color:#7A5C38;
+    line-height:1.7;
+    display:-webkit-box;
+    -webkit-line-clamp:2; -webkit-box-orient:vertical;
+    overflow:hidden;
+}
+.result-card-arrow {
+    display:flex; align-items:center; padding:0 16px;
+    color:#C4A052; font-size:1.1rem;
+    flex-shrink:0;
+}
+
+/* ─── AIoT / USR 卡片：網格 ─── */
+.grid-result-card {
+    background:#FFF; border:1px solid rgba(139,105,20,.15);
+    border-radius:10px;
+    padding:24px 22px;
+    box-shadow:0 2px 10px rgba(46,31,15,.04);
+    transition:all .28s; height:100%;
+    position: relative; overflow: hidden;
+}
+.grid-result-card::before {
+    content:''; position:absolute;
+    top:0; left:0; right:0; height:3px;
+    background:linear-gradient(90deg,#3A5C30,var(--bamboo-light,#C4A052));
+    transform:scaleX(0); transform-origin:left;
+    transition:transform .35s;
+}
+.grid-result-card:hover { transform:translateY(-5px); box-shadow:0 12px 30px rgba(46,31,15,.09); }
+.grid-result-card:hover::before { transform:scaleX(1); }
+
+.grid-card-icon { font-size:1.8rem; margin-bottom:12px; display:block; }
+.grid-card-tags { margin-bottom:10px; display:flex; flex-wrap:wrap; gap:6px; }
+.grid-card-tag {
+    font-size:.7rem; padding:2px 10px;
+    border:1px solid rgba(58,92,48,.35); color:#6A9050;
+    border-radius:100px; letter-spacing:.05em;
+}
+.grid-card-title {
+    font-family:'Noto Serif TC',serif;
+    font-size:1.05rem; font-weight:700;
+    color:#2E1F0F; margin-bottom:8px;
+}
+.grid-card-meta {
+    font-size:.78rem; color:#8B6914;
+    margin-bottom:10px; letter-spacing:.08em;
+}
+.grid-card-desc {
+    font-size:.84rem; color:#7A5C38;
+    line-height:1.7;
+    display:-webkit-box;
+    -webkit-line-clamp:3; -webkit-box-orient:vertical;
+    overflow:hidden;
+}
+
+/* ─── 查詢結果為空 ─── */
+.no-results {
+    text-align:center; padding:80px 0;
+    background:#FFF; border:1px solid rgba(139,105,20,.1);
+    border-radius:12px;
+}
+.no-results-icon { font-size:3rem; margin-bottom:20px; opacity:.4; }
+.no-results h3 {
+    font-family:'Noto Serif TC',serif;
+    font-size:1.4rem; color:#2E1F0F; margin-bottom:12px;
+}
+.no-results p { font-size:.9rem; color:#7A5C38; line-height:1.8; }
+.no-results .suggest { 
+    margin-top:24px; display:flex; flex-wrap:wrap; gap:10px; justify-content:center;
+}
+.suggest-keyword {
+    display:inline-block;
+    background:rgba(139,105,20,.08);
+    border:1px solid rgba(139,105,20,.2);
+    color:#8B6914; font-size:.85rem;
+    padding:6px 16px; border-radius:100px;
+    text-decoration:none; transition:.2s;
+    cursor:pointer;
+}
+.suggest-keyword:hover { background:rgba(139,105,20,.15); color:#8B6914; text-decoration:none; }
+
+/* ─── 無查詢詞 ─── */
+.empty-query-wrap {
+    padding:80px 0; text-align:center;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- HERO -->
+<section class="search-hero">
+    <div class="container position-relative" style="z-index:1">
+        <p class="search-hero-label">SEARCH</p>
+        {% if query %}
+        <h1 class="search-hero-q">「{{ query }}」的搜尋結果</h1>
+        <span class="search-count-badge">
+            共找到 {{ total_count }} 筆相關內容
+        </span>
+        {% else %}
+        <h1 class="search-hero-q">搜尋風雲客棧</h1>
+        {% endif %}
+
+        <!-- 頁面上方大型搜尋列 -->
+        <form class="search-form-wrap" action="{% url 'global_search' %}" method="GET" role="search">
+            <input type="text" name="q"
+                   value="{{ query }}"
+                   placeholder="輸入關鍵字：智慧養殖、機器人、文蛤…"
+                   autofocus>
+            <button type="submit">🔍 搜尋</button>
+        </form>
+    </div>
+</section>
+
+<!-- 搜尋結果主體 -->
+<section class="search-results-body">
+    <div class="container">
+
+        {% if not query %}
+        <!-- 沒有輸入關鍵字 -->
+        <div class="empty-query-wrap">
+            <div style="font-size:3rem;margin-bottom:20px;">🔍</div>
+            <h2 style="font-family:'Noto Serif TC',serif;color:#2E1F0F;margin-bottom:12px;">請輸入搜尋關鍵字</h2>
+            <p style="color:#7A5C38;">試試看：智慧養殖、STEAM、文蛤、機器人、水井村…</p>
+            <div style="margin-top:28px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;">
+                <a href="{% url 'global_search' %}?q=智慧養殖" class="suggest-keyword">智慧養殖</a>
+                <a href="{% url 'global_search' %}?q=STEAM" class="suggest-keyword">STEAM</a>
+                <a href="{% url 'global_search' %}?q=水井三寶" class="suggest-keyword">水井三寶</a>
+                <a href="{% url 'global_search' %}?q=機器人" class="suggest-keyword">機器人</a>
+                <a href="{% url 'global_search' %}?q=USR" class="suggest-keyword">USR</a>
+                <a href="{% url 'global_search' %}?q=文蛤" class="suggest-keyword">文蛤</a>
+                <a href="{% url 'global_search' %}?q=AIoT" class="suggest-keyword">AIoT</a>
+                <a href="{% url 'global_search' %}?q=水質監測" class="suggest-keyword">水質監測</a>
+            </div>
+        </div>
+
+        {% elif total_count == 0 %}
+        <!-- 查有詞但找不到 -->
+        <div class="no-results">
+            <div class="no-results-icon">😶</div>
+            <h3>找不到「{{ query }}」相關的內容</h3>
+            <p>請換個關鍵字試試，或從以下熱門關鍵字開始探索：</p>
+            <div class="suggest">
+                <a href="{% url 'global_search' %}?q=智慧養殖" class="suggest-keyword">智慧養殖</a>
+                <a href="{% url 'global_search' %}?q=STEAM" class="suggest-keyword">STEAM</a>
+                <a href="{% url 'global_search' %}?q=機器人" class="suggest-keyword">機器人</a>
+                <a href="{% url 'global_search' %}?q=水井村" class="suggest-keyword">水井村</a>
+                <a href="{% url 'global_search' %}?q=文蛤" class="suggest-keyword">文蛤</a>
+                <a href="{% url 'global_search' %}?q=AIoT" class="suggest-keyword">AIoT</a>
+            </div>
+        </div>
+
+        {% else %}
+
+        <!-- ════ 活動結果 ════ -->
+        {% if activities %}
+        <div class="results-section">
+            <div class="section-header">
+                <span class="section-icon">📅</span>
+                <h2 class="section-heading">活動與工作坊</h2>
+                <span class="section-count">{{ activities|length }} 筆</span>
+            </div>
+            <div class="d-flex flex-column gap-3">
+                {% for act in activities %}
+                <a href="{% url 'event_detail' act.pk %}" class="result-card" data-aos="fade-up">
+                    {% if act.cover_image %}
+                    <div class="result-card-img">
+                        <img src="{{ act.cover_image.url }}" alt="{{ act.title }}">
+                    </div>
+                    {% else %}
+                    <div class="result-card-img-placeholder">📅</div>
+                    {% endif %}
+                    <div class="result-card-body">
+                        <div class="result-card-meta">
+                            <span class="result-date">{{ act.date|date:"Y/m/d" }}</span>
+                            {% if act.location %}
+                            <span style="font-size:.78rem;color:#9A8070;letter-spacing:.04em;">📍 {{ act.location }}</span>
+                            {% endif %}
+                            {% for tag in act.tag_list %}
+                            <span class="result-tag">{{ tag }}</span>
+                            {% endfor %}
+                            {% if act.is_past %}
+                            <span style="font-size:.7rem;padding:2px 8px;border:1px solid rgba(160,144,112,.4);color:#9A8070;border-radius:100px;">已結束</span>
+                            {% endif %}
+                        </div>
+                        <h3 class="result-title">{{ act.title }}</h3>
+                        {% if act.title_2 %}
+                        <p style="font-size:.82rem;color:#9A7A50;margin-bottom:6px;">{{ act.title_2 }}</p>
+                        {% endif %}
+                        <p class="result-desc">{{ act.description }}</p>
+                    </div>
+                    <div class="result-card-arrow">›</div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- ════ AIoT 科技計畫 ════ -->
+        {% if aiot_results %}
+        <div class="results-section">
+            <div class="section-header">
+                <span class="section-icon">💡</span>
+                <h2 class="section-heading">AIoT 科技實踐計畫</h2>
+                <span class="section-count">{{ aiot_results|length }} 筆</span>
+            </div>
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                {% for proj in aiot_results %}
+                <div class="col" data-aos="fade-up">
+                    {% if proj.link_url %}
+                    <a href="{{ proj.link_url }}" target="_blank" rel="noopener noreferrer" class="grid-result-card d-block text-decoration-none">
+                    {% else %}
+                    <a href="{% url 'usr' %}" class="grid-result-card d-block text-decoration-none">
+                    {% endif %}
+                        <span class="grid-card-icon">{{ proj.icon }}</span>
+                        <div class="grid-card-tags">
+                            {% for tag in proj.tag_list %}
+                            <span class="grid-card-tag">{{ tag }}</span>
+                            {% endfor %}
+                        </div>
+                        <h3 class="grid-card-title">{{ proj.title }}</h3>
+                        <p class="grid-card-desc">{{ proj.description }}</p>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- ════ USR 師生成果 ════ -->
+        {% if usr_results %}
+        <div class="results-section">
+            <div class="section-header">
+                <span class="section-icon">🌱</span>
+                <h2 class="section-heading">USR 師生實踐成果</h2>
+                <span class="section-count">{{ usr_results|length }} 筆</span>
+            </div>
+            <div class="row row-cols-1 row-cols-md-2 g-4">
+                {% for item in usr_results %}
+                <div class="col" data-aos="fade-up">
+                    {% if item.link_url %}
+                    <a href="{{ item.link_url }}" target="_blank" rel="noopener noreferrer" class="grid-result-card d-block text-decoration-none">
+                    {% else %}
+                    <a href="{% url 'usr' %}" class="grid-result-card d-block text-decoration-none">
+                    {% endif %}
+                        <div class="grid-card-meta">
+                            {{ item.date|date:"Y/m/d" }}
+                            &ensp;·&ensp;
+                            <span style="color:#6A9050;">{{ item.category }}</span>
+                        </div>
+                        <h3 class="grid-card-title">{{ item.title }}</h3>
+                        <p class="grid-card-desc">{{ item.description }}</p>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

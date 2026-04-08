@@ -13,6 +13,11 @@ def guide_home(request):
     ecology_spots = spots.filter(category='ecology')
     usr_spots = spots.filter(category='usr')
 
+    preview_video = ARAsset.objects.filter(
+        is_active=True,
+        video_file__isnull=False
+    ).exclude(video_file='').first()
+
     featured_others = spots.exclude(category='treasure')[:6]
 
     context = {
@@ -27,6 +32,7 @@ def guide_home(request):
         'featured_others': featured_others,
         'page_title': '水井村互動導覽',
         'current_category': None,
+        'preview_video': preview_video,
     }
     return render(request, 'guide/guide_home.html', context)
 
@@ -114,9 +120,8 @@ def guide_ar_treasures(request, slug):
         slug=slug,
         is_active=True
     )
-    # 用這個 spot 的 category 撈同類所有 spot 的 AR assets
     ar_assets = ARAsset.objects.filter(
-        spot__category=spot.category,
+        spot__slug=spot.slug,
         spot__is_active=True,
         is_active=True
     ).select_related('spot').order_by('spot__sort_order', 'spot__id', 'id')

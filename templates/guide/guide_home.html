@@ -19,8 +19,10 @@
       </p>
 
       <div class="guide-hero-actions">
-        <a href="#treasure-section" class="guide-btn-primary">先看水井三寶</a>
-        <a href="#preview-ar" class="guide-btn-secondary">查看互動預告</a>
+        <a href="{% url 'guide:home' %}#treasure-section" class="guide-btn-primary">先看水井三寶</a>
+        {% if preview_video %}
+        <button class="guide-btn-secondary" onclick="openVideoLightbox('{{ preview_video.video_file.url }}', '{{ preview_video.spot.title }} · {{ preview_video.title }}')">查看互動預告</button>
+        {% endif %}
       </div>
     </div>
   </section>
@@ -226,5 +228,39 @@
     </div>
   </section> -->
   <!-- {% endif %} -->
+   
 </div>
+<div class="guide-video-lightbox" id="guide-video-lightbox" onclick="if(event.target===this)closeVideoLightbox()">
+    <div class="guide-video-lightbox-inner">
+        <div class="guide-video-lightbox-toolbar">
+            <span id="video-lightbox-caption"></span>
+            <button onclick="closeVideoLightbox()">✕</button>
+        </div>
+        <video id="video-lightbox-player" controls playsinline preload="none"></video>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function openVideoLightbox(src, caption) {
+    var player = document.getElementById('video-lightbox-player');
+    player.src = src;
+    document.getElementById('video-lightbox-caption').textContent = caption || '';
+    document.getElementById('guide-video-lightbox').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeVideoLightbox() {
+    var player = document.getElementById('video-lightbox-player');
+    player.pause();
+    player.src = '';
+    document.getElementById('guide-video-lightbox').classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeVideoLightbox();
+});
+</script>
 {% endblock %}
