@@ -1,9 +1,54 @@
+/* ── 首頁：Nav 透明疊在 Hero 上 ── */
+body.page-home {
+    padding-top: 0;
+}
+
+body.page-home #mainNav {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+    border-bottom: none !important;
+}
+
+body.page-home #mainNav.scrolled {
+    background: rgb(30, 15, 5) !important;
+    backdrop-filter: blur(12px) !important;
+    box-shadow: 0 2px 30px rgba(0, 0, 0, 0.5) !important;
+    border-bottom: 1px solid rgba(139, 105, 20, 0.2) !important;
+}
+
+body.page-home .hero-carousel {
+    height: 100vh !important;
+    min-height: 600px;
+    margin-top: 0 !important;
+}
+
+body.page-home #mainNav .nav-link,
+body.page-home #mainNav .navbar-brand {
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.9);
+}
+
+body.page-home .hero-carousel::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 160px;
+    background: linear-gradient(to bottom,
+            rgba(10, 6, 2, 0.8) 0%,
+            transparent 100%);
+    z-index: 1;
+    pointer-events: none;
+}
+
 /* ===================== HERO CAROUSEL ===================== */
 .hero-carousel {
-    height: 100vh;
-    min-height: 600px;
+    height: calc(100vh - var(--nav-height));
+    min-height: 560px;
     position: relative;
     overflow: hidden;
+    margin-top: 0;
 }
 
 .hero-carousel .carousel-inner,
@@ -16,7 +61,7 @@
     height: 100%;
     background-size: cover;
     background-repeat: no-repeat;
-    background-position: center 62%;
+    background-position: center 40%;
     position: relative;
 }
 
@@ -37,7 +82,8 @@
 .hero-caption {
     position: absolute;
     left: 50%;
-    bottom: 16%;
+    bottom: 14%;
+    /* 因容器變矮，適度調低文字位置 */
     transform: translateX(-50%);
     text-align: center;
     width: min(90%, 860px);
@@ -219,6 +265,16 @@
 
 /* ===================== MOBILE ===================== */
 @media (max-width: 767.98px) {
+    body.page-home .hero-carousel {
+        height: auto !important;
+        min-height: auto !important;
+    }
+
+    body.page-home .hero-carousel .carousel-inner,
+    body.page-home .hero-carousel .carousel-item {
+        height: auto !important;
+    }
+
     .hero-carousel {
         height: 88vh;
         min-height: 520px;
@@ -786,7 +842,8 @@
 /* ===================== 活動 SECTION ===================== */
 .events-section {
     padding: 100px 0;
-    background: #F4EFEB; /* Soft sand/beige for rhythm break */
+    background: #F4EFEB;
+    /* Soft sand/beige for rhythm break */
     overflow-x: hidden;
     position: relative;
 }
@@ -1663,7 +1720,8 @@
    STATS BAR (極黑高對比打斷)
    ============================================================ */
 .stats-bar-section {
-    background: #1A1108; /* Dark Ink */
+    background: #1A1108;
+    /* Dark Ink */
     padding: 56px 0;
     border-top: 1px solid rgba(196, 160, 82, 0.15);
     border-bottom: 1px solid rgba(196, 160, 82, 0.15);
@@ -1713,7 +1771,8 @@
     font-family: 'Noto Serif TC', serif;
     font-size: clamp(2.4rem, 4vw, 3.2rem);
     font-weight: 700;
-    color: #E6C57A; /* Bright glowing gold */
+    color: #E6C57A;
+    /* Bright glowing gold */
     line-height: 1;
 }
 
@@ -1769,7 +1828,8 @@
    LATEST EFFORTS NEWS STRIP (取代原本的純白三寶卡片)
    ============================================================ */
 .efforts-news-strip {
-    background: #FFFFFF; /* Pure white */
+    background: #FFFFFF;
+    /* Pure white */
     padding: 90px 0 100px;
     position: relative;
     overflow: hidden;
@@ -1802,15 +1862,15 @@
     overflow: hidden;
     text-decoration: none;
     color: inherit;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
     transition: all 0.3s ease;
-    border: 1px solid rgba(0,0,0,0.05);
+    border: 1px solid rgba(0, 0, 0, 0.05);
     height: 100%;
 }
 
 .news-img-card:hover {
     transform: translateY(-6px);
-    box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
 }
 
 .news-img-wrap {

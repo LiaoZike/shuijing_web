@@ -180,7 +180,7 @@ MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 ACCOUNT_ADAPTER = 'accounts.adapter.CustomAccountAdapter'
 
 # 自定義設定
-ACTIVITIES_PER_PAGE = 12
+ACTIVITIES_PER_PAGE = 9
 
 
 MEDIA_URL = '/media/'

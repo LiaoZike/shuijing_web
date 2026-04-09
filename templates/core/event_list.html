@@ -68,8 +68,7 @@
             {% for activity in page_obj %}
             <a href="{% url 'event_detail' activity.pk %}"
                class="event-item {% if activity.is_past %}is-past{% endif %}"
-               data-aos="fade-up" data-aos-delay="{{ forloop.counter0|add:1 }}00">
-
+               data-aos="fade-up" data-aos-delay="{% widthratio forloop.counter 1 30 %}">
                 <!-- 圖片 -->
                 {% if activity.cover_image %}
                 <div class="event-cover">

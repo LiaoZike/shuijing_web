@@ -56,7 +56,7 @@
             </li>
             <li class="nav-item">
                 <a class="nav-link {% if 'event' in request.resolver_match.url_name %}active{% endif %}"
-                href="{% url 'event_list' %}">活 動</a>
+                href="{% url 'event_list' %}">活動資訊</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {% if request.resolver_match.app_name == 'guide' %}active{% endif %}"
@@ -79,8 +79,7 @@
                                value="{{ request.GET.q|default:'' }}"
                                autocomplete="off">
                     </div>
-                    <button type="button" class="nav-search-btn" id="navSearchToggle" aria-label="搜尋">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <button type="submit" class="nav-search-btn" id="navSearchToggle" aria-label="搜尋">                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="11" cy="11" r="8"></circle>
                             <path d="M21 21l-4.35-4.35"></path>
                         </svg>
@@ -232,39 +231,55 @@
     const searchWrap   = document.getElementById('navSearchWrap');
     const searchInput  = document.getElementById('navSearchInput');
     const searchForm   = document.getElementById('navSearchForm');
+    if (searchToggle && searchWrap && searchInput && searchForm) {
+        searchForm.addEventListener('submit', (e) => {
+            const keyword = searchInput.value.trim();
+            const isMobile = window.innerWidth <= 991.98;
 
-    if (searchToggle) {
-        searchToggle.addEventListener('click', () => {
-            const isOpen = searchWrap.classList.toggle('open');
-            if (isOpen) {
-                searchInput.focus();
-            } else {
-                searchInput.value = '';
-            }
-        });
+            // 沒有輸入文字
+            if (!keyword) {
+                e.preventDefault();
 
-        // Enter 鍵送出表單
-        searchInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                if (searchInput.value.trim()) {
-                    searchForm.submit();
+                // 手機：直接 focus，不做收合動畫
+                if (isMobile) {
+                    searchInput.focus();
+                    return;
                 }
+
+                // 桌機：切換展開/收合
+                const isOpen = searchWrap.classList.toggle('open');
+                if (isOpen) {
+                    searchInput.focus();
+                } else {
+                    searchInput.value = '';
+                }
+                return;
             }
+
+            // 有輸入文字：正常送出
+        });
+
+        searchInput.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                searchWrap.classList.remove('open');
+                const isMobile = window.innerWidth <= 991.98;
+                if (!isMobile) {
+                    searchWrap.classList.remove('open');
+                }
                 searchInput.value = '';
             }
         });
 
-        // 點外部關閉
         document.addEventListener('click', (e) => {
+            const isMobile = window.innerWidth <= 991.98;
+            if (isMobile) return;
+
             if (!searchForm.contains(e.target)) {
                 searchWrap.classList.remove('open');
             }
         });
 
         // 如果是搜尋結果頁，自動展開
-        if (searchInput.value) {
+        if (searchInput.value.trim()) {
             searchWrap.classList.add('open');
         }
     }

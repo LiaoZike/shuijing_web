@@ -92,16 +92,17 @@ def event_list(request):
         ).order_by('-date')
 
     else:
-        activities = activities.annotate(
-            is_past_flag=Case(
-                When(
-                    Q(end_date__lt=today) | Q(end_date__isnull=True, date__lt=today),
-                    then=Value(1)
-                ),
-                default=Value(0),
-                output_field=IntegerField(),
-            )
-        ).order_by('is_past_flag', '-is_featured', 'date')
+        upcoming = activities.filter(
+            Q(end_date__gte=today) | Q(end_date__isnull=True, date__gte=today)
+        ).order_by('-is_featured', 'date')
+
+        past = activities.filter(
+            Q(end_date__lt=today) | Q(end_date__isnull=True, date__lt=today)
+        ).order_by('-date')
+
+        # 合併：未來在前，已結束在後
+        from itertools import chain
+        activities = list(chain(upcoming, past))
 
     paginator = Paginator(activities, settings.ACTIVITIES_PER_PAGE)
     page_obj = paginator.get_page(request.GET.get('page', 1))

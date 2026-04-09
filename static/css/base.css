@@ -12,13 +12,20 @@
     --ink: #1A120A;
     --text-light: #F5EDD8;
     --text-muted: #A09070;
+    --nav-height: 74px;
 }
 
 * {
     box-sizing: border-box;
-    font-family: -apple-system, BlinkMacSystemFont,
-        "Segoe UI", "PingFang TC", "Microsoft JhengHei",
-        "Noto Sans TC", Arial, sans-serif;
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        "PingFang TC",
+        "Microsoft JhengHei",
+        "Noto Sans TC",
+        Arial,
+        sans-serif;
 }
 
 body {
@@ -26,17 +33,15 @@ body {
     background-color: var(--ink);
     color: var(--text-light);
     overflow-x: hidden;
-    padding-top: 74px; /* 防止固定導覽列遮擋內容 */
+    padding-top: var(--nav-height);
 }
 
-/* ===================== NAVBAR ===================== */
 #mainNav {
-    background: rgba(30, 15, 5, 0.85);
+    background: rgb(30, 15, 5);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid rgba(139, 105, 20, 0.2);
     transition: background 0.4s ease, box-shadow 0.4s ease, padding 0.3s ease;
-    padding: 18px 0;
 }
 
 #mainNav.scrolled {
@@ -46,12 +51,8 @@ body {
     border-bottom: 1px solid rgba(139, 105, 20, 0.4);
 }
 
-.nav-link.active {
-    color: var(--bamboo-light) !important;
-}
-
-.nav-link.active::after {
-    width: calc(100% - 32px);
+#mainNav .container {
+    flex-wrap: wrap;
 }
 
 .navbar-brand {
@@ -59,6 +60,11 @@ body {
     font-weight: 700;
     color: var(--cream) !important;
     letter-spacing: 0.05em;
+    min-width: 0;
+    max-width: calc(100% - 70px);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .navbar-brand .brand-en {
@@ -68,6 +74,20 @@ body {
     letter-spacing: 0.2em;
     font-family: 'Noto Sans TC', sans-serif;
     font-weight: 300;
+}
+
+.navbar-toggler {
+    border: 1px solid rgba(196, 160, 82, 0.4);
+    padding: 4px 10px;
+    flex-shrink: 0;
+}
+
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28196%2C160%2C82%2C0.9%29' stroke-width='2' stroke-linecap='round' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+.navbar-collapse {
+    flex-basis: 100%;
 }
 
 .nav-link {
@@ -98,7 +118,14 @@ body {
     width: calc(100% - 32px);
 }
 
-/* 下拉選單 */
+.nav-link.active {
+    color: var(--bamboo-light) !important;
+}
+
+.nav-link.active::after {
+    width: calc(100% - 32px);
+}
+
 .dropdown-menu {
     background: rgba(20, 10, 3, 0.97);
     border: 1px solid rgba(139, 105, 20, 0.3);
@@ -121,7 +148,6 @@ body {
     padding-left: 26px;
 }
 
-/* Google 登入按鈕 */
 .btn-login {
     border: 1px solid rgba(196, 160, 82, 0.5);
     color: var(--bamboo-light);
@@ -139,17 +165,100 @@ body {
     color: var(--cream);
 }
 
-/* Hamburger */
-.navbar-toggler {
-    border: 1px solid rgba(196, 160, 82, 0.4);
-    padding: 4px 10px;
+.nav-search-form {
+    position: relative;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    width: auto;
 }
 
-.navbar-toggler-icon {
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28196%2C160%2C82%2C0.9%29' stroke-width='2' stroke-linecap='round' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+.nav-search-wrap {
+    overflow: hidden;
+    width: 0;
+    max-width: 0;
+    opacity: 0;
+    transition:
+        width 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+        max-width 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.3s ease;
 }
 
-/* ===================== FOOTER ===================== */
+.nav-search-wrap.open {
+    width: 240px;
+    max-width: 240px;
+    opacity: 1;
+}
+
+.nav-search-input {
+    width: 240px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(196, 160, 82, 0.35);
+    border-radius: 24px;
+    color: #F5EDD8;
+    font-size: 0.84rem;
+    padding: 7px 16px 7px 14px;
+    outline: none;
+    letter-spacing: 0.05em;
+    transition:
+        background 0.25s,
+        border-color 0.25s,
+        box-shadow 0.3s;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.nav-search-input::placeholder {
+    color: rgba(196, 160, 82, 0.45);
+    font-size: 0.8rem;
+}
+
+.nav-search-input:focus {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(196, 160, 82, 0.75);
+    box-shadow:
+        0 0 0 3px rgba(196, 160, 82, 0.12),
+        0 2px 16px rgba(196, 160, 82, 0.15);
+}
+
+.nav-search-btn {
+    background: rgba(139, 105, 20, 0);
+    border: 1.5px solid rgba(196, 160, 82, 0);
+    color: rgba(196, 160, 82, 0.7);
+    padding: 7px 9px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition:
+        color 0.25s,
+        background 0.25s,
+        border-color 0.25s,
+        box-shadow 0.3s,
+        transform 0.2s;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.nav-search-btn:hover {
+    color: #C4A052;
+    background: rgba(196, 160, 82, 0.1);
+    border-color: rgba(196, 160, 82, 0.3);
+    box-shadow: 0 0 10px rgba(196, 160, 82, 0.2);
+    transform: scale(1.1);
+}
+
+.nav-search-btn:active {
+    transform: scale(0.95);
+}
+
+.nav-search-btn svg {
+    display: block;
+    transition: stroke 0.25s;
+}
+
 footer {
     background: var(--wood-dark);
     border-top: 1px solid rgba(139, 105, 20, 0.25);
@@ -189,7 +298,6 @@ footer .footer-bottom {
     color: rgba(160, 144, 112, 0.5);
 }
 
-/* ===================== UTILS ===================== */
 .section-title {
     font-family: 'Noto Serif TC', serif;
     font-size: 1.6rem;
@@ -211,7 +319,6 @@ footer .footer-bottom {
     margin: 0 auto 12px;
 }
 
-/* Toast */
 .toast-container {
     position: fixed;
     bottom: 32px;
@@ -256,239 +363,200 @@ footer .footer-bottom {
     color: var(--cream);
 }
 
-
-
-
-#mainNav .container {
-    flex-wrap: wrap;
-}
-
-.navbar-brand {
-    min-width: 0;
-    max-width: calc(100% - 70px);
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-}
-
-.navbar-toggler {
-    flex-shrink: 0;
-}
-
-.navbar-collapse {
-    flex-basis: 100%;
-}
-
 @media (max-width: 991.98px) {
-    .brand-en {
-        display: none;
-    }
-}
-
-/* ══════════════════════════════════════════
-   手機版 Navbar 展開選單 — 精緻化
-══════════════════════════════════════════ */
-@media (max-width: 991.98px) {
-
-    /* 展開後整條 navbar 區塊底部微加陰影 */
-    #mainNav.show-menu,
-    #mainNav .navbar-collapse.show {
-        border-bottom: 1px solid rgba(139, 105, 20, 0.25);
+    :root {
+        --nav-height: 78px;
     }
 
-    /* 選單整體容器：上邊框分隔 + 上下 padding */
+    #mainNav {
+        padding: 14px 0;
+    }
+
+    #mainNav .container {
+        align-items: center;
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+    .navbar-brand {
+        max-width: calc(100% - 84px);
+        line-height: 1.2;
+        white-space: normal;
+        text-overflow: initial;
+    }
+
+    .navbar-brand .brand-en {
+        display: block;
+        font-size: 0.62rem;
+        letter-spacing: 0.16em;
+        margin-top: 4px;
+    }
+
+    .navbar-toggler {
+        width: 56px;
+        height: 56px;
+        padding: 0;
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: auto;
+    }
+
+    .navbar-toggler:focus {
+        box-shadow: none;
+    }
+
     .navbar-collapse {
-        border-top: 1px solid rgba(196, 160, 82, 0.15);
-        margin-top: 10px;
-        padding: 8px 0 16px;
+        flex-basis: 100%;
+        margin-top: 14px;
+        padding: 14px 12px 16px;
+        background: rgba(36, 16, 4, 0.92);
+        border: 1px solid rgba(196, 160, 82, 0.16);
+        border-radius: 18px;
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
     }
 
-    /* 每個 nav-link 在手機版：左側有金色指示條動畫 */
+    .navbar-nav {
+        gap: 4px;
+        margin-bottom: 14px;
+    }
+
+    .nav-item {
+        width: 100%;
+    }
+
     .nav-link {
-        padding: 11px 20px !important;
-        border-radius: 6px;
-        margin: 1px 8px;
-        letter-spacing: 0.1em;
-        position: relative;
-        border-bottom: none;
-        transition: background 0.2s, color 0.2s, padding-left 0.2s;
+        display: block;
+        width: 100%;
+        padding: 12px 16px !important;
+        margin: 0;
+        border-radius: 12px;
+        font-size: 0.98rem;
+        letter-spacing: 0.12em;
+        line-height: 1.45;
     }
 
-    /* 移除桌面的底線 ::after，改用左邊框效果 */
     .nav-link::after {
         content: none;
     }
 
-    /* hover：背景微亮 + 文字金 */
     .nav-link:hover {
-        background: rgba(196, 160, 82, 0.07);
-        padding-left: 26px !important;
+        background: rgba(196, 160, 82, 0.08);
+        padding-left: 20px !important;
     }
 
-    /* active（目前頁面）：左邊金條 */
     .nav-link.active {
-        background: rgba(196, 160, 82, 0.1);
+        background: rgba(196, 160, 82, 0.12);
         border-left: 3px solid #C4A052;
-        padding-left: 17px !important;
+        padding-left: 13px !important;
+        color: #f6df9d !important;
     }
 
-    /* 在手機選單底部：搜尋欄 + 登入 放在一排 */
-    #mainNav .d-flex {
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-        padding: 8px 8px 0;
-        gap: 12px;
+    #mainNav .me-2 {
+        width: 100%;
+        margin-right: 0 !important;
     }
 
-    /* 搜尋在手機直接展開 */
-    .nav-search-wrap {
-        width: 160px !important;
-        max-width: 160px !important;
-        opacity: 1 !important;
+    #mainNav .d-flex.align-items-center.gap-2.me-2 {
+        display: block !important;
+        width: 100%;
+        margin-right: 0 !important;
+        padding: 0;
+        margin-top: 8px;
+        margin-bottom: 12px;
     }
 
-    /* toggler 按鈕美化 */
-    .navbar-toggler {
-        border: 1px solid rgba(196, 160, 82, 0.35);
-        border-radius: 6px;
-        padding: 5px 8px;
-        color: #C4A052;
-        transition: background 0.2s;
-    }
-    .navbar-toggler:hover {
-        background: rgba(196, 160, 82, 0.1);
-    }
-    .navbar-toggler-icon {
-        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28196%2C160%2C82%2C0.9%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
-    }
-}
-
-/* ══════════════════════════════════════════
-   NAVBAR 搜尋列 — Glassmorphism 玻璃質感
-══════════════════════════════════════════ */
-.nav-search-form {
-    position: relative;
-    z-index: 20;
-    display: flex;
-    align-items: center;
-    gap: 0;
-}
-
-/* 展開容器：滑動動畫展開 */
-.nav-search-wrap {
-    overflow: hidden;
-    width: 0;
-    max-width: 0;
-    opacity: 0;
-    transition:
-        width 0.4s cubic-bezier(0.22, 1, 0.36, 1),
-        max-width 0.4s cubic-bezier(0.22, 1, 0.36, 1),
-        opacity 0.3s ease;
-}
-
-.nav-search-wrap.open {
-    width: 240px;
-    max-width: 240px;
-    opacity: 1;
-}
-
-/* 輸入框本體：玻璃底 + 金邊 */
-.nav-search-input {
-    width: 240px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(196, 160, 82, 0.35);
-    border-radius: 24px;
-    color: #F5EDD8;
-    font-size: 0.84rem;
-    padding: 7px 16px 7px 14px;
-    outline: none;
-    letter-spacing: 0.05em;
-    transition:
-        background 0.25s,
-        border-color 0.25s,
-        box-shadow 0.3s;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-}
-
-.nav-search-input::placeholder {
-    color: rgba(196, 160, 82, 0.45);
-    font-size: 0.8rem;
-}
-
-/* Focus 時：金光輝光效果 */
-.nav-search-input:focus {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(196, 160, 82, 0.75);
-    box-shadow:
-        0 0 0 3px rgba(196, 160, 82, 0.12),
-        0 2px 16px rgba(196, 160, 82, 0.15);
-}
-
-/* 搜尋按鈕：圓形圖示，hover 發光 */
-.nav-search-btn {
-    background: rgba(139, 105, 20, 0);
-    border: 1.5px solid rgba(196, 160, 82, 0);
-    color: rgba(196, 160, 82, 0.7);
-    padding: 7px 9px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition:
-        color 0.25s,
-        background 0.25s,
-        border-color 0.25s,
-        box-shadow 0.3s,
-        transform 0.2s;
-    line-height: 1;
-    flex-shrink: 0;
-}
-
-.nav-search-btn:hover {
-    color: #C4A052;
-    background: rgba(196, 160, 82, 0.1);
-    border-color: rgba(196, 160, 82, 0.3);
-    box-shadow: 0 0 10px rgba(196, 160, 82, 0.2);
-    transform: scale(1.1);
-}
-
-.nav-search-btn:active {
-    transform: scale(0.95);
-}
-
-/* SVG 圖示位置 */
-.nav-search-btn svg {
-    display: block;
-    transition: stroke 0.25s;
-}
-
-/* ── 平板以下 ── */
-@media (max-width: 991.98px) {
-    .nav-search-wrap.open {
-        width: 170px;
-        max-width: 170px;
-    }
-    .nav-search-input {
-        width: 170px;
-        font-size: 0.8rem;
-        padding: 6px 12px;
-    }
-}
-
-/* ── 手機以下：全寬展開 ── */
-@media (max-width: 575.98px) {
     .nav-search-form {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 10px;
         position: static;
     }
+
+    .nav-search-wrap,
     .nav-search-wrap.open {
-        width: 140px;
-        max-width: 140px;
+        width: 100% !important;
+        max-width: none !important;
+        opacity: 1 !important;
+        overflow: visible;
+        flex: 1 1 auto;
     }
+
     .nav-search-input {
-        width: 140px;
-        font-size: 0.78rem;
+        width: 100% !important;
+        min-width: 0;
+        height: 44px;
+        padding: 0 14px;
+        font-size: 0.9rem;
+        border-radius: 999px;
     }
-}
+
+    .nav-search-btn {
+        width: 42px;
+        height: 42px;
+        flex: 0 0 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+    }
+
+    #mainNav .d-flex.align-items-center.gap-3 {
+        display: block !important;
+        width: 100%;
+        padding: 0;
+    }
+
+    .dropdown,
+    .btn-login {
+        width: 100%;
+    }
+
+    .btn-login {
+        min-height: 42px;
+        padding: 9px 16px;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .dropdown .btn-login {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .navbar-brand {
+        max-width: calc(100% - 74px);
+    }
+
+    .navbar-brand .brand-en {
+        font-size: 0.58rem;
+        letter-spacing: 0.14em;
+    }
+
+    .navbar-toggler {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+    }
+
+    .navbar-collapse {
+        padding: 12px 10px 14px;
+        border-radius: 16px;
+    }
+
+    .nav-link {
+        font-size: 0.95rem;
+    }
+
+    .nav-search-input {
+        font-size: 0.86rem;
+    }
+}

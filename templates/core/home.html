@@ -73,12 +73,11 @@
     <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next" aria-label="下一張">
         <span class="carousel-control-next-icon" aria-hidden="true"></span>
     </button>
+    <div class="scroll-down d-none d-md-block"
+         onclick="document.querySelector('.sansheng-section').scrollIntoView({behavior:'smooth'})">
+        ↓ 探索風雲客棧
+    </div>
 </div>
-
-<div class="scroll-down d-none d-md-block" onclick="document.querySelector('.sansheng-section').scrollIntoView({behavior:'smooth'})">
-    ↓ 探索風雲客棧
-</div>
-
 
 
 <!-- ===================== 服務項目 ===================== -->
@@ -473,6 +472,15 @@
         });
     }, { threshold: 0.4 });
     counters.forEach(el => observer.observe(el));
+})();
+(function () {
+    document.body.classList.add('page-home');
+    const nav = document.getElementById('mainNav');
+    function onScroll() {
+        nav.classList.toggle('scrolled', window.scrollY > 80);
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
 })();
 </script>
 {% endblock %}
