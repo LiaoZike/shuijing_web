@@ -8,59 +8,67 @@
 
 {% block content %}
 <div class="about-page">
-    
-    <!-- 頁面視覺主視覺 (HERO) -->
+
+    <!-- 頁面主視覺 (HERO) -->
     <section class="about-hero">
+        <div class="about-hero-deco"></div>
         <div class="container relative z-10">
             <div class="row align-items-center">
                 <div class="col-lg-8" data-aos="fade-up">
-                    <span class="about-hero-label">NFU x ShuiJing Village</span>
-                    <h1 class="about-hero-title">關於風雲客棧<br>連結科技與土地的數位聚落</h1>
+                    <span class="about-hero-label">NFU × ShuiJing Village</span>
+                    <h1 class="about-hero-title">
+                        關於風雲客棧<br>
+                        <span style="font-size:0.75em; font-weight:400; color:#C4A052;">科技與土地，在偏鄉共鳴的數位聚落</span>
+                    </h1>
                     <p class="about-hero-desc">
-                        「風雲客棧數位平台」是由國立虎尾科技大學電機資訊學院師生所打造的雲端總部。<br>
-                        我們走入口湖鄉水井村，以大學社會責任 (USR) 為核心，透過 AIoT 智慧養殖、STEAM 科技教育與在地文化保存，與村民共同勾勒出三生共好（生產、生態、生活）的永續願景。
+                        「風雲客棧數位平台」由國立虎尾科技大學電機資訊學院師生共同打造。<br>
+                        我們走進口湖鄉水井村，以大學社會責任（USR）為核心理念，透過 AIoT 智慧養殖、STEAM 科技教育與在地文化保存，攜手村民共同描繪<strong
+                            style="color:#D4AF46;">三生共好—生產、生態、生活</strong>的永續藍圖。
                     </p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- 平台理念與核心四大功能 -->
+    <!-- 平台四大核心功能 -->
     <section class="about-sec">
         <div class="container">
             <div class="text-center mb-5" data-aos="fade-up">
                 <p class="section-label">CORE FEATURES</p>
                 <h2 class="section-title">數位平台四大核心功能</h2>
-                <p style="color:var(--ab-text); max-width:600px; margin:0 auto;">這不僅是一個網站，更是虎科大學生協助在地推廣活動、串聯資源並留存美好記憶的最佳入口。</p>
+                <p style="color:var(--ab-text); max-width:600px; margin:0 auto; font-size:0.95rem; line-height:1.9;">
+                    這不只是一個網站，更是虎科大學生協助在地推廣活動、串聯各方資源，並將珍貴記憶永久保存的數位入口。
+                </p>
             </div>
-            
+
             <div class="row g-4">
                 <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="100">
                     <div class="feature-card">
                         <div class="fc-icon"><i class="bi bi-book"></i></div>
                         <h4 class="fc-title">地方故事留存</h4>
-                        <p class="fc-desc">紀錄水井村的歷史脈絡、沿海濕地生態與候鳥足跡。特別挖掘「水井三寶（姻緣花、白馬、烏龜）」等珍貴的文化象徵，讓記憶在數位空間中傳承。</p>
+                        <p class="fc-desc">紀錄水井村的歷史脈絡與沿海濕地生態，深入挖掘「水井三寶——姻緣花、白馬、烏龜」等珍貴文化象徵，讓百年記憶在數位空間中代代傳承。</p>
                     </div>
                 </div>
                 <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="200">
                     <div class="feature-card">
                         <div class="fc-icon"><i class="bi bi-calendar-check"></i></div>
                         <h4 class="fc-title">活動推廣與報名</h4>
-                        <p class="fc-desc">解決傳統漁村資訊流通的痛點，整合社區發展協會與學生工作坊的活動資訊，提供簡單明瞭的線上報名系統，拉近村民與青年的距離。</p>
+                        <p class="fc-desc">解決傳統漁村資訊流通的痛點，整合社區發展協會與學生工作坊的活動資訊，提供簡單明瞭的線上報名系統，拉近村民與外地青年的距離。</p>
                     </div>
                 </div>
                 <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="300">
                     <div class="feature-card">
                         <div class="fc-icon"><i class="bi bi-cpu"></i></div>
                         <h4 class="fc-title">USR 科技實踐展示</h4>
-                        <p class="fc-desc">呈現虎科大團隊的實踐成果，包含導入文蛤池的 AIoT 水質監測、自動投餌系統，以及帶領偏鄉學童體驗 OTTO/Matrix 機器人的 STEAM 教育紀錄。</p>
+                        <p class="fc-desc">呈現虎科大團隊的實踐成果——導入文蛤池的 AIoT 水質監測、自動投餌系統，以及帶領偏鄉學童動手操作 OTTO/Matrix 機器人的 STEAM
+                            教育全紀錄。</p>
                     </div>
                 </div>
                 <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="400">
                     <div class="feature-card">
                         <div class="fc-icon"><i class="bi bi-map"></i></div>
                         <h4 class="fc-title">Qrobt 互動生態導覽</h4>
-                        <p class="fc-desc">結合學生的創意導覽設計，例如「水井村 Qrobt 趣味地圖」，引領外地遊客透過數位互動的方式，實地走訪並認識這個充滿生命力的寂靜村落。</p>
+                        <p class="fc-desc">結合學生創意發想的「水井村 Qrobt 趣味地圖」，引領外地訪客以數位互動的方式實地探索，走入這個靜謐卻充滿生命力的百年漁村。</p>
                     </div>
                 </div>
             </div>
@@ -74,21 +82,25 @@
                 <div class="col-lg-4 mb-5" data-aos="fade-right">
                     <p class="section-label">OUR JOURNEY</p>
                     <h2 class="section-title">虎科大 × 水井村<br>深耕足跡</h2>
-                    <p style="color:var(--ab-text); line-height: 1.8;">
-                        電機資訊學院推動的「智慧減碳節水三生一體」計畫，並非紙上談兵。<br><br>
-                        學生們走入泥濘的魚塭，與老一輩漁民對話；走進偏鄉教室，用雙手教導孩子寫下第一行程式瑪。我們相信，科技的最終目的是帶來溫暖。
+                    <p style="color:var(--ab-text); line-height:2; font-size:0.95rem;">
+                        電機資訊學院推動的「智慧減碳節水三生一體」計畫，從不停留在課本或簡報上。<br><br>
+                        學生們踩進泥濘的魚塭，與老一輩漁民肩並肩對話；走進偏鄉教室，用雙手教導孩子敲出第一行程式碼。我們深信，科技最終的意義，是為人與土地帶來真實的溫暖。
                     </p>
-                    <a href="{% url 'usr' %}" class="btn mt-4" style="background:var(--ab-gold); color:#FFF; padding:10px 24px; border-radius:100px; font-weight:700;">查看詳細 USR 成果</a>
+                    <a href="{% url 'usr' %}" class="btn mt-4"
+                        style="background:var(--ab-gold); color:#FFF; padding:10px 28px; border-radius:100px; font-weight:700; font-size:0.9rem; letter-spacing:0.05em;">
+                        查看詳細 USR 成果
+                    </a>
                 </div>
-                
-                <div class="col-lg-8" data-aos="fade-left">
+
+                <div class="col-lg-8" data-aos="fade-left" data-aos-delay="100">
                     <div class="timeline-wrap">
-                        
+
                         <div class="timeline-item">
                             <div class="tl-date">生產環境優化</div>
                             <h4 class="tl-title">AIoT 智慧養殖導入</h4>
                             <div class="tl-desc">
-                                面對勞動力老化問題，團隊開發智慧養殖監控系統，幫助漁民在手機上即時了解魚塭溫度、pH值與溶氧量。並導入自動投餌與節水循環設計，有效提升生產效能。
+                                面對勞動力老化的嚴峻挑戰，團隊研發智慧養殖監控系統，讓漁民只需拿起手機，便能即時掌握魚塭的溫度、pH
+                                值與溶氧量。搭配自動投餌與節水循環設計，大幅降低人力負擔，有效提升生產效能與養殖收益。
                             </div>
                         </div>
 
@@ -96,7 +108,8 @@
                             <div class="tl-date">生活文化紮根</div>
                             <h4 class="tl-title">水井三寶與產銷鏈結</h4>
                             <div class="tl-desc">
-                                與社區共同舉辦手作 DIY 工作坊，發掘姻緣花等在地工藝。並協助開發「尚虎雲」產銷平台，將水井村的農產品與文創商品推廣至更廣闊的市場。
+                                與社區耆老攜手舉辦手作 DIY
+                                工作坊，重新發掘姻緣花（雞蛋花）等在地工藝的獨特價值。並協助規劃「尚虎雲」產銷平台，將水井村的鮮味農漁產品與特色文創商品推向更廣闊的市場，讓在地的好東西讓全台看見。
                             </div>
                         </div>
 
@@ -104,7 +117,8 @@
                             <div class="tl-date">生態教育跨代交流</div>
                             <h4 class="tl-title">偏鄉 STEAM 科技教育</h4>
                             <div class="tl-desc">
-                                大學生化身老師，帶著 Matrix 機器人與程式設計課程走進當地校園。除了縮短城鄉數位落差，更透過青銀共學的活動，讓長輩與孫子輩因為科技產生新的對話與笑聲。
+                                大學生化身老師，帶著 Matrix
+                                機器人與互動程式設計課程走進水井當地校園，用行動縮短城鄉數位落差。更透過青銀共學的歡樂活動，讓阿公阿嬤與孫子輩因為一顆小型機器人，產生從未有過的新奇對話與燦爛笑聲。
                             </div>
                         </div>
 
@@ -117,22 +131,29 @@
     <!-- 圖片與結語 -->
     <section class="about-sec">
         <div class="container text-center">
-            <h2 class="section-title mb-5" data-aos="fade-up">看見被溫暖改變的水井村</h2>
-            
-            <div class="about-image-grid mb-5" data-aos="fade-up" data-aos-delay="200">
-                <div class="img-box">
-                    <img src="{% static 'image/about/nfu_robot_class.png' %}" alt="偏鄉學童體驗 STEAM 機器人教育">
+            <h2 class="section-title mb-2" data-aos="fade-up">看見被溫暖改變的水井村</h2>
+            <p style="color:var(--ab-muted); font-size:0.85rem; letter-spacing:0.15em; margin-bottom:48px;"
+                data-aos="fade-up" data-aos-delay="50">
+                FIELD MOMENTS
+            </p>
+
+            <div class="about-image-grid mb-5" data-aos="fade-up" data-aos-delay="150">
+                <div class="img-box" data-caption="風雲客棧・智慧養殖基地&#10;虎科大 USR 研究室現場">
+                    <img src="{% static 'image/about/nfu_aqua.png' %}" alt="風雲客棧智慧養殖基地現場">
                 </div>
-                <div class="img-box">
-                    <img src="{% static 'image/about/nfu_aqua_tech.png' %}" alt="團隊與在地老農民交流智慧養殖設備">
+                <div class="img-box" data-caption="師生與在地老漁民交流&#10;攜手推動 AIoT 智慧養殖設備">
+                    <img src="{% static 'image/about/nfu_aqua2.png' %}" alt="團隊與在地老漁民交流智慧養殖設備">
                 </div>
             </div>
-            
-            <div data-aos="fade-up" style="max-width:700px; margin:0 auto;">
-                <p style="font-size:1.1rem; color:var(--ab-text); line-height: 2;">
+
+            <div data-aos="fade-up" data-aos-delay="200" style="max-width:640px; margin:0 auto;">
+                <p class="about-closing">
                     「風雲客棧」不只是個虛擬的網站名稱，<br>
-                    它是虎科大學生實踐社會責任的歸宿，也是水井村民迎向智慧未來的起點。<br>
-                    歡迎您點擊上方導覽列，參與我們的最新活動，或透過互動導覽，一起走入這個可愛的村莊。
+                    它是虎科大學生實踐社會責任的歸宿，<br>
+                    也是水井村民迎向智慧未來的嶄新起點。
+                </p>
+                <p class="about-closing-sub">
+                    歡迎點擊上方導覽列，參與最新活動，或透過互動導覽，一起走入這個可愛的百年漁村。
                 </p>
             </div>
         </div>

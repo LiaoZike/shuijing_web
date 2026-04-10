@@ -1,0 +1,391 @@
+/* ============================================================
+   STORY.CSS — 水井村的故事（以水成家）
+   官方/博物館質感 結合 水井村溫暖色系
+   ============================================================ */
+
+body {
+    background: #F5F0E8;
+    color: #2E1F0F;
+    font-family: 'Noto Sans TC', sans-serif;
+}
+
+/* ── PAGE HERO ── */
+.story-hero {
+    min-height: 90vh;
+    background: var(--wood-dark);
+    display: flex;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    padding: 120px 0 80px;
+}
+
+.story-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--hero-bg) center/cover no-repeat;
+    opacity: 0.25;
+}
+
+.story-hero-content {
+    position: relative;
+    z-index: 2;
+}
+
+.story-hero-label {
+    font-size: 0.8rem;
+    letter-spacing: 0.3em;
+    color: var(--bamboo-light);
+    margin-bottom: 24px;
+    font-weight: 500;
+}
+
+.story-hero h1 {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    color: var(--cream);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    line-height: 1.4;
+    margin-bottom: 24px;
+}
+
+.story-hero p {
+    color: var(--cream-dark);
+    font-size: 1.05rem;
+    letter-spacing: 0.08em;
+    line-height: 2;
+    max-width: 600px;
+}
+
+/* ── 數字統計 ── */
+.stats-section {
+    padding: 60px 0;
+    background: #2E1F0F;
+    border-bottom: 1px solid rgba(139, 105, 20, 0.15);
+}
+
+.stat-item {
+    text-align: center;
+    padding: 20px;
+}
+
+.stat-num {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-weight: 700;
+    font-size: 3rem;
+    color: var(--bamboo-light);
+    line-height: 1;
+    margin-bottom: 10px;
+}
+
+.stat-unit {
+    font-size: 1.1rem;
+    font-weight: 400;
+    color: rgba(196, 160, 82, 0.8);
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: var(--cream-dark);
+    letter-spacing: 0.1em;
+}
+
+/* ── 故事章節 ── */
+.story-section {
+    padding: 100px 0;
+}
+
+.story-section:nth-child(even) {
+    background: #EDE5D0;
+}
+
+.story-section:nth-child(odd) {
+    background: #F5F0E8;
+}
+
+.story-chapter-num {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-weight: 700;
+    font-size: 4rem;
+    color: rgba(139, 105, 20, 0.15);
+    line-height: 1;
+    margin-bottom: 12px;
+}
+
+.story-chapter-label {
+    font-size: 0.75rem;
+    letter-spacing: 0.25em;
+    color: var(--bamboo);
+    margin-bottom: 16px;
+    font-weight: 500;
+}
+
+.story-chapter-title {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-weight: 700;
+    font-size: clamp(1.5rem, 3vw, 2.2rem);
+    color: #2E1F0F;
+    margin-bottom: 24px;
+    letter-spacing: 0.05em;
+}
+
+.story-text {
+    font-size: 1rem;
+    color: #5A4030;
+    line-height: 2;
+    letter-spacing: 0.03em;
+    text-align: justify;
+}
+
+.story-divider {
+    width: 60px;
+    height: 3px;
+    background: var(--bamboo);
+    margin: 24px 0;
+}
+
+/* ── 資訊卡片 ── */
+.info-box {
+    background: #FFFFFF;
+    border: 1px solid rgba(139, 105, 20, 0.15);
+    border-left: 4px solid var(--bamboo);
+    padding: 24px 28px;
+    margin: 24px 0;
+    box-shadow: 0 4px 20px rgba(139, 105, 20, 0.03);
+}
+
+.info-box h5 {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-weight: 700;
+    color: #2E1F0F;
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+    letter-spacing: 0.05em;
+}
+
+.info-box p {
+    font-size: 0.95rem;
+    color: #7A5C38;
+    line-height: 1.8;
+    margin: 0;
+}
+
+/* ── 章節圖片 ── */
+.story-img-wrap {
+    border-radius: 4px;
+    overflow: hidden;
+    background: #E8DFC8;
+    border: 1px solid rgba(139, 105, 20, 0.15);
+}
+
+.story-img-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    transition: transform 0.6s ease;
+}
+
+.story-img-wrap:hover img {
+    transform: scale(1.02);
+}
+
+.img-source {
+    font-size: 0.75rem;
+    color: #9A8A70;
+    text-align: left;
+    padding: 10px 16px;
+    background: rgba(232, 223, 200, 0.4);
+    letter-spacing: 0.02em;
+    border-top: 1px solid rgba(139, 105, 20, 0.1);
+}
+
+.img-source a {
+    color: #8B6914;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.img-source a:hover {
+    text-decoration: underline;
+    color: #5A4030;
+}
+
+/* ── 引言區塊 ── */
+.story-quote-section {
+    padding: 100px 0;
+    background: #2E1F0F;
+    text-align: center;
+}
+
+.story-quote {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-weight: 500;
+    font-size: clamp(1.2rem, 2.5vw, 1.6rem);
+    color: var(--cream);
+    line-height: 1.8;
+    letter-spacing: 0.05em;
+    max-width: 700px;
+    margin: 0 auto;
+    position: relative;
+    padding: 0 20px;
+}
+
+.story-quote::before {
+    content: '“';
+    font-size: 5rem;
+    color: rgba(196, 160, 82, 0.25);
+    position: absolute;
+    top: -40px;
+    left: -20px;
+    font-family: sans-serif;
+    font-weight: 700;
+}
+
+.story-quote-author {
+    font-size: 0.9rem;
+    color: var(--bamboo-light);
+    letter-spacing: 0.15em;
+    margin-top: 30px;
+    font-weight: 500;
+}
+
+/* ── 三寶展示 (Official Style) ── */
+.treasure-section {
+    padding: 100px 0;
+    background: var(--wood-dark);
+}
+
+.treasure-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(196, 160, 82, 0.15);
+    padding: 40px 30px;
+    text-align: center;
+    height: 100%;
+    transition: all 0.3s;
+    position: relative;
+    border-radius: 4px;
+}
+
+.treasure-card:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(196, 160, 82, 0.4);
+    transform: translateY(-4px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.treasure-name {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: var(--cream);
+    margin-bottom: 8px;
+    letter-spacing: 0.1em;
+}
+
+.treasure-en {
+    font-size: 0.75rem;
+    color: var(--bamboo-light);
+    letter-spacing: 0.25em;
+    margin-bottom: 24px;
+    text-transform: uppercase;
+}
+
+.treasure-desc {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    line-height: 1.8;
+    text-align: justify;
+}
+
+.treasure-badge {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    font-size: 0.7rem;
+    padding: 4px 12px;
+    border: 1px solid rgba(139, 105, 20, 0.3);
+    color: var(--bamboo-light);
+    letter-spacing: 0.1em;
+    border-radius: 20px;
+}
+
+/* ── 在地物產 ── */
+.products-section {
+    padding: 100px 0;
+    background: #F5F0E8;
+}
+
+/* ── 鑿井之歌 ── */
+.song-section {
+    padding: 100px 0;
+    background: #EDE5D0;
+}
+
+.song-lyrics {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 1.05rem;
+    color: #5A4030;
+    line-height: 2.2;
+    letter-spacing: 0.04em;
+    border-left: 4px solid var(--bamboo);
+    padding-left: 32px;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+/* ── 資料引用 ── */
+.citation-section {
+    padding: 36px 0;
+    background: #EDE5D0;
+    border-top: 1px solid rgba(139, 105, 20, 0.15);
+}
+
+.citation-text {
+    font-size: 0.82rem;
+    color: #9A8A70;
+    letter-spacing: 0.05em;
+    line-height: 2;
+    margin: 0;
+}
+
+.citation-text a {
+    color: #8B6914;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.citation-text a:hover {
+    text-decoration: underline;
+    color: #5A4030;
+}
+
+/* ── CTA ── */
+.story-cta {
+    padding: 100px 0;
+    background: #2E1F0F;
+    text-align: center;
+}
+
+.story-cta .section-title {
+    color: var(--cream);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+}
+
+.story-cta .btn-login {
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+/* ── 通用補丁 ── */
+.h-100 {
+    height: 100% !important;
+}
+
+.info-box.h-100 {
+    margin: 0;
+}
