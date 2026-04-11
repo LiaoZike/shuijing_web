@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ notice.title }} - 風雲客棧{% endblock %}
+
+{% block link_css %}
+    <link rel="stylesheet" href="{% static 'css/core/notice.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="notice-detail-page">
+
+    {# ── Top nav ── #}
+    <div class="notice-detail-nav">
+        <a href="{% url 'notice_list' %}" class="notice-back-link">
+            <i class="bi bi-arrow-left"></i>
+            <span>返回公告列表</span>
+        </a>
+        <nav class="notice-breadcrumb">
+            <a href="{% url 'home' %}">首頁</a>
+            <span class="separator">/</span>
+            <a href="{% url 'notice_list' %}">公告列表</a>
+            <span class="separator">/</span>
+            <span style="color:#4A3320;">公告詳情</span>
+        </nav>
+    </div>
+
+    {# ── Article card ── #}
+    <div class="notice-detail-container">
+        <article class="notice-article" data-aos="fade-up">
+
+            <header class="notice-article-header">
+                <div class="notice-meta-large">
+                    <span class="notice-tag tag-{{ notice.category }}">
+                        {{ notice.get_category_display }}
+                    </span>
+                    <span class="notice-meta-sep">|</span>
+                    <span class="notice-date">{{ notice.publish_date|date:"Y 年 m 月 d 日" }}</span>
+                    <span class="notice-meta-sep">|</span>
+                    <span class="notice-meta-author">風雲客棧數位平台</span>
+                </div>
+                <h1 class="notice-article-title">{{ notice.title }}</h1>
+            </header>
+
+            <div class="notice-article-body">
+                {{ notice.content|linebreaks }}
+            </div>
+
+            {# ── 圖片畫廊 ── #}
+            {% if notice.images.all %}
+            <div class="notice-gallery">
+                <p class="notice-gallery-label">相關圖片</p>
+                <div class="notice-gallery-grid">
+                    {% for item in notice.images.all %}
+                    <div class="gallery-item" data-aos="zoom-in" data-aos-delay="{{ forloop.counter }}00">
+                        <div class="gallery-img-wrap">
+                            <img src="{{ item.image.url }}" alt="{{ item.caption|default:notice.title }}">
+                        </div>
+                        {% if item.caption %}
+                        <div class="gallery-caption">{{ item.caption }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <footer class="notice-article-footer-simple">
+                <a href="{% url 'notice_list' %}" class="notice-footer-back">
+                    <i class="bi bi-arrow-left"></i> 返回公告列表
+                </a>
+                <span class="notice-footer-hint">風雲客棧數位平台 · 水井村</span>
+            </footer>
+
+        </article>
+    </div>
+
+</div>
+{% endblock %}

@@ -19,6 +19,7 @@
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/core/mascot.css' %}">
     {% block link_css %}{% endblock %}
 </head>
 <body>
@@ -46,17 +47,29 @@
                 <a class="nav-link {% if request.resolver_match.url_name == 'home' and request.resolver_match.app_name != 'guide' %}active{% endif %}"
                 href="{% url 'home' %}">首 頁</a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}"
-                href="{% url 'about' %}">關於風雲客棧</a>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle {% if request.resolver_match.url_name == 'about' or request.resolver_match.url_name == 'story' %}active{% endif %}"
+                href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    關 於
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{% url 'about' %}">關於風雲客棧</a></li>
+                    <li><a class="dropdown-item" href="{% url 'story' %}">關於水井村</a></li>
+                </ul>
             </li>
-             <li class="nav-item">
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle {% if 'event' in request.resolver_match.url_name or 'notice' in request.resolver_match.url_name %}active{% endif %}"
+                href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    消息資訊
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{% url 'notice_list' %}">最新公告</a></li>
+                    <li><a class="dropdown-item" href="{% url 'event_list' %}">近期活動</a></li>
+                </ul>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link {% if request.resolver_match.url_name == 'usr' %}active{% endif %}"
                 href="{% url 'usr' %}">USR 成果</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {% if 'event' in request.resolver_match.url_name %}active{% endif %}"
-                href="{% url 'event_list' %}">活動資訊</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {% if request.resolver_match.app_name == 'guide' %}active{% endif %}"
@@ -144,7 +157,7 @@
                 </p>
                 <div class="d-flex gap-3 mt-4">
                     <a href="https://ossr.nfu.edu.tw/" target="_blank" title="USR 官網"><i class="bi bi-globe" style="color: var(--text-muted); font-size: 1.1rem;"></i></a>
-                    <a href="https://www.facebook.com/nfuusr/" target="_blank" title="Facebook"><i class="bi bi-facebook" style="color: var(--text-muted); font-size: 1.1rem;"></i></a>
+                    <a href="https://www.facebook.com/nfuossr" target="_blank" title="Facebook"><i class="bi bi-facebook" style="color: var(--text-muted); font-size: 1.1rem;"></i></a>
                     <a href="{% url 'contact' %}" title="聯絡我們"><i class="bi bi-envelope-fill" style="color: var(--text-muted); font-size: 1.1rem;"></i></a>
                 </div>
             </div>
@@ -162,6 +175,7 @@
                     <li class="mb-2"><a href="{% url 'guide:home' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">互動導覽地圖</a></li>
                     <li class="mb-2"><a href="{% url 'event_list' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">近期活動詳情</a></li>
                     <li class="mb-2"><a href="{% url 'about' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">關於風雲客棧</a></li>
+                    <li class="mb-2"><a href="{% url 'story' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">關於水井村</a></li>
                 </ul>
             </div>
             <div class="col-6 col-lg-2 mb-4">
@@ -194,8 +208,40 @@
 <!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+<!-- Lenis 順滑滾動引擎 (Premium Smooth Scroll) -->
+<script src="https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
 <script>
-    AOS.init({ duration: 700, once: false, offset: 80 });
+    // 初始化 Lenis (優化靈敏度，降低延遲感)
+    const lenis = new Lenis({
+        duration: 0.65,
+        // easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), 
+        easing: (t) => 1 - Math.pow(1 - t, 3), 
+        direction: 'vertical',
+        smooth: true,
+        smoothTouch: false, 
+    });
+
+    function raf(time) {
+        lenis.raf(time);
+        requestAnimationFrame(raf);
+    }
+    requestAnimationFrame(raf);
+
+    // 解決 Lenis 導致 Bootstrap 彈出視窗（Modal）出現滑鼠穿透滾動的 Bug
+    document.addEventListener('show.bs.modal', () => {
+        lenis.stop();
+    });
+    document.addEventListener('hidden.bs.modal', () => {
+        lenis.start();
+    });
+
+    // AOS 動畫設定 (使用 throttle 降低滾動時的計算頻率，優化效能)
+    AOS.init({ 
+        duration: 600, 
+        once: true, 
+        offset: 50,
+        throttleDelay: 99 // 降低偵測頻率，提升滑動流暢度
+    });
 
     // Navbar 滾動變色
     window.addEventListener('scroll', () => {
@@ -285,7 +331,41 @@
     }
 </script>
 
-{% block extra_js %}{% endblock %}
+<!-- ===================== FLOATING MASCOT ===================== -->
+<div class="shuijing-mascot-container" id="shuijingMascot" onclick="scrollToTop(1200);">
+    <div class="mascot-bubble">哈囉！點我回頂部唷 🐢</div>
+    <div class="shuijing-mascot-wrapper">
+        <div class="shuijing-mascot-sprite"></div>
+    </div>
+    <!-- <div class="mascot-shadow"></div> -->
+</div>
+
 {% block link_js %}{% endblock %}
+{% block extra_js %}{% endblock %}
+<script>
+    /**
+     * 緩慢回到頂部函式
+     * @param {number} duration 毫秒數，數值越大越慢
+     */
+    function scrollToTop(duration) {
+        const start = window.pageYOffset;
+        const startTime = 'now' in window.performance ? performance.now() : new Date().getTime();
+
+        function scroll() {
+            const now = 'now' in window.performance ? performance.now() : new Date().getTime();
+            const time = Math.min(1, ((now - startTime) / duration));
+            
+            // 使用 Ease-in-out 動畫，讓啟動與停止更柔和
+            const easeInOutQuad = (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+            
+            window.scroll(0, Math.ceil((easeInOutQuad(time) * (0 - start)) + start));
+
+            if (window.pageYOffset > 0 && time < 1) {
+                requestAnimationFrame(scroll);
+            }
+        }
+        scroll();
+    }
+</script>
 </body>
 </html>

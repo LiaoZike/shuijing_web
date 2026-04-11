@@ -23,7 +23,18 @@
                 名額上限 {{ activity.max_participants }} 人・
                 已報名 {{ activity.registration_count }} 人・
                 剩餘 {{ activity.remaining_spots }} 人
+                {% if activity.waitlist_count > 0 %}
+                ・候補 {{ activity.waitlist_count }} 人
+                {% endif %}
             </div>
+            {% if activity.remaining_spots == 0 %}
+            <div style="background:rgba(196,160,82,0.15);border:1px solid rgba(196,160,82,0.4);border-radius:8px;padding:14px 20px;margin-bottom:20px;">
+                <p style="margin:0;font-size:0.88rem;color:#8B6914;">
+                    <i class="bi bi-info-circle me-2"></i>
+                    名額已滿，您即將加入<strong>候補名單</strong>。若有名額釋出將優先通知您。
+                </p>
+            </div>
+            {% endif %}
             {% endif %}
 
             <form method="post" id="registerForm">
@@ -64,7 +75,11 @@
                               placeholder="如有特殊需求，請備註"></textarea>
                 </div>
 
+                {% if activity.max_participants and activity.remaining_spots == 0 %}
+                <button type="submit" class="btn-submit" style="background:#C4A052;"><i class="bi bi-hourglass-split me-2"></i>加入候補名單 →</button>
+                {% else %}
                 <button type="submit" class="btn-submit">確認報名 →</button>
+                {% endif %}
             </form>
 
             <a href="{% url 'event_detail' activity.pk %}"

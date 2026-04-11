@@ -83,7 +83,31 @@ body {
 /* ============================================================
    DETAIL HERO  —  活動詳細頁標題區
    ============================================================ */
+.detail-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-light);
+    font-size: 0.9rem;
+    letter-spacing: 0.1em;
+    text-decoration: none;
+    transition: color 0.2s, border-color 0.2s;
+    border: 1px solid var(--text-light);
+    padding: 10px 16px;
+    background-color: #8f867b;
+    margin-bottom: 10px;
+}
+
+.detail-btn-secondary:hover {
+    background-color: #6b6359;
+    color: #cfc7b3;
+    border-color: var(--cream-dark);
+    text-decoration: none;
+}
+
+
 .detail-hero {
+    margin-top: -3px;
     padding: 140px 0 0;
     background: var(--wood-dark);
     position: relative;
@@ -114,12 +138,15 @@ body {
 
 .breadcrumb-bar {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 8px;
     font-size: 0.78rem;
     color: var(--text-muted);
     letter-spacing: 0.1em;
     margin-bottom: 24px;
+    word-break: break-word;
+    overflow-wrap: anywhere;
 }
 
 .breadcrumb-bar a {
@@ -141,6 +168,7 @@ body {
     align-items: center;
     gap: 8px;
     margin-bottom: 16px;
+    flex-wrap: wrap;
 }
 
 .detail-badge {
@@ -172,6 +200,8 @@ body {
     letter-spacing: 0.08em;
     line-height: 1.4;
     margin-bottom: 10px;
+    word-break: break-word;
+    overflow-wrap: anywhere;
 }
 
 .detail-subtitle {
@@ -586,23 +616,6 @@ body {
     line-height: 2;
     letter-spacing: 0.04em;
     white-space: pre-line;
-}
-
-.back-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    color: #9A8070;
-    font-size: 1rem;
-    letter-spacing: 0.1em;
-    text-decoration: none;
-    margin-bottom: 40px;
-    transition: color 0.2s;
-}
-
-.back-link:hover {
-    color: var(--bamboo);
-    text-decoration: none;
 }
 
 .section-title {

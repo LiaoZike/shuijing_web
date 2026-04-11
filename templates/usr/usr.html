@@ -3,7 +3,7 @@
 {% load static %}
 
 {% block link_css %}
-<link rel="stylesheet" href="{% static 'css/core/usr.css' %}">
+<link rel="stylesheet" href="{% static 'css/usr/usr.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -35,12 +35,11 @@
                         </p>
                         <p style="font-family:var(--font-serif-tc);font-size:1.4rem;
                                 color:var(--c-ink);letter-spacing:0.06em;line-height:1.6;margin:0;font-weight:700;">
-                            大學特色類<br>萌芽型計畫
+                            大學特色類<br>
                         </p>
                         <div style="margin:24px 0;height:1px;background:rgba(0,0,0,0.06);"></div>
                         <p style="font-size:0.95rem;color:var(--c-muted);margin:0;line-height:1.8;">
                             <strong>實踐場域：</strong>雲林縣水井村<br>
-                            <strong>SDGs：</strong>6・7・11・12・13
                         </p>
                     </div>
         </div>
@@ -244,7 +243,7 @@
     </section>
 
     <!-- 相關影音 -->
-    <section class="usr-section">
+    <section id="video-section" class="usr-section">
         <div class="container">
             <div class="text-center mb-5" data-aos="fade-up">
                 <p class="section-subtitle-light">VIDEO RECORDS</p>
@@ -252,15 +251,59 @@
                 <p style="color:var(--c-muted);margin-bottom:32px;font-size:1rem;" data-aos="fade-up">記錄師生在水井村的實踐過程與成果發表。</p>
             </div>
             
+            
             <div class="usr-video-grid mb-5">
-              {% for video in videos %}
-              <div class="usr-video-item" data-aos="fade-up" data-aos-delay="{{ forloop.counter }}00">
-                  {% if "youtube.com/embed" in video.link_url %}
-                  <iframe src="{{ video.link_url }}" allowfullscreen class="usr-video-embed"></iframe>
-                  {% else %}
-                  <a href="{{ video.link_url }}" target="_blank" style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--c-gold);text-decoration:none;min-height:200px;">{{ video.title }}</a>
-                  {% endif %}
-                  <div class="usr-video-title">{{ video.title }}</div>
+              {% for video in videos_page %}
+              <div class="usr-video-item" data-aos="fade-up" data-aos-delay="{{ forloop.counter }}00" 
+                   style="padding:0; overflow:hidden; border-radius:12px; background:var(--c-surface); cursor:pointer; position:relative;" 
+                   data-title="{{ video.title }}"
+                   data-desc="{{ video.description }}"
+                   data-embed-url="{{ video.get_embed_url }}"
+                   data-ori-url="{{ video.link_url }}"
+                   data-video-url="{% if video.video_file %}{{ video.video_file.url }}{% endif %}"
+                   data-embed-code="{{ video.embed_code }}"
+                   onclick="openRichVideoModal(this)">
+                  
+                  <div class="video-thumbnail-wrapper" style="position:relative; width:100%; aspect-ratio:16/9; background:#000; overflow:hidden;">
+                      {% if video.video_file %}
+                          <video src="{{ video.video_file.url }}" style="width:100%; height:100%; object-fit:cover; opacity:0.7; pointer-events:none;"></video>
+                      {% elif video.get_youtube_thumbnail %}
+                          <img src="{{ video.get_youtube_thumbnail }}" alt="{{ video.title }}" class="video-card-img" style="width:100%; height:100%; object-fit:cover; transition: transform 0.4s ease; opacity:0.85;">
+                      {% elif video.images.first %}
+                          <img src="{{ video.images.first.image.url }}" alt="{{ video.title }}" class="video-card-img" style="width:100%; height:100%; object-fit:cover; transition: transform 0.4s ease; opacity:0.85;">
+                      {% else %}
+                          <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#e2ddd3; color:#888;">
+                              紀錄詳情
+                          </div>
+                      {% endif %}
+                      
+                      <!-- 精美播放/檢視按鈕覆蓋層 -->
+                      <div class="play-btn-overlay" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:60px; height:60px; background:rgba(0,0,0,0.6); border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid rgba(255,255,255,0.8); transition:all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+                          {% if video.video_file or video.get_embed_url or video.embed_code %}
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="margin-left:4px;">
+                              <path d="M8 5V19L19 12L8 5Z" fill="white"/>
+                          </svg>
+                          {% else %}
+                          <i class="fas fa-images" style="color:white; font-size:24px;"></i>
+                          {% endif %}
+                      </div>
+                  </div>
+
+                  <!-- 隱藏的附圖資料庫 (供 JS 抓取) -->
+                  <template class="video-images-data">
+                      {% for img in video.images.all %}
+                      <div class="col-12 col-md-6 mb-4">
+                          <img src="{{ img.image.url }}" alt="{{ img.caption }}" class="w-100 rounded" style="object-fit:cover; aspect-ratio:4/3; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                          {% if img.caption %}
+                          <p class="mt-2 text-center" style="font-size:0.9rem; color:var(--c-muted);">{{ img.caption }}</p>
+                          {% endif %}
+                      </div>
+                      {% endfor %}
+                  </template>
+
+                  <div class="usr-video-title" style="padding:16px; min-height:80px; display:flex; align-items:center; justify-content:center; border-top:1px solid rgba(0,0,0,0.05); text-align:center; font-weight:500; font-family:var(--font-serif-tc);">
+                      {{ video.title }}
+                  </div>
               </div>
               {% empty %}
               <div class="usr-video-item" style="display:flex;align-items:center;justify-content:center;color:#666;font-size:14px;background:#e2ddd3;min-height:200px;">
@@ -268,6 +311,31 @@
               </div>
               {% endfor %}
             </div>
+
+            <!-- 分頁導覽列 -->
+            {% if videos_page.has_other_pages %}
+            <div class="pagination-wrap" data-aos="fade-up">
+                {% if videos_page.has_previous %}
+                <a href="?vpage={{ videos_page.previous_page_number }}#video-section" class="page-btn">‹</a>
+                {% else %}
+                <span class="page-btn disabled">‹</span>
+                {% endif %}
+
+                {% for i in videos_page.paginator.page_range %}
+                    {% if videos_page.number == i %}
+                    <span class="page-btn active">{{ i }}</span>
+                    {% else %}
+                    <a href="?vpage={{ i }}#video-section" class="page-btn">{{ i }}</a>
+                    {% endif %}
+                {% endfor %}
+
+                {% if videos_page.has_next %}
+                <a href="?vpage={{ videos_page.next_page_number }}#video-section" class="page-btn">›</a>
+                {% else %}
+                <span class="page-btn disabled">›</span>
+                {% endif %}
+            </div>
+            {% endif %}
 
             <div class="row">
                 <div class="col-lg-8 mx-auto text-center" data-aos="fade-up">
@@ -279,42 +347,50 @@
         </div>
     </section>
 
-    <!-- 新聞報導 -->
-    <section class="usr-section-alt">
-      <div class="container">
-        <div class="text-center mb-5" data-aos="fade-up">
-            <p class="section-subtitle-light">NEWS</p>
-            <h2 class="section-title-dark">媒體與校園報導</h2>
-        </div>
+    <!-- 影片/圖文專用 Modal (質感畫廊升級版) -->
+    <div class="modal fade" id="videoModal" tabindex="-1" aria-labelledby="videoModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content" style="background:var(--c-surface); border:none; border-radius:16px; overflow:hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
+          
+          <div class="modal-header" style="border-bottom:1px solid rgba(0,0,0,0.06); background:var(--c-surface); padding: 16px 24px;">
+            <h5 class="modal-title" id="videoModalLabel" style="color:var(--c-ink); font-size:1.15rem; font-weight:700; letter-spacing:0.05em; font-family:var(--font-serif-tc);">紀錄詳情</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="closeRichVideoModal()"></button>
+          </div>
 
-        <div class="row">
-            <div class="col-lg-10 mx-auto">
-                <div class="usr-news-list">
-                  <a href="https://ossr.nfu.edu.tw/news.php?pa=getNewsList&category=7" target="_blank" rel="noopener" class="usr-news-item" data-aos="fade-up">
-                    <div class="usr-news-source">虎科大永續處</div>
-                    <div class="usr-news-text">
-                      <div class="usr-news-title">永續處 USR－水井村智慧減碳節水三生一體社會實踐計畫「三寶奇緣」活動圓滿成功</div>
-                      <div class="usr-news-date">虎科大永續發展暨社會責任處</div>
+          <div class="modal-body" style="padding:0; background:var(--c-surface); color:var(--c-ink); 
+     overflow-y:auto; overscroll-behavior:contain;">
+            <!-- 影音播放區 (純黑沉浸式區塊) -->
+            <div id="videoModalMedia" style="background:#0a0a0a; border-bottom: 2px solid var(--c-gold); position: relative;">
+                <!-- 滾動防護罩：解決 iframe 攔截捲動問題 -->
+                <div id="videoModalScrollGuard" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; cursor: ns-resize; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0); transition: background 0.3s;">
+                    <div class="scroll-tip" style="color: #fff; background: rgba(0,0,0,0.4); padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; pointer-events: none; opacity: 0; transition: opacity 0.3s;">
+                        <i class="bi bi-mouse me-1"></i> 您可以滑動滾輪捲動內容，或點擊觀看影片
                     </div>
-                  </a>
-                  <a href="https://www.cheers.com.tw/article/article.action?id=5103756" target="_blank" rel="noopener" class="usr-news-item" data-aos="fade-up" data-aos-delay="100">
-                    <div class="usr-news-source">Cheers</div>
-                    <div class="usr-news-text">
-                      <div class="usr-news-title">返鄉種田也科技感十足？虎尾科大學生用 AI 讓農業變潮流</div>
-                      <div class="usr-news-date">2025 · Cheers 快樂工作人</div>
-                    </div>
-                  </a>
-                  <a href="https://www.nfu.edu.tw/zh/approved-news-nfu/approved-news-nfu-news/11695" target="_blank" rel="noopener" class="usr-news-item" data-aos="fade-up" data-aos-delay="200">
-                    <div class="usr-news-source">虎科大</div>
-                    <div class="usr-news-text">
-                      <div class="usr-news-title">全台大學搶開 AI 系，這間科大卻選開「農業系」！為什麼？</div>
-                      <div class="usr-news-date">2024 · 國立虎尾科技大學</div>
-                    </div>
-                  </a>
                 </div>
             </div>
+
+            <!-- 圖文內容區 (米白優雅區塊) -->
+            <div style="padding: 48px 32px; max-width:960px; margin:0 auto;">
+                
+                <h3 id="videoModalInnerTitle" style="margin-bottom:24px; font-weight:800; line-height:1.4; color:var(--c-ink); font-family:var(--font-serif-tc); text-align:center;"></h3>
+                <div style="width:60px; height:3px; background:var(--c-gold); margin:0 auto 40px auto;"></div>
+                
+                <!-- 精美導引區 -->
+                <div id="videoModalAction" class="mb-5 text-center" style="display:none;"></div>
+
+                <!-- 文字敘述 -->
+                <div id="videoModalDesc" style="font-size:1.05rem; line-height:1.9; color:var(--c-muted); margin-bottom:48px; white-space:pre-wrap; text-align:justify; padding:0 24px;"></div>
+                
+                <!-- 附圖網格 -->
+                <div id="videoModalImages" class="row g-4 justify-content-center"></div>
+
+            </div>
+
+          </div>
         </div>
       </div>
-    </section>
-
+    </div>
+{% endblock %}
+{% block link_js %}
+<script src="{% static 'js/usr/usr.js' %}"></script>
 {% endblock %}

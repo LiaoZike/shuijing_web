@@ -34,7 +34,7 @@ class ServiceItem(models.Model):
     description = models.TextField('說明')
     link_text   = models.CharField('連結文字', max_length=50, default='了解更多',
                                    help_text='例如：探索農產、瀏覽商品')
-    link_url    = models.CharField('連結網址', max_length=200, default='#')
+    link_url    = models.URLField('連結網址', max_length=500, default='#')
     is_featured = models.BooleanField('特色標示（金框）', default=False)
     badge_text  = models.CharField('標籤文字', max_length=20, blank=True,
                                    help_text='例如：限定體驗，留空不顯示')
@@ -68,7 +68,7 @@ class Activity(models.Model):
     location    = models.CharField('地點', max_length=100)  # 必填拿掉 blank=True
     cover_image = models.ImageField('宣傳圖片', upload_to='activities/',
                                     blank=True, null=True)
-    link_url    = models.CharField('報名/詳情連結', max_length=200, blank=True)
+    link_url    = models.URLField('報名/詳情連結', max_length=500, blank=True)
     max_participants = models.PositiveIntegerField('總人數上限', blank=True, null=True,
                                                    help_text='留空表示不限總人數')
     max_per_user      = models.PositiveIntegerField('每帳號限報名人數', blank=True, null=True,
@@ -77,6 +77,8 @@ class Activity(models.Model):
     contact_phone = models.CharField('聯絡電話', max_length=20)     # 必填
     contact_email = models.EmailField('聯絡信箱', blank=True)
 
+    allow_waitlist = models.BooleanField('允許候補', default=False,
+                                         help_text='當名額不足時，是否允許轉為候補')
     is_active   = models.BooleanField('顯示', default=True)
     is_featured = models.BooleanField('置頂推薦', default=False)
 
@@ -109,10 +111,17 @@ class Activity(models.Model):
             return timezone.now() <= self.register_deadline
         return True
     def registration_count(self):
-        """實際報名總人數（加總每筆的人數）"""
+        """實際確認報名總人數（只計算 confirmed，加總每筆的人數）"""
         from django.db.models import Sum
-        result = self.registrations.aggregate(total=Sum('participant_count'))
+        result = self.registrations.filter(status='confirmed').aggregate(total=Sum('participant_count'))
         return result['total'] or 0
+
+    def waitlist_count(self):
+        """候補總人數（只計算 waitlist，加總每筆的人數）"""
+        from django.db.models import Sum
+        result = self.registrations.filter(status='waitlist').aggregate(total=Sum('participant_count'))
+        return result['total'] or 0
+
     def remaining_spots(self):
         if not self.max_participants:
             return None
@@ -131,6 +140,11 @@ class Activity(models.Model):
 # Function: 活動報名資料模型
 ##################################################
 class Registration(models.Model):
+    STATUS_CHOICES = [
+        ('confirmed', '已確認'),
+        ('waitlist',  '候補中'),
+    ]
+
     activity       = models.ForeignKey(Activity, on_delete=models.CASCADE,
                                        related_name='registrations',
                                        verbose_name='活動')
@@ -142,6 +156,9 @@ class Registration(models.Model):
     email          = models.EmailField('信箱')
     participant_count = models.PositiveIntegerField('報名人數', default=1,
                                                     help_text='包含本人，例如全家4人填4')
+    status         = models.CharField('報名狀態', max_length=10,
+                                      choices=STATUS_CHOICES, default='confirmed',
+                                      help_text='confirmed=已確認, waitlist=候補中')
     note           = models.TextField('備註', blank=True,
                                       help_text='同行人姓名、飲食需求等')
     created_at     = models.DateTimeField('報名時間', auto_now_add=True)
@@ -150,7 +167,8 @@ class Registration(models.Model):
         verbose_name = '報名記錄'
         verbose_name_plural = '報名記錄'
     def __str__(self):
-        return f"{self.activity.title} - {self.name}（{self.participant_count}人）"
+        status_label = '候補' if self.status == 'waitlist' else '確認'
+        return f"{self.activity.title} - {self.name}（{self.participant_count}人・{status_label}）"
     def get_date(self):
         return self.activity.date
     
@@ -211,7 +229,7 @@ class AiotProject(models.Model):
     tags        = models.CharField('標籤', max_length=100, help_text='例如：智慧養殖,水質監測')
     description = models.TextField('專案說明')
     image       = models.ImageField('專案圖片', upload_to='usr/aiot/', blank=True, null=True)
-    link_url    = models.CharField('連結網址', max_length=200, blank=True, help_text='與在地故事結合的延伸連結')
+    link_url    = models.URLField('連結網址', max_length=500, blank=True, help_text='與在地故事結合的延伸連結')
     is_active   = models.BooleanField('顯示', default=True)
     order       = models.PositiveIntegerField('排序', default=0)
 
@@ -238,7 +256,7 @@ class UsrAchievement(models.Model):
     title       = models.CharField('標題', max_length=100)
     description = models.TextField('說明')
     image       = models.ImageField('活動照片', upload_to='usr/achievements/', blank=True, null=True)
-    link_url    = models.CharField('詳細連結', max_length=200, blank=True)
+    link_url    = models.URLField('詳細連結', max_length=500, blank=True)
     is_active   = models.BooleanField('顯示', default=True)
 
     class Meta:
@@ -255,8 +273,15 @@ class UsrAchievement(models.Model):
 ##################################################
 class UsrVideo(models.Model):
     date        = models.DateField('發布日期')
-    title       = models.CharField('影片標題', max_length=150)
-    link_url    = models.CharField('影片連結', max_length=300)
+    title       = models.CharField('影片/紀錄標題', max_length=150)
+    description = models.TextField('詳細說明', blank=True)
+    link_url    = models.URLField('YouTube 連結', max_length=500, blank=True)
+    embed_code  = models.TextField(
+        '自訂嵌入原始碼', 
+        blank=True, 
+        help_text='可貼入來自 YouTube / Facebook 等平台的嵌入原始碼（iframe 格式）'  # ← 移除 < > 符號
+    )
+    video_file  = models.FileField('直接上傳影片檔', upload_to='usr/videos/', blank=True, null=True)
     is_active   = models.BooleanField('顯示', default=True)
 
     class Meta:
@@ -266,6 +291,46 @@ class UsrVideo(models.Model):
 
     def __str__(self):
         return self.title
+
+    def get_embed_url(self):
+        if not self.link_url:
+            return ""
+        if "youtube.com/embed" in self.link_url:
+            return self.link_url  # 直接回傳，不替換網域
+        import re
+        match = re.search(r'(?:youtube\.com/watch\?v=|youtu\.be/)([\w-]+)', self.link_url)
+        if match:
+            return f"https://www.youtube.com/embed/{match.group(1)}"  # 改回 youtube.com
+        return ""
+        
+    def get_embed_code_or_url(self):
+        """回傳優先順序：embed_code > get_embed_url"""
+        if self.embed_code and self.embed_code.strip():
+            return self.embed_code.strip()
+        return ""  # 只負責 raw embed_code；YouTube URL 由 get_embed_url 處理
+
+    def get_youtube_thumbnail(self):
+        if not self.link_url:
+            return ""
+        import re
+        match = re.search(r'(?:youtube\.com/watch\?v=|youtu\.be/|youtube\.com/embed/)([\w-]+)', self.link_url)
+        if match:
+            return f"https://img.youtube.com/vi/{match.group(1)}/maxresdefault.jpg"
+        return ""
+
+class UsrVideoImage(models.Model):
+    video       = models.ForeignKey(UsrVideo, on_delete=models.CASCADE, related_name='images', verbose_name='所屬紀錄')
+    image       = models.ImageField('圖片', upload_to='usr/video_images/')
+    caption     = models.CharField('圖片說明', max_length=100, blank=True)
+    order       = models.PositiveIntegerField('排序', default=0)
+
+    class Meta:
+        ordering = ['order']
+        verbose_name = '影音紀錄附圖'
+        verbose_name_plural = '影音紀錄附圖'
+
+    def __str__(self):
+        return f"{self.video.title} - 圖片 {self.order}"
 
 
 ##################################################
@@ -287,3 +352,43 @@ class UsrTeamMember(models.Model):
     def __str__(self):
         return f"{self.name} ({self.role})"
 
+# Close the file with the new model
+class Notice(models.Model):
+    CATEGORY_CHOICES = [
+        ('important', '重要公告'),
+        ('general',   '一般訊息'),
+        ('event',     '活動快訊'),
+    ]
+
+    title        = models.CharField('標題', max_length=200)
+    category     = models.CharField('分類', max_length=20, choices=CATEGORY_CHOICES, default='general')
+    content      = models.TextField('內容')
+    publish_date = models.DateField('發佈日期', default=timezone.now)
+    is_active    = models.BooleanField('顯示', default=True)
+    is_priority  = models.BooleanField('置頂', default=False)
+    created_at   = models.DateTimeField('建立時間', auto_now_add=True)
+    updated_at   = models.DateTimeField('更新時間', auto_now=True)
+
+    class Meta:
+        ordering = ['-is_priority', '-publish_date', '-created_at']
+        verbose_name = '公告'
+        verbose_name_plural = '公告'
+
+    def __str__(self):
+        return f"[{self.get_category_display()}] {self.title}"
+
+
+class NoticeImage(models.Model):
+    notice      = models.ForeignKey(Notice, related_name='images', on_delete=models.CASCADE, verbose_name='公告')
+    image       = models.ImageField('圖片', upload_to='notices/')
+    caption     = models.CharField('圖片說明', max_length=200, blank=True)
+    order       = models.IntegerField('排序', default=0)
+    created_at  = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', 'created_at']
+        verbose_name = '公告圖片'
+        verbose_name_plural = '公告圖片'
+
+    def __str__(self):
+        return f"Image for {self.notice.title}"

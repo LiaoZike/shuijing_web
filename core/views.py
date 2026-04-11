@@ -18,6 +18,7 @@ from .models import (
     ContactMessage,
     AiotProject,
     UsrAchievement,
+    Notice,
 )
 
 import threading
@@ -57,10 +58,12 @@ def home(request):
         .order_by('is_past', '-is_featured', '-date')[:4]
     )
 
+    notices = Notice.objects.filter(is_active=True).order_by('-publish_date')[:7]
     return render(request, 'core/home.html', {
         'slides': slides,
         'services': services,
         'activities': activities,
+        'notices': notices,
         'today': today,
     })
 
@@ -130,6 +133,9 @@ def event_detail(request, pk):
     if activity.max_participants:
         is_full = activity.remaining_spots() <= 0
 
+    # 候補可用：額滿但仍開放報名，且開放候補
+    is_waitlist_available = is_full and activity.is_registration_open() and activity.allow_waitlist
+
     # 顯示用的報名人數，不超過上限
     displayed_count = None
     if activity.max_participants:
@@ -140,12 +146,13 @@ def event_detail(request, pk):
     ).exclude(pk=pk).order_by('-is_featured', 'date')[:3]
 
     return render(request, 'core/event_detail.html', {
-        'activity':          activity,
-        'today':             today,
-        'is_full':           is_full,
-        'user_registration': user_registration,
-        'related':           related,
-        'displayed_count':   displayed_count,
+        'activity':              activity,
+        'today':                 today,
+        'is_full':               is_full,
+        'is_waitlist_available':  is_waitlist_available,
+        'user_registration':     user_registration,
+        'related':               related,
+        'displayed_count':       displayed_count,
     })
 
 
@@ -173,7 +180,7 @@ def _get_companions_from_post(request):
 
 
 def _validate_event_registration(activity, user, name, phone, companions):
-    """檢查活動報名資料是否合法，若不合法則回傳錯誤訊息。"""
+    """檢查活動報名資料是否合法（不再檢查名額，名額由 view 判斷 confirmed/waitlist）。"""
     if not name or not phone:
         return '抱歉! 姓名和電話為必填。'
 
@@ -197,7 +204,8 @@ def _validate_event_registration(activity, user, name, phone, companions):
     if activity.max_participants:
         remaining = activity.remaining_spots()
         if participant_count > remaining:
-            return f'抱歉! 剩餘名額只剩 {remaining} 位，無法報名 {participant_count} 人。'
+            if not getattr(activity, 'allow_waitlist', False):
+                return f'抱歉! 剩餘名額只剩 {remaining} 位，無法報名 {participant_count} 人。'
 
     return None
 
@@ -253,6 +261,13 @@ def event_register(request, pk):
 
     participant_count = 1 + len(companions)
 
+    # 決定報名狀態：confirmed or waitlist
+    status = 'confirmed'
+    if activity.max_participants:
+        remaining = activity.remaining_spots()
+        if participant_count > remaining:
+            status = 'waitlist'
+
     registration = Registration.objects.create(
         activity=activity,
         user=request.user,
@@ -260,6 +275,7 @@ def event_register(request, pk):
         phone=phone,
         email=email or request.user.email,
         participant_count=participant_count,
+        status=status,
         note=note,
     )
 
@@ -271,30 +287,16 @@ def event_register(request, pk):
             email=companion['email'],
         )
 
-    messages.success(request, f'已成功報名「{activity.title}」，共 {participant_count} 人！')
+    if status == 'waitlist':
+        messages.info(request, f'已加入「{activity.title}」候補名單，共 {participant_count} 人。若有名額釋出將通知您！')
+    else:
+        messages.success(request, f'已成功報名「{activity.title}」，共 {participant_count} 人！')
     return redirect('event_detail', pk=pk)
 
 
 def story(request):
     """故事頁。"""
     return render(request, 'core/story.html')
-
-
-# USR
-
-def usr_page(request):
-    context = {
-        'page_title': 'USR 成果・虎科大 × 水井村',
-    }
-    # return render(request, 'usr/usr.html', context)
-    # return render(request, 'usr/usr_home_1.html', context)
-    return render(request, 'usr/usr_home2.html', context)
-
-# def usr_page(request):
-#     """使用者相關頁面。"""
-#     # return render(request, 'core/usr_home2.html')
-#     return render(request, 'core/usr_home_1.html')
-#     # return render(request, 'core/usr.html')
 
 
 def about(request):
@@ -401,14 +403,19 @@ def usr_page(request):
 
     aiot_projects = AiotProject.objects.filter(is_active=True).order_by('order')
     achievements = UsrAchievement.objects.filter(is_active=True).order_by('-date')
-    videos = UsrVideo.objects.filter(is_active=True).order_by('-date')
+    videos_list = UsrVideo.objects.filter(is_active=True).prefetch_related('images').order_by('-date')  # ← 加這個
     team_members = UsrTeamMember.objects.filter(is_active=True).order_by('order')
+
+    from django.core.paginator import Paginator
+    paginator = Paginator(videos_list, 6)
+    page_number = request.GET.get('vpage', 1)
+    videos_page = paginator.get_page(page_number)
 
     context = {
         'page_title': 'USR 成果・虎科大 × 水井村',
         'aiot_projects': aiot_projects,
         'achievements': achievements,
-        'videos': videos,
+        'videos_page': videos_page,
         'team_members': team_members,
     }
     return render(request, 'usr/usr.html', context)
@@ -462,4 +469,28 @@ def global_search(request):
         'usr_results': usr_results,
         'total_count': total_count,
         'today': today,
+    })
+# --- 公告 Notice ---
+def notice_list(request):
+    """公告列表頁，支援分類篩選。"""
+    category = request.GET.get('category')
+    notices_list = Notice.objects.filter(is_active=True).order_by('-publish_date')
+    
+    if category and category in dict(Notice.CATEGORY_CHOICES):
+        notices_list = notices_list.filter(category=category)
+        
+    paginator = Paginator(notices_list, 10)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    
+    return render(request, 'core/notice_list.html', {
+        'page_obj': page_obj,
+        'current_category': category,
+        'categories': Notice.CATEGORY_CHOICES
+    })
+
+def notice_detail(request, pk):
+    """公告詳情頁。"""
+    notice = get_object_or_404(Notice, pk=pk, is_active=True)
+    return render(request, 'core/notice_detail.html', {
+        'notice': notice
     })

@@ -4,7 +4,7 @@
     <link rel="stylesheet" href="{% static 'css/core/home.css' %}">
 {% endblock %}
 {% block extra_css %}
-.parallax-section{
+.parallax-bg {
     background-image: url('{% static "image/background.jpg" %}');
 }
 {% endblock %}
@@ -12,7 +12,7 @@
 {% block content %}
 
 <!-- ===================== HERO CAROUSEL ===================== -->
-<div id="heroCarousel" class="carousel slide hero-carousel" data-bs-ride="carousel" data-bs-interval="4000">
+<div id="heroCarousel" class="carousel slide hero-carousel" data-bs-ride="carousel" data-bs-interval="6000">
     <div class="carousel-indicators">
         {% for slide in slides %}
         <button type="button"
@@ -79,17 +79,16 @@
     </div>
 </div>
 
-
 <!-- ===================== 服務項目 ===================== -->
 <section class="services-section">
     <div class="container">
-        <div class="services-header" data-aos="fade-up">
+        <div class="services-header">
             <div class="services-header-left">
                 <div class="divider-bamboo"></div>
                 <p class="section-subtitle mt-3">OUR SERVICES</p>
                 <h2 class="section-title">我們能為你做什麼</h2>
             </div>
-            <div class="services-header-right" data-aos="fade-left" data-aos-delay="150">
+            <div class="services-header-right">
                 <p class="services-intro-text">
                     風雲客棧與虎科大 USR 計畫攜手，<br>
                     深耕水井村・匯聚科技與人文
@@ -201,26 +200,26 @@
 <section class="stats-bar-section">
     <div class="container">
         <div class="stats-bar-grid">
-            <div class="stat-item" data-aos="fade-up" data-aos-delay="0">
+            <div class="stat-item"  data-aos-delay="50">
                 <div class="stat-num" data-count="3">0</div>
                 <div class="stat-unit">年</div>
                 <div class="stat-label">USR 深耕計畫</div>
             </div>
             <div class="stat-divider"></div>
-            <div class="stat-item" data-aos="fade-up" data-aos-delay="80">
+            <div class="stat-item"  data-aos-delay="50">
                 <div class="stat-num" data-count="150">0</div>
                 <div class="stat-unit">+</div>
                 <div class="stat-label">師生共同參與</div>
             </div>
             <div class="stat-divider"></div>
-            <div class="stat-item" data-aos="fade-up" data-aos-delay="160">
+            <div class="stat-item" data-aos-delay="50">
                 <div class="stat-num" data-count="20">0</div>
                 <div class="stat-unit">+</div>
                 <div class="stat-label">在地服務項目</div>
             </div>
             <div class="stat-divider"></div>
-            <div class="stat-item" data-aos="fade-up" data-aos-delay="240">
-                <div class="stat-num" data-count="1">0</div>
+            <div class="stat-item" data-aos-delay="40">
+                <div class="stat-num" data-count="2">0</div>
                 <div class="stat-unit"></div>
                 <div class="stat-label">水井村數位路徑</div>
             </div>
@@ -228,11 +227,103 @@
     </div>
 </section>
 
+<!--  ===================== 公告與活動 ===================== -->
+ <section class="combined-strip" data-aos="fade-up">
+    <div class="container">
+        <div class="combined-box">
+ 
+            {# ── Header ── #}
+            <div class="cb-header">
+                <div>
+                    <div class="cb-kicker">LATEST UPDATES</div>
+                    <h2 class="cb-title">公告與活動</h2>
+                </div>
+                <a href="{% url 'notice_list' %}" class="cb-all-link" id="cb-all-link">
+                    查看全部公告 <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+ 
+            {# ── Tabs ── #}
+            <div class="cb-tabs" role="tablist">
+                <button class="cb-tab cb-tab--notice active"
+                        id="tab-notice"
+                        role="tab"
+                        aria-selected="true"
+                        aria-controls="panel-notice"
+                        onclick="cbSwitch('notice')">
+                    重要公告
+                    <span class="cb-tab-badge">{{ notices|length }}</span>
+                </button>
+                <button class="cb-tab cb-tab--event"
+                        id="tab-event"
+                        role="tab"
+                        aria-selected="false"
+                        aria-controls="panel-event"
+                        onclick="cbSwitch('event')">
+                    近期活動
+                    <span class="cb-tab-badge">{{ activities|length }}</span>
+                </button>
+            </div>
+ 
+            {# ── Notice Panel ── #}
+            <div class="cb-panel" id="panel-notice" role="tabpanel" aria-labelledby="tab-notice">
+                {% for notice in notices %}
+                <a href="{% url 'notice_detail' notice.pk %}" class="cb-notice-item">
+                    <span class="cb-tag cb-tag--{{ notice.category }}">
+                        {{ notice.get_category_display }}
+                    </span>
+                    <span class="cb-date">{{ notice.publish_date|date:"Y.m.d" }}</span>
+                    <span class="cb-notice-title">{{ notice.title }}</span>
+                    <i class="bi bi-chevron-right cb-arr"></i>
+                </a>
+                {% empty %}
+                <div class="cb-empty">
+                    <i class="bi bi-megaphone"></i> 目前尚無公告訊息
+                </div>
+                {% endfor %}
+            </div>
+ 
+            {# ── Event Panel ── #}
+            <div class="cb-panel cb-panel--hidden" id="panel-event" role="tabpanel" aria-labelledby="tab-event">
+                {% for activity in activities %}
+                <a href="{% url 'event_detail' activity.pk %}"
+                   class="cb-event-item {% if activity.is_past %}cb-event-item--past{% endif %}">
+                    <div class="cb-event-badge {% if activity.is_past %}cb-event-badge--past{% endif %}">
+                        <span class="cb-event-day">{{ activity.date|date:"d" }}</span>
+                        <span class="cb-event-mon">{{ activity.date|date:"M"|upper }}</span>
+                    </div>
+                    <div class="cb-event-info">
+                        <div class="cb-event-title">{{ activity.title }}</div>
+                        <div class="cb-event-meta">
+                            {% if activity.location %}{{ activity.location }}{% endif %}
+                            {% if activity.location and activity.time %}・{% endif %}
+                            {% if activity.time %}{{ activity.time }}{% endif %}
+                        </div>
+                    </div>
+                    {% if activity.is_past %}
+                        <span class="cb-pill cb-pill--end">已結束</span>
+                    {% elif activity.is_featured %}
+                        <span class="cb-pill cb-pill--rec">推薦</span>
+                    {% else %}
+                        <span class="cb-pill cb-pill--open">報名中</span>
+                    {% endif %}
+                </a>
+                {% empty %}
+                <div class="cb-empty">
+                    <i class="bi bi-calendar-x"></i> 近期暫無活動，敬請期待
+                </div>
+                {% endfor %}
+            </div>
+ 
+        </div>{# /.combined-box #}
+    </div>
+</section>
 <!-- ===================== 近期活動 ===================== -->
+{% comment %} 
 <section class="events-section">
     <div class="container">
         <div class="row align-items-start">
-            <div class="col-lg-4 mb-5" data-aos="fade-right">
+            <div class="col-lg-4 mb-5">
                 <div class="divider-bamboo" style="margin:0 0 12px;"></div>
                 <p class="section-subtitle mb-3">EVENTS</p>
                 <h2 class="section-title">近期活動</h2>
@@ -242,7 +333,7 @@
                     最道地的台灣鄉村生活。
                 </p>
             </div>
-            <div class="col-lg-8" data-aos="fade-left">
+            <div class="col-lg-8" data-aos="fade-left" data-aos-delay="100">
                 {% for activity in activities %}
                 <a href="{% url 'event_detail' activity.pk %}" class="event-card {% if activity.is_past %}event-past{% endif %}" style="text-decoration:none; color:inherit; display:flex;">
                     <div class="event-date">
@@ -279,9 +370,8 @@
             </div>
         </div>
 
-        <!-- 查看全部按鈕 -->
         {% if activities %}
-        <div class="text-center mt-4" data-aos="fade-up">
+        <div class="text-center mt-4">
             <a href="{% url 'event_list' %}" class="btn-login" style="font-size:0.82rem;padding:10px 32px;letter-spacing:0.15em;">
                 查看全部活動 →
             </a>
@@ -289,10 +379,13 @@
         {% endif %}
     </div>
 </section>
+{% endcomment %}
 
 <!-- ===================== 視差區塊 ===================== -->
 <section class="parallax-section">
-    <div class="parallax-content container" data-aos="fade-up">
+    <div class="parallax-bg"></div>
+    <div class="parallax-overlay"></div>
+    <div class="parallax-content container">
         <div class="parallax-tag">SHUIJING VILLAGE</div>
         <blockquote>「這片土地，靜靜守護著世代的記憶」</blockquote>
         <cite>— 雲林縣口湖鄉・水井村</cite>
@@ -355,7 +448,7 @@
             </div>
         </div>
         
-        <div class="text-center mt-5" data-aos="fade-up">
+        <div class="text-center mt-5">
             <a href="{% url 'usr' %}" class="btn-login" style="font-size:0.82rem;padding:10px 32px;letter-spacing:0.15em; background: transparent; border: 1px solid #C4A052; color: #8B6914;">
                 查看所有成果紀錄 →
             </a>
@@ -366,7 +459,7 @@
 <!-- ===================== 三生 CARDS ===================== -->
 <section class="sansheng-section">
     <div class="container">
-        <div class="text-center mb-5" data-aos="fade-up">
+        <div class="text-center mb-5">
             <div class="divider-bamboo"></div>
             <p class="section-subtitle mb-3">THREE HARMONIES</p>
             <h2 class="section-title">三生共好</h2>
@@ -421,7 +514,7 @@
 <!-- ===================== CTA ===================== -->
 <section class="cta-section">
     <div class="cta-bg-overlay"></div>
-    <div class="container cta-inner" data-aos="fade-up">
+    <div class="container cta-inner">
         <div class="cta-location-tag">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="currentColor"/></svg>
             雲林縣口湖鄉水井村
@@ -446,43 +539,8 @@
     </div>
 </section>
 
-{% block extra_js %}
-<script>
-// ── Stats CountUp Animation ──
-(function() {
-    const counters = document.querySelectorAll('.stat-num[data-count]');
-    if (!counters.length) return;
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (!entry.isIntersecting) return;
-            const el = entry.target;
-            const target = parseInt(el.dataset.count, 10);
-            const duration = 1400;
-            const start = performance.now();
-            function update(now) {
-                const elapsed = now - start;
-                const progress = Math.min(elapsed / duration, 1);
-                const ease = 1 - Math.pow(1 - progress, 3);
-                el.textContent = Math.floor(ease * target);
-                if (progress < 1) requestAnimationFrame(update);
-                else el.textContent = target;
-            }
-            requestAnimationFrame(update);
-            observer.unobserve(el);
-        });
-    }, { threshold: 0.4 });
-    counters.forEach(el => observer.observe(el));
-})();
-(function () {
-    document.body.classList.add('page-home');
-    const nav = document.getElementById('mainNav');
-    function onScroll() {
-        nav.classList.toggle('scrolled', window.scrollY > 80);
-    }
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-})();
-</script>
+{% block link_js %}
+<script src="{% static 'js/core/home.js' %}"></script>
 {% endblock %}
 
 {% endblock %}

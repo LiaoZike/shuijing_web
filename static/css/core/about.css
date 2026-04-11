@@ -4,8 +4,8 @@
    ============================================================ */
 
 :root {
-    --ab-bg: #F5F0E8;
-    --ab-ink: #2E1F0F;
+    --ab-bg: #c9c1b5;
+    --ab-ink: #181007;
     --ab-text: #4A3320;
     --ab-muted: #7A5C38;
     --ab-border: rgba(139, 105, 20, 0.15);
@@ -44,9 +44,8 @@ body {
     content: '';
     position: absolute;
     inset: 0;
-    background:
-        radial-gradient(circle at 80% 20%, rgba(139, 105, 20, 0.18), transparent 55%),
-        radial-gradient(circle at 10% 80%, rgba(58, 92, 48, 0.12), transparent 45%);
+    background: var(--hero-bg) center/cover no-repeat;
+    opacity: 0.15;
 }
 
 /* 右側裝飾圓圈 */

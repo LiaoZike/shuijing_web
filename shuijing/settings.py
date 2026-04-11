@@ -33,6 +33,7 @@ ALLOWED_HOSTS = ["*"]
 # Application definition
 
 INSTALLED_APPS = [
+    "simpleui",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -197,3 +198,63 @@ EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 CONTACT_EMAIL = os.environ.get('CONTACT_EMAIL', EMAIL_HOST_USER)
+
+# ==========================================
+# 網站管理後台 (SimpleUI) 設定
+# ==========================================
+SIMPLEUI_HOME_INFO = False
+SIMPLEUI_LOGO = ''
+SIMPLEUI_DEFAULT_THEME = 'e-black-pro.css'
+SIMPLEUI_CONFIG = {
+    'system_keep': False,
+    'menu_display': ['常用', 'USR', '導覽', '已停止使用', '認證和授權'],
+    'dynamic': False,
+    'menus': [
+        {
+            'name': '常用',
+            'icon': 'fas fa-star',
+            'models': [
+                {'name': '活動', 'url': 'core/activity/', 'icon': 'far fa-calendar-alt'},
+                {'name': '最新公告', 'url': 'core/notice/', 'icon': 'fas fa-bullhorn'},
+                {'name': '報名記錄', 'url': 'core/registration/', 'icon': 'fas fa-clipboard-list'},
+                {'name': '首頁輪播', 'url': 'core/heroslide/', 'icon': 'far fa-images'},
+                {'name': '聯絡訊息', 'url': 'core/contactmessage/', 'icon': 'far fa-envelope'}
+            ]
+        },
+        {
+            'name': 'USR',
+            'icon': 'fas fa-project-diagram',
+            'models': [
+                {'name': 'AIoT 專案', 'url': 'core/aiotproject/', 'icon': 'fas fa-network-wired'},
+                {'name': '影音紀錄', 'url': 'core/usrvideo/', 'icon': 'fas fa-video'},
+                {'name': '師生表現紀錄', 'url': 'core/usrachievement/', 'icon': 'fas fa-trophy'}
+            ]
+        },
+        {
+            'name': '導覽',
+            'icon': 'fas fa-map-marked-alt',
+            'models': [
+                {'name': '導覽點', 'url': 'guide/storyspot/', 'icon': 'fas fa-map-pin'},
+                {'name': '細項_AR素材', 'url': 'guide/arasset/', 'icon': 'fas fa-cube'},
+                {'name': '細項_導覽說明', 'url': 'guide/storyfact/', 'icon': 'fas fa-info-circle'}
+            ]
+        },
+        {
+            'name': '已停止使用',
+            'icon': 'fas fa-archive',
+            'models': [
+                {'name': 'USR 團隊成員', 'url': 'core/usrteammember/', 'icon': 'fas fa-users-slash'},
+                {'name': '服務項目', 'url': 'core/serviceitem/', 'icon': 'fas fa-ban'}
+            ]
+        },
+        {
+            'name': '認證和授權',
+            'icon': 'fas fa-shield-alt',
+            'models': [
+                {'name': '使用者', 'url': 'auth/user/', 'icon': 'fas fa-user'},
+                {'name': '群組', 'url': 'auth/group/', 'icon': 'fas fa-users'},
+                {'name': '社交帳號', 'url': 'socialaccount/socialaccount/', 'icon': 'fas fa-share-alt'}
+            ]
+        }
+    ]
+}

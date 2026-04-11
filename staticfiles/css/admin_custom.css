@@ -1,0 +1,32 @@
+/* 修正 SimpleUI / Django Admin 底部儲存列被遮擋的問題 */
+
+/* 強制讓 Django Admin 的送出列浮動或確保可見 */
+.submit-row {
+    padding: 12px 20px;
+    margin: 20px 0 0 0;
+    background: #f8f8f8;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    display: block !important;
+    position: relative !important;
+    z-index: 999;
+}
+
+/* 如果是 SimpleUI，強制顯示其底部動作條 */
+.layui-footer, .layer-footer, .button-row {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+    clear: both !important;
+}
+
+/* 縮小 TextField 的高度，防止頁面過長 */
+textarea {
+    max-height: 150px !important;
+}
+
+/* 修正某些白塊跑版問題 */
+.form-row {
+    overflow: visible !important;
+}

@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}最新公告 - 風雲客棧{% endblock %}
+
+{% block link_css %}
+    <link rel="stylesheet" href="{% static 'css/core/notice.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="notice-archive-page">
+
+    {# ── Hero ── #}
+    <div class="notice-hero">
+        <div class="container">
+            <p class="notice-kicker">ANNOUNCEMENTS</p>
+            <h1 class="notice-archive-title">最新公告</h1>
+            <p class="notice-archive-subtitle">
+                掌握風雲客棧與水井村的每一刻動態，記錄地方文化與發展的點點滴滴。
+            </p>
+        </div>
+    </div>
+
+    {# ── Filter bar（全寬 sticky，不在 container 內）── #}
+    <div class="notice-filter-bar">
+        <div class="notice-filter-inner">
+            <a href="{% url 'notice_list' %}"
+               class="notice-tab-item {% if not current_category %}active{% endif %}">
+                全部公告
+                <span class="notice-tab-count">{{ total_count }}</span>
+            </a>
+            {% for cat_val, cat_name in categories %}
+            <a href="?category={{ cat_val }}"
+               class="notice-tab-item {% if current_category == cat_val %}active{% endif %}">
+                {{ cat_name }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    {# ── List ── #}
+    <div class="notice-list-container">
+        <p class="notice-result-count">共 {{ page_obj.paginator.count }} 筆公告</p>
+
+        <table class="notice-table">
+            <thead>
+                <tr>
+                    <th>日期</th>
+                    <th>類別</th>
+                    <th>公告標題</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for notice in page_obj %}
+                <tr onclick="location.href='{% url 'notice_detail' notice.pk %}'">
+                    <td class="notice-td-date">{{ notice.publish_date|date:"Y.m.d" }}</td>
+                    <td class="notice-td-tag">
+                        <span class="notice-tag tag-{{ notice.category }}">
+                            {{ notice.get_category_display }}
+                        </span>
+                    </td>
+                    <td class="notice-td-body">
+                        <div class="notice-list-title">
+                            {{ notice.title }}
+                            {% if notice.is_new %}<span class="notice-new-dot"></span>{% endif %}
+                        </div>
+                        {% if notice.content %}
+                        <div class="notice-list-preview">
+                            {{ notice.content|striptags|truncatechars:80 }}
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td class="notice-td-arrow">›</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4">
+                        <div class="empty-notices">
+                            <p>目前尚無此類別的公告訊息</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {# ── Pagination ── #}
+        {% if page_obj.has_other_pages %}
+        <nav class="notice-pagination mt-4">
+            <ul class="pagination">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if current_category %}&category={{ current_category }}{% endif %}">&laquo;</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                {% endif %}
+
+                {% for i in page_obj.paginator.page_range %}
+                <li class="page-item {% if page_obj.number == i %}active{% endif %}">
+                    <a class="page-link" href="?page={{ i }}{% if current_category %}&category={{ current_category }}{% endif %}">{{ i }}</a>
+                </li>
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if current_category %}&category={{ current_category }}{% endif %}">&raquo;</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

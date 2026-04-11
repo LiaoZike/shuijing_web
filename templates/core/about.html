@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}關於我們 - 風雲客棧數位平台{% endblock %}
+{% block title %}關於風雲客棧 - 風雲客棧數位平台{% endblock %}
 {% load static %}
 
 {% block link_css %}
@@ -10,7 +10,7 @@
 <div class="about-page">
 
     <!-- 頁面主視覺 (HERO) -->
-    <section class="about-hero">
+    <section class="about-hero" style="--hero-bg:url('{% static 'image/about/nfu_aqua1.jpg' %}');">
         <div class="about-hero-deco"></div>
         <div class="container relative z-10">
             <div class="row align-items-center">
@@ -138,11 +138,11 @@
             </p>
 
             <div class="about-image-grid mb-5" data-aos="fade-up" data-aos-delay="150">
-                <div class="img-box" data-caption="風雲客棧・智慧養殖基地&#10;虎科大 USR 研究室現場">
+                <div class="img-box" data-caption="風雲客棧・USR 研究室現場">
                     <img src="{% static 'image/about/nfu_aqua.png' %}" alt="風雲客棧智慧養殖基地現場">
                 </div>
-                <div class="img-box" data-caption="師生與在地老漁民交流&#10;攜手推動 AIoT 智慧養殖設備">
-                    <img src="{% static 'image/about/nfu_aqua2.png' %}" alt="團隊與在地老漁民交流智慧養殖設備">
+                <div class="img-box" data-caption="風雲客棧・智慧養殖基地">
+                    <img src="{% static 'image/about/nfu_aqua2.png' %}" alt="風雲客棧智慧養殖基地現場">
                 </div>
             </div>
 

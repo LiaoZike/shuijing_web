@@ -87,8 +87,8 @@ class StoryFact(models.Model):
     sort_order = models.PositiveIntegerField(default=0, verbose_name='排序')
 
     class Meta:
-        verbose_name = '導覽說明'
-        verbose_name_plural = '導覽說明'
+        verbose_name = '不重要_導覽說明'
+        verbose_name_plural = '不重要_導覽說明'
         ordering = ['sort_order', 'id']
 
     def __str__(self):

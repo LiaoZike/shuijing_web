@@ -10,7 +10,7 @@
 <section class="reg-detail-wrap">
     <div class="container">
         <div style="max-width:680px;margin:0 auto 24px;" class="reg-nav-bar">
-            <a href="{% url 'my_registrations' %}" class="reg-nav-back">← 返回報名紀錄</a>
+            <a href="{% url 'my_registrations' %}" class="detail-btn-secondary">← 返回報名紀錄</a>
             <a href="{% url 'event_detail' registration.activity.pk %}" class="reg-nav-event">活動頁面 ↗</a>
         </div>
         <div class="reg-detail-card" data-aos="fade-up">
@@ -20,6 +20,11 @@
             <span class="reg-status-chip {% if registration.activity.is_past %}past{% else %}upcoming{% endif %}">
                 {% if registration.activity.is_past %}活動已結束{% else %}即將舉辦{% endif %}
             </span>
+            {% if registration.status == 'waitlist' %}
+            <span class="reg-status-chip" style="background:rgba(196,160,82,0.15);color:#8B6914;border-color:rgba(196,160,82,0.4);">
+                <i class="bi bi-hourglass-split me-1"></i>候補中
+            </span>
+            {% endif %}
 
             <h1 class="reg-detail-activity">{{ registration.activity.title }}</h1>
             <p class="reg-detail-date">
@@ -82,8 +87,19 @@
             {% endfor %}
             {% endif %}
 
-            <!-- 報名時間 -->
+            <!-- 報名資訊 -->
             <p class="reg-section-title" style="margin-top:24px;">報名資訊</p>
+            <div class="reg-field-row">
+                <span class="reg-field-label">報名狀態</span>
+                <span class="reg-field-value">
+                    {% if registration.status == 'waitlist' %}
+                    <span style="color:#8B6914;font-weight:600;"><i class="bi bi-hourglass-split me-1"></i>候補中</span>
+                    <br><small style="color:#9A8070;">名額釋出時將優先通知您</small>
+                    {% else %}
+                    <span style="color:var(--green-mid);font-weight:600;"><i class="bi bi-check-circle me-1"></i>已確認</span>
+                    {% endif %}
+                </span>
+            </div>
             <div class="reg-field-row">
                 <span class="reg-field-label">報名時間</span>
                 <span class="reg-field-value">{{ registration.created_at|date:"Y 年 m 月 d 日 H:i" }}</span>

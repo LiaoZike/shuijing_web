@@ -15,6 +15,10 @@
     --nav-height: 74px;
 }
 
+a {
+    text-decoration: none;
+}
+
 * {
     box-sizing: border-box;
     font-family:
@@ -28,11 +32,18 @@
         sans-serif;
 }
 
+html,
+body {
+    max-width: 100%;
+    overflow-x: hidden;
+    /* Fallback */
+    overflow-x: clip;
+}
+
 body {
     font-family: 'Noto Sans TC', sans-serif;
     background-color: var(--ink);
     color: var(--text-light);
-    overflow-x: hidden;
     padding-top: var(--nav-height);
 }
 
@@ -99,7 +110,8 @@ body {
     transition: color 0.3s;
 }
 
-.nav-link::after {
+/* 把底線動畫改用 ::before 實作，留出 ::after 給下拉選單的三角形使用 */
+.nav-link::before {
     content: '';
     position: absolute;
     bottom: 4px;
@@ -114,7 +126,7 @@ body {
     color: var(--bamboo-light) !important;
 }
 
-.nav-link:hover::after {
+.nav-link:hover::before {
     width: calc(100% - 32px);
 }
 
@@ -122,30 +134,68 @@ body {
     color: var(--bamboo-light) !important;
 }
 
-.nav-link.active::after {
+.nav-link.active::before {
     width: calc(100% - 32px);
 }
 
+/* 調整電腦版的三角形間距與對齊 */
+.navbar-nav .dropdown-toggle::after {
+    vertical-align: middle;
+    margin-left: 0.4em;
+    transition: transform 0.3s ease;
+}
+
+@media (min-width: 992px) {
+    .navbar-nav .dropdown:hover .dropdown-toggle::after {
+        transform: rotate(180deg);
+    }
+}
+
 .dropdown-menu {
-    background: rgba(20, 10, 3, 0.97);
-    border: 1px solid rgba(139, 105, 20, 0.3);
-    border-radius: 0;
-    min-width: 160px;
+    background: rgba(24, 12, 6, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(196, 160, 82, 0.15);
+    border-radius: 12px;
+    min-width: 180px;
     padding: 8px 0;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
 }
 
 .dropdown-item {
     color: var(--cream-dark);
-    font-size: 0.85rem;
+    font-size: 0.88rem;
     letter-spacing: 0.1em;
-    padding: 10px 20px;
-    transition: all 0.2s;
+    padding: 10px 24px;
+    transition: all 0.25s ease;
 }
 
-.dropdown-item:hover {
-    background: rgba(139, 105, 20, 0.15);
+.dropdown-item:hover,
+.dropdown-item:focus {
+    background: rgba(196, 160, 82, 0.1);
     color: var(--bamboo-light);
-    padding-left: 26px;
+    padding-left: 30px;
+}
+
+/* 桌面版導覽列支援滑鼠懸浮(Hover)即可展開子選單 */
+@media (min-width: 992px) {
+    .navbar-nav .dropdown:hover .dropdown-menu {
+        display: block;
+        animation: dropdownFadeIn 0.25s ease forwards;
+    }
+
+    .navbar-nav .dropdown-menu {
+        margin-top: 0;
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    @keyframes dropdownFadeIn {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 }
 
 .btn-login {
@@ -429,7 +479,9 @@ footer .footer-bottom {
     }
 
     .nav-link {
-        display: block;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         width: 100%;
         padding: 12px 16px !important;
         margin: 0;
@@ -439,13 +491,44 @@ footer .footer-bottom {
         line-height: 1.45;
     }
 
-    .nav-link::after {
+    /* 手機版把底線動畫隱藏，保留右側三角形 */
+    .nav-link::before {
         content: none;
+    }
+
+    .navbar-nav .dropdown-toggle.show::after {
+        transform: rotate(180deg);
     }
 
     .nav-link:hover {
         background: rgba(196, 160, 82, 0.08);
         padding-left: 20px !important;
+    }
+
+    /* 行動版 navbar 子選單不使用浮動樣式，而是展開在原處 */
+    .navbar-nav .dropdown-menu {
+        position: static !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        padding: 4px 0 8px 16px !important;
+        margin-top: 0;
+    }
+
+    .navbar-nav .dropdown-item {
+        color: var(--text-muted) !important;
+        padding: 10px 16px;
+        border-radius: 10px;
+        font-size: 0.9rem;
+    }
+
+    .navbar-nav .dropdown-item:hover,
+    .navbar-nav .dropdown-item:focus {
+        background: rgba(196, 160, 82, 0.08) !important;
+        color: #f6df9d !important;
+        padding-left: 24px !important;
     }
 
     .nav-link.active {
@@ -559,4 +642,17 @@ footer .footer-bottom {
     .nav-search-input {
         font-size: 0.86rem;
     }
+}
+
+/* 修正 Bootstrap Modal 開啟時容易因為 overflow-x 設定導致的背景滑鼠穿透滾動問題 */
+html:has(body.modal-open) {
+    overflow: hidden !important;
+}
+
+body.modal-open {
+    overflow: hidden !important;
+}
+
+.modal {
+    overscroll-behavior: contain;
 }

@@ -57,6 +57,11 @@
                     <span class="reg-badge cat">{{ tag }}</span>
                     {% endfor %}
                     {% endif %}
+                    {% if reg.status == 'waitlist' %}
+                    <span class="reg-badge" style="background:rgba(196,160,82,0.15);color:#8B6914;border-color:rgba(196,160,82,0.4);">
+                        <i class="bi bi-hourglass-split me-1"></i>候補中
+                    </span>
+                    {% endif %}
                     <span class="reg-badge {% if reg.activity.is_past %}past{% else %}upcoming{% endif %}">
                         {% if reg.activity.is_past %}已結束{% else %}即將舉辦{% endif %}
                     </span>
