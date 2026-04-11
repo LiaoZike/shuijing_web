@@ -656,3 +656,11 @@ body.modal-open {
 .modal {
     overscroll-behavior: contain;
 }
+
+@media (prefers-reduced-motion: no-preference) {
+
+    html,
+    :root {
+        scroll-behavior: auto !important;
+    }
+}

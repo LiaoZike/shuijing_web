@@ -23,6 +23,17 @@
     {% block link_css %}{% endblock %}
 </head>
 <body>
+<!-- ===================== PAGE LOADER ===================== -->
+<div class="page-loader" id="pageLoader">
+    <div class="loader-content">
+        <div class="custom-spinner">
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
+        <div class="loader-text">載入中</div>
+    </div>
+</div>
 <style>
     {% block extra_css %}{% endblock %}
 </style>
@@ -330,6 +341,28 @@
             searchWrap.classList.add('open');
         }
     }
+
+    // ── 頁面載入完成後隱藏 Loading ──
+    window.addEventListener('load', () => {
+        const loader = document.getElementById('pageLoader');
+        if (loader) {
+            // 延遲一小段時間讓體驗更流暢
+            setTimeout(() => {
+                loader.classList.add('fade-out');
+                // 完全移除 DOM 以免影響效能
+                setTimeout(() => loader.remove(), 600);
+            }, 300);
+        }
+    });
+
+    // 安全機制：如果載入過久 (5秒)，強制隱藏
+    setTimeout(() => {
+        const loader = document.getElementById('pageLoader');
+        if (loader) {
+            loader.classList.add('fade-out');
+            setTimeout(() => loader.remove(), 600);
+        }
+    }, 5000);
 </script>
 
 <!-- ===================== FLOATING MASCOT ===================== -->

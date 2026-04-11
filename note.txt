@@ -1,15 +1,13 @@
 source ./.venv/bin/activate
 pip install python-dotenv
 
-# 0.先產生靜態檔案
-python manage.py collectstatic
 
 
 # 1.壓縮檔案
 cd ..
 rm .\shuijing.zip
 
-robocopy shuijing_web shuijing_web_clean /E /XD .venv __pycache__ static
+robocopy shuijing_web shuijing_web_clean /E /XD .venv __pycache__ staticfiles
 Compress-Archive -Path shuijing_web_clean\* -DestinationPath shuijing.zip -Force
 Remove-Item -Recurse -Force shuijing_web_clean
 
@@ -22,6 +20,9 @@ cd ~
 rm -rf shuijing
 unzip shuijing.zip -d shuijing
 
+# 4.產生靜態檔案
+cd shuijing
+python manage.py collectstatic
 
 
 /static/ => /home/web41243166/shuijing/staticfiles/
