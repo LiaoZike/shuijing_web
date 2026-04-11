@@ -226,8 +226,8 @@ SIMPLEUI_CONFIG = {
             'icon': 'fas fa-project-diagram',
             'models': [
                 {'name': 'AIoT 專案', 'url': 'core/aiotproject/', 'icon': 'fas fa-network-wired'},
-                {'name': '影音紀錄', 'url': 'core/usrvideo/', 'icon': 'fas fa-video'},
-                {'name': '師生表現紀錄', 'url': 'core/usrachievement/', 'icon': 'fas fa-trophy'}
+                {'name': '師生表現紀錄', 'url': 'core/usrachievement/', 'icon': 'fas fa-trophy'},
+                {'name': '影音紀錄', 'url': 'core/usrvideo/', 'icon': 'fas fa-video'}
             ]
         },
         {

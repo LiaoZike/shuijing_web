@@ -162,32 +162,32 @@
                 </div>
             </div>
             <div class="col-6 col-lg-2 mb-4">
-                <p style="color:var(--cream-dark);font-size:0.8rem;letter-spacing:0.15em;margin-bottom:18px; font-weight: 600;">USR 成果</p>
+                <p style="color:var(--cream-dark);font-size:0.8rem;letter-spacing:0.15em;margin-bottom:18px; font-weight: 600;">USR 社會實踐</p>
                 <ul class="list-unstyled">
                     <li class="mb-2"><a href="{% url 'usr' %}#aiot-section" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">AIoT 智慧計畫</a></li>
-                    <li class="mb-2"><a href="{% url 'usr' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">師生成果紀錄</a></li>
-                    <li class="mb-2"><a href="{% url 'usr' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">影音紀錄中心</a></li>
+                    <li class="mb-2"><a href="{% url 'usr' %}#achievement-section" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">師生成果紀錄</a></li>
+                    <li class="mb-2"><a href="{% url 'usr' %}#video-section" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">影音紀錄中心</a></li>
                 </ul>
             </div>
             <div class="col-6 col-lg-2 mb-4">
-                <p style="color:var(--cream-dark);font-size:0.8rem;letter-spacing:0.15em;margin-bottom:18px; font-weight: 600;">探索水井</p>
+                <p style="color:var(--cream-dark);font-size:0.8rem;letter-spacing:0.15em;margin-bottom:18px; font-weight: 600;">探索與訊息</p>
                 <ul class="list-unstyled">
-                    <li class="mb-2"><a href="{% url 'guide:home' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">互動導覽地圖</a></li>
+                    <li class="mb-2"><a href="{% url 'notice_list' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">最新公告消息</a></li>
                     <li class="mb-2"><a href="{% url 'event_list' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">近期活動詳情</a></li>
-                    <li class="mb-2"><a href="{% url 'about' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">關於風雲客棧</a></li>
-                    <li class="mb-2"><a href="{% url 'story' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">關於水井村</a></li>
+                    <li class="mb-2"><a href="{% url 'guide:home' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">互動導覽地圖</a></li>
+                    <li class="mb-2"><a href="{% url 'home' %}#services-section" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">三生共好服務</a></li>
                 </ul>
             </div>
             <div class="col-6 col-lg-2 mb-4">
-                <p style="color:var(--cream-dark);font-size:0.8rem;letter-spacing:0.15em;margin-bottom:18px; font-weight: 600;">帳戶服務</p>
+                <p style="color:var(--cream-dark);font-size:0.8rem;letter-spacing:0.15em;margin-bottom:18px; font-weight: 600;">關於與帳戶</p>
                 <ul class="list-unstyled">
+                    <li class="mb-2"><a href="{% url 'about' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">關於風雲客棧</a></li>
+                    <li class="mb-2"><a href="{% url 'story' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">關於水井村故事</a></li>
                     {% if user.is_authenticated %}
-                        <li class="mb-2"><a href="{% url 'my_profile' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">個人基本資料</a></li>
-                        <li class="mb-2"><a href="{% url 'my_registrations' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">活動報名紀錄</a></li>
+                        <li class="mb-2"><a href="{% url 'my_registrations' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">報名紀錄與資料</a></li>
                     {% else %}
-                        <li class="mb-2"><a href="{% url 'login_portal' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">登入/註冊系統</a></li>
+                        <li class="mb-2"><a href="{% url 'login_portal' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">登入/註冊中心</a></li>
                     {% endif %}
-                    <li class="mb-2"><a href="{% url 'contact' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">聯絡我們</a></li>
                 </ul>
             </div>
             <div class="col-6 col-lg-2 mb-4">
@@ -195,6 +195,7 @@
                 <ul class="list-unstyled">
                     <li class="mb-2"><a href="https://www.nfu.edu.tw/" target="_blank" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">國立虎尾科大</a></li>
                     <li class="mb-2"><a href="https://ossr.nfu.edu.tw/" target="_blank" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">虎科大永續處</a></li>
+                    <li class="mb-2"><a href="{% url 'contact' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">聯絡我們</a></li>
                 </ul>
             </div>
         </div>

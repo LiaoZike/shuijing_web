@@ -185,7 +185,7 @@
 
                             {% if project.link_url %}
                             <div class="mt-auto pt-3 border-top" style="border-color: rgba(0,0,0,0.04)!important">
-                                <a href="{{ project.link_url }}" class="aiot-link">了解更多區塊</a>
+                                <a href="{{ project.link_url }}" class="aiot-link" target="_blank">探索相關資訊</a>
                             </div>
                             {% endif %}
                         </div>
@@ -199,7 +199,7 @@
     </section>
 
     <!-- 師生實踐成果 -->
-    <section class="usr-section-alt">
+    <section id="achievement-section" class="usr-section-alt">
         <div class="container">
             <div class="row mb-5">
                 <div class="col-lg-6" data-aos="fade-right">
@@ -214,7 +214,7 @@
             <div class="row">
                 <div class="col-12">
                     {% for item in achievements %}
-                    <div class="achievement-row" data-aos="fade-up">
+                    <div class="achievement-row" data-aos="fade-up" id="achievement-{{ item.pk }}">
                         {% if item.image %}
                         <div class="achievement-img-wrapper">
                             <img src="{{ item.image.url }}" alt="{{ item.title }}" class="achievement-img">
@@ -227,6 +227,17 @@
                             </p>
                             <h5 class="achievement-title">{{ item.title }}</h5>
                             <p class="achievement-desc">{{ item.description }}</p>
+
+                            {% if item.images.all %}
+                            <div class="achievement-gallery">
+                                {% for extra in item.images.all %}
+                                <a href="{{ extra.image.url }}" target="_blank" class="achievement-thumb" title="{{ extra.caption }}">
+                                    <img src="{{ extra.image.url }}" alt="{{ extra.caption }}">
+                                </a>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+
                             {% if item.link_url %}
                             <div class="mt-4">
                                 <a href="{{ item.link_url }}" target="_blank" class="usr-btn-outline" style="padding: 8px 24px; font-size:0.85rem;">詳細報導</a>
@@ -390,7 +401,69 @@
         </div>
       </div>
     </div>
+    <!-- 圖片放大 Lightbox 結構 -->
+    <div id="imageLightbox" class="image-lightbox" onclick="closeLightbox()">
+        <span class="lightbox-close">&times;</span>
+        <img class="lightbox-content" id="lightboxImg">
+    </div>
 {% endblock %}
 {% block link_js %}
 <script src="{% static 'js/usr/usr.js' %}"></script>
+<script>
+    /**
+     * 開啟 Lightbox 放大圖片
+     */
+    function openLightbox(src) {
+        const lightbox = document.getElementById('imageLightbox');
+        const lightboxImg = document.getElementById('lightboxImg');
+        if (!lightbox || !lightboxImg) return;
+        
+        lightboxImg.src = src;
+        lightbox.classList.add('active');
+        
+        // 停止 Lenis 滾動
+        if (typeof lenis !== 'undefined') lenis.stop();
+        document.body.style.overflow = 'hidden';
+    }
+
+    /**
+     * 關閉 Lightbox
+     */
+    function closeLightbox() {
+        const lightbox = document.getElementById('imageLightbox');
+        if (!lightbox) return;
+        
+        lightbox.classList.remove('active');
+        
+        // 恢復 Lenis 滾動
+        if (typeof lenis !== 'undefined') lenis.start();
+        document.body.style.overflow = '';
+    }
+
+    // 初始化點擊事件
+    document.addEventListener('DOMContentLoaded', () => {
+        // 監聽師生成果的主圖與縮圖
+        document.addEventListener('click', (e) => {
+            const target = e.target;
+            
+            // 檢查是否點擊了目標圖片或縮圖
+            const isMainImg = target.classList.contains('achievement-img');
+            const isThumbImg = target.tagName === 'IMG' && target.closest('.achievement-thumb');
+            
+            if (isMainImg || isThumbImg) {
+                // 強力阻止 A 標籤預設行為 (彈出分頁)
+                e.preventDefault();
+                e.stopPropagation();
+                
+                openLightbox(target.src);
+                return false;
+            }
+        }, true); // 使用 Capture 模式確保優先攔截
+        
+        // 按下 Esc 關閉
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeLightbox();
+        });
+    });
+</script>
 {% endblock %}

@@ -21,6 +21,7 @@ def upload_usr_videos(instance, filename): return get_upload_path(instance, file
 def upload_usr_video_images(instance, filename): return get_upload_path(instance, filename, 'usr/video_images/')
 def upload_usr_team(instance, filename): return get_upload_path(instance, filename, 'usr/team/')
 def upload_notices(instance, filename): return get_upload_path(instance, filename, 'notices/')
+def upload_usr_achievement_images(instance, filename): return get_upload_path(instance, filename, 'usr/achievements/gallery/')
 
 ######################################################
 # Function:首頁輪播資料模型
@@ -54,7 +55,7 @@ class ServiceItem(models.Model):
     description = models.TextField('說明')
     link_text   = models.CharField('連結文字', max_length=50, default='了解更多',
                                    help_text='例如：探索農產、瀏覽商品')
-    link_url    = models.URLField('連結網址', max_length=500, default='#')
+    link_url    = models.CharField('連結網址', max_length=500, default='#')
     is_featured = models.BooleanField('特色標示（金框）', default=False)
     badge_text  = models.CharField('標籤文字', max_length=20, blank=True,
                                    help_text='例如：限定體驗，留空不顯示')
@@ -88,7 +89,7 @@ class Activity(models.Model):
     location    = models.CharField('地點', max_length=100)  # 必填拿掉 blank=True
     cover_image = models.ImageField('宣傳圖片', upload_to=upload_activities,
                                     blank=True, null=True)
-    link_url    = models.URLField('報名/詳情連結', max_length=500, blank=True)
+    link_url    = models.CharField('報名/詳情連結', max_length=500, blank=True)
     max_participants = models.PositiveIntegerField('總人數上限', blank=True, null=True,
                                                    help_text='留空表示不限總人數')
     max_per_user      = models.PositiveIntegerField('每帳號限報名人數', blank=True, null=True,
@@ -249,7 +250,7 @@ class AiotProject(models.Model):
     tags        = models.CharField('標籤', max_length=100, help_text='例如：智慧養殖,水質監測')
     description = models.TextField('專案說明')
     image       = models.ImageField('專案圖片', upload_to=upload_usr_aiot, blank=True, null=True)
-    link_url    = models.URLField('連結網址', max_length=500, blank=True, help_text='與在地故事結合的延伸連結')
+    link_url    = models.CharField('連結網址', max_length=500, blank=True, help_text='與在地故事結合的延伸連結')
     is_active   = models.BooleanField('顯示', default=True)
     order       = models.PositiveIntegerField('排序', default=0)
 
@@ -276,7 +277,7 @@ class UsrAchievement(models.Model):
     title       = models.CharField('標題', max_length=100)
     description = models.TextField('說明')
     image       = models.ImageField('活動照片', upload_to=upload_usr_achievements, blank=True, null=True)
-    link_url    = models.URLField('詳細連結', max_length=500, blank=True)
+    link_url    = models.CharField('詳細連結', max_length=500, blank=True)
     is_active   = models.BooleanField('顯示', default=True)
 
     class Meta:
@@ -287,6 +288,21 @@ class UsrAchievement(models.Model):
     def __str__(self):
         return f"[{self.date}] {self.title}"
 
+class UsrAchievementImage(models.Model):
+    achievement = models.ForeignKey(UsrAchievement, related_name='images', on_delete=models.CASCADE, verbose_name='所屬成果')
+    image       = models.ImageField('圖片', upload_to=upload_usr_achievement_images)
+    caption     = models.CharField('圖片說明', max_length=200, blank=True)
+    order       = models.IntegerField('排序', default=0)
+    created_at  = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', 'created_at']
+        verbose_name = '師生成果圖片'
+        verbose_name_plural = '師生成果圖片'
+
+    def __str__(self):
+        return f"Image for {self.achievement.title}"
+
 
 ##################################################
 # Function: USR - 影音紀錄 (USR Video)
@@ -295,7 +311,7 @@ class UsrVideo(models.Model):
     date        = models.DateField('發布日期')
     title       = models.CharField('影片/紀錄標題', max_length=150)
     description = models.TextField('詳細說明', blank=True)
-    link_url    = models.URLField('YouTube 連結', max_length=500, blank=True)
+    link_url    = models.CharField('YouTube 連結', max_length=500, blank=True)
     embed_code  = models.TextField(
         '自訂嵌入原始碼', 
         blank=True, 

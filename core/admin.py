@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import (HeroSlide, ServiceItem, Activity, Registration, Participant, ContactMessage,
-                     AiotProject, UsrAchievement, UsrVideo, UsrVideoImage, UsrTeamMember, Notice, NoticeImage)
+                     AiotProject, UsrAchievement, UsrAchievementImage, UsrVideo, UsrVideoImage, UsrTeamMember, Notice, NoticeImage)
 from django.db import models
 from django.forms import Textarea, ModelForm, TextInput
 admin.site.site_header = "風雲客棧管理系統"
@@ -96,11 +96,18 @@ class AiotProjectAdmin(admin.ModelAdmin):
     list_editable = ['order', 'is_active']
     search_fields = ['title', 'tags']
 
+    search_fields = ['title', 'description']
+
+class UsrAchievementImageInline(admin.TabularInline):
+    model = UsrAchievementImage
+    extra = 1
+
 @admin.register(UsrAchievement)
 class UsrAchievementAdmin(admin.ModelAdmin):
     list_display = ['date', 'category', 'title', 'is_active']
     list_filter = ['category', 'is_active']
     search_fields = ['title', 'description']
+    inlines = [UsrAchievementImageInline]
 
 class UsrVideoImageInline(admin.StackedInline):
     model = UsrVideoImage

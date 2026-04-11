@@ -59,11 +59,13 @@ def home(request):
     )
 
     notices = Notice.objects.filter(is_active=True).order_by('-publish_date')[:7]
+    achievements = UsrAchievement.objects.filter(is_active=True).order_by('-date')[:3]
     return render(request, 'core/home.html', {
         'slides': slides,
         'services': services,
         'activities': activities,
         'notices': notices,
+        'achievements': achievements,
         'today': today,
     })
 

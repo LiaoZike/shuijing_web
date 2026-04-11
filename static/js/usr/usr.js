@@ -12,11 +12,11 @@ function openRichVideoModal(el) {
     const mediaContainer = document.getElementById('videoModalMedia');
     const actionContainer = document.getElementById('videoModalAction');
     const scrollGuard = document.getElementById('videoModalScrollGuard');
-    
+
     // 清除舊內容，但保留 Scroll Guard
     const existingMedia = mediaContainer.querySelectorAll(':not(#videoModalScrollGuard)');
     existingMedia.forEach(m => m.remove());
-    
+
     actionContainer.innerHTML = '';
     actionContainer.style.display = 'none';
 
@@ -42,7 +42,7 @@ function openRichVideoModal(el) {
         wrap.style.background = '#000';
         wrap.innerHTML = embedCode;
         mediaContainer.appendChild(wrap);
-        
+
         const iframe = wrap.querySelector('iframe');
         if (iframe) {
             iframe.style.width = '100%';
@@ -120,12 +120,12 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             // 3. 提示效果
-            scrollGuard.addEventListener('mouseenter', function() {
+            scrollGuard.addEventListener('mouseenter', function () {
                 if (scrollGuard.style.pointerEvents !== 'none') {
                     if (tip) tip.style.opacity = '1';
                 }
             });
-            scrollGuard.addEventListener('mouseleave', function() {
+            scrollGuard.addEventListener('mouseleave', function () {
                 if (tip) tip.style.opacity = '0';
             });
         }
@@ -133,9 +133,22 @@ document.addEventListener('DOMContentLoaded', function () {
         videoModalEl.addEventListener('shown.bs.modal', function () {
             document.body.style.overflow = 'hidden';
         });
-        
+
         videoModalEl.addEventListener('hidden.bs.modal', function () {
             closeRichVideoModal();
         });
     }
-});
+});
+const modal = document.getElementById('videoModal');
+modal?.addEventListener('show.bs.modal', () => {
+    document.body.classList.add('modal-open');
+});
+modal?.addEventListener('hidden.bs.modal', () => {
+    document.body.classList.remove('modal-open');
+});
+const modalBody = modal.querySelector('.modal-body');
+if (modalBody) {
+    modalBody.addEventListener('wheel', (e) => {
+        e.stopPropagation();
+    }, { passive: false });
+}

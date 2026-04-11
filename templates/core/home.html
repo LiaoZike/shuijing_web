@@ -80,7 +80,7 @@
 </div>
 
 <!-- ===================== 服務項目 ===================== -->
-<section class="services-section">
+<section id="services-section" class="services-section">
     <div class="container">
         <div class="services-header">
             <div class="services-header-left">
@@ -402,50 +402,27 @@
         </div>
         
         <div class="row g-4 pt-2">
-            <!-- News Card 1 -->
-            <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
-                <a href="{% url 'story' %}" class="news-img-card">
+            {% for achievement in achievements %}
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:100 }}">
+                <a href="{% url 'usr' %}#achievement-{{ achievement.pk }}" class="news-img-card">
                     <div class="news-img-wrap">
-                        <i class="bi bi-image" style="opacity:0.3; font-size:3rem;"></i>
+                        {% if achievement.image %}
+                            <img src="{{ achievement.image.url }}" alt="{{ achievement.title }}">
+                        {% else %}
+                            <i class="bi bi-image" style="opacity:0.3; font-size:3rem;"></i>
+                        {% endif %}
                     </div>
                     <div class="news-card-body">
-                        <span class="news-card-tag">師生表現</span>
-                        <h4 class="news-card-title">卓越表現：許永和院長與師生團隊獲獎連連</h4>
-                        <p class="news-card-desc">許永和院長帶領的 USR 團隊不僅在地方服務上有成，其研究成果亦獲得多項國內外創新獎項肯定。學生團隊在「海洋科學節」及各大發明展中展示的系統，展現虎科大師生理論與實務並重的優點，也讓世界看見台灣智慧農業的實力。</p>
+                        <span class="news-card-tag">{{ achievement.category }}</span>
+                        <h4 class="news-card-title">{{ achievement.title }}</h4>
+                        <p class="news-card-desc">{{ achievement.description|truncatechars:100 }}</p>
                         <div class="news-card-more">繼續閱讀 <i class="bi bi-chevron-right"></i></div>
                     </div>
                 </a>
             </div>
-            
-            <!-- News Card 2 -->
-            <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
-                <a href="{% url 'story' %}" class="news-img-card">
-                    <div class="news-img-wrap">
-                        <i class="bi bi-image" style="opacity:0.3; font-size:3rem;"></i>
-                    </div>
-                    <div class="news-card-body">
-                        <span class="news-card-tag">USR成果</span>
-                        <h4 class="news-card-title">虎科大 USR 計畫：深耕在地，鏈結國際</h4>
-                        <p class="news-card-desc">推動「水井村智慧減碳節水三生一體社會實踐計畫」，不只是技術導入更是人心的鏈結。師生走入村落了解真實需求，從水質檢測到智慧行銷，將實驗室成果應用於魚塭農田，實現真正的社會價值。</p>
-                        <div class="news-card-more">繼續閱讀 <i class="bi bi-chevron-right"></i></div>
-                    </div>
-                </a>
-            </div>
-            
-            <!-- News Card 3 -->
-            <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
-                <a href="{% url 'story' %}" class="news-img-card">
-                    <div class="news-img-wrap">
-                        <i class="bi bi-image" style="opacity:0.3; font-size:3rem;"></i>
-                    </div>
-                    <div class="news-card-body">
-                        <span class="news-card-tag">智慧科技</span>
-                        <h4 class="news-card-title">水井村：從鹽分地帶到智慧聚落的變遷</h4>
-                        <p class="news-card-desc">早期居民依賴傳統漁業維生，在氣候變遷下面臨挑戰。近年導入「三生共好」觀念與智慧養殖技術，不僅降低勞動強度，更加倍提升產品價值。每一口魚塭背後，都是對家鄉土地的深情。</p>
-                        <div class="news-card-more">繼續閱讀 <i class="bi bi-chevron-right"></i></div>
-                    </div>
-                </a>
-            </div>
+            {% empty %}
+            <p class="text-center w-100" style="color:var(--text-muted); padding:30px;">暫無最新成果發佈。</p>
+            {% endfor %}
         </div>
         
         <div class="text-center mt-5">
@@ -511,30 +488,44 @@
 </section>
 
 
-<!-- ===================== CTA ===================== -->
+<!-- ===================== CTA & MAP ===================== -->
 <section class="cta-section">
     <div class="cta-bg-overlay"></div>
-    <div class="container cta-inner">
-        <div class="cta-location-tag">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="currentColor"/></svg>
-            雲林縣口湖鄉水井村
-        </div>
-        <p class="section-subtitle mb-3">COME VISIT US</p>
-        <h2 class="section-title mb-3 cta-title">來水井村走走</h2>
-        <p class="cta-desc">
-            感受台灣鄉村最真實的三生共好，<br class="d-none d-md-block">
-            與我們一起守護這片美麗的土地。
-        </p>
-        <div class="cta-actions">
-            {% if user.is_authenticated %}
-                <a href="{% url 'event_list' %}" class="cta-btn-primary">瀏覽活動 →</a>
-                <a href="{% url 'story' %}" class="cta-btn-secondary">認識水井村</a>
-            {% else %}
-                <a href="{% url 'login_portal' %}?next=/" class="cta-btn-primary">
-                    <i class="bi bi-google me-2"></i>登入加入我們
-                </a>
-                <a href="{% url 'story' %}" class="cta-btn-secondary">認識水井村</a>
-            {% endif %}
+    <div class="container cta-container" style="position:relative; z-index:2;">
+        <div class="row align-items-center g-5">
+            <!-- 文字與按鈕 -->
+            <div class="col-lg-6" data-aos="fade-right">
+                <div class="cta-content-wrap">
+                    <div class="cta-location-tag">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="currentColor"/></svg>
+                        雲林縣口湖鄉水井村
+                    </div>
+                    <p class="section-subtitle mb-3" style="text-align:left;">COME VISIT US</p>
+                    <h2 class="section-title mb-3 cta-title" style="text-align:left;">來水井村走走</h2>
+                    <p class="cta-desc" style="text-align:left;">
+                        感受台灣鄉村最真實的三生共好，<br>
+                        與我們一起守護這片美麗的土地。
+                    </p>
+                    <div class="cta-actions" style="justify-content:flex-start;">
+                        {% if user.is_authenticated %}
+                            <a href="{% url 'event_list' %}" class="cta-btn-primary">瀏覽活動 →</a>
+                            <a href="{% url 'story' %}" class="cta-btn-secondary">認識水井村</a>
+                        {% else %}
+                            <a href="{% url 'login_portal' %}?next=/" class="cta-btn-primary">
+                                <i class="bi bi-google me-2"></i>登入加入我們
+                            </a>
+                            <a href="{% url 'story' %}" class="cta-btn-secondary">認識水井村</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 地圖區域 -->
+            <div class="col-lg-6" data-aos="fade-left" data-aos-delay="200">
+                <div class="cta-map-wrapper">
+                    <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14632.920082256642!2d120.17367334999999!3d23.524227899999996!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x346e9e16373e3b81%3A0x502f67fb783efb0f!2zNjUz6Zuy5p6X57ij5Y-j5rmW6YSJ5rC05LqV5p2R!5e0!3m2!1szh-TW!2stw!4v1775920443960!5m2!1szh-TW!2stw" width="100%" height="400" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                </div>
+            </div>
         </div>
     </div>
 </section>

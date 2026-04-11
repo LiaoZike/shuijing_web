@@ -2167,106 +2167,144 @@ body.page-home .hero-carousel::after {
    12. CTA SECTION
    ===================================================================== */
 .cta-section {
-    padding: 100px 0;
-    text-align: center;
     position: relative;
+    padding: 120px 0;
+    background: #1a0f05;
     overflow: hidden;
 }
 
 .cta-bg-overlay {
     position: absolute;
     inset: 0;
-    background-image: radial-gradient(ellipse 60% 60% at 50% 50%, rgba(196, 160, 82, 0.06) 0%, transparent 70%);
-    pointer-events: none;
+    background: linear-gradient(135deg, rgba(134, 110, 88, 0.95), rgba(228, 193, 153, 0.9));
+    z-index: 1;
 }
 
-.cta-inner {
+.cta-container {
     position: relative;
-    z-index: 1;
+    z-index: 2;
 }
 
 .cta-location-tag {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    color: rgba(255, 255, 255, 0.95);
-    font-size: 0.72rem;
-    letter-spacing: 0.18em;
-    margin-bottom: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    gap: 8px;
+    background: rgba(196, 160, 82, 0.12);
+    border: 1px solid rgba(196, 160, 82, 0.2);
+    color: var(--bamboo-light);
+    padding: 6px 16px;
     border-radius: 999px;
-    padding: 5px 16px;
-    background: rgba(255, 255, 255, 0.15);
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    margin-bottom: 24px;
 }
 
 .cta-title {
-    font-size: clamp(1.8rem, 4vw, 2.8rem) !important;
-    color: #FFFFFF !important;
+    color: #fff8e8 !important;
+    font-size: 2.8rem;
+    line-height: 1.2;
 }
 
 .cta-desc {
-    color: rgba(255, 255, 255, 0.88);
-    font-size: 0.95rem;
-    line-height: 2;
-    letter-spacing: 0.08em;
+    color: rgba(255, 248, 232, 0.7);
+    font-size: 1.15rem;
+    line-height: 1.8;
     margin-bottom: 40px;
-}
-
-.cta-section .section-subtitle {
-    color: rgba(255, 255, 255, 0.8);
-}
-
-.cta-section .section-title {
-    color: #FFFFFF;
+    letter-spacing: 0.05em;
 }
 
 .cta-actions {
     display: flex;
     gap: 16px;
-    justify-content: center;
     flex-wrap: wrap;
 }
 
 .cta-btn-primary {
-    display: inline-block;
-    background: #FFFFFF;
-    color: #8A6313;
-    font-size: 0.9rem;
-    font-weight: 700;
-    letter-spacing: 0.14em;
+    background: var(--bamboo-light);
+    color: #fff;
     padding: 14px 36px;
     border-radius: 8px;
+    font-weight: 600;
     text-decoration: none;
-    transition: all 0.3s ease;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    letter-spacing: 0.15em;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 15px rgba(196, 160, 82, 0.3);
 }
 
 .cta-btn-primary:hover {
-    background: #FDFBF7;
-    transform: translateY(-3px);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
-    color: #5C3F05;
+    background: #B08C40;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(196, 160, 82, 0.4);
+    color: #fff;
 }
 
 .cta-btn-secondary {
-    display: inline-block;
     background: transparent;
-    color: #FFFFFF;
-    font-size: 0.9rem;
-    font-weight: 500;
-    letter-spacing: 0.12em;
+    color: #fff;
     padding: 14px 36px;
     border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.6);
+    font-weight: 600;
     text-decoration: none;
+    letter-spacing: 0.15em;
+    border: 1px solid rgba(255, 255, 255, 0.3);
     transition: all 0.3s ease;
 }
 
 .cta-btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: #FFFFFF;
-    color: #FFFFFF;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #fff;
+    color: #fff;
     transform: translateY(-3px);
+}
+
+/* Map Wrapper */
+.cta-map-wrapper {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(196, 160, 82, 0.15);
+    background: #000;
+    line-height: 0;
+}
+
+.cta-map-wrapper iframe {
+    filter: invert(5%) hue-rotate(20deg) brightness(1.05) contrast(1.1);
+    transition: filter 0.5s ease;
+    display: block;
+}
+
+.cta-map-wrapper:hover iframe {
+    filter: none;
+}
+
+/* RWD for Map CTA */
+@media (max-width: 991.98px) {
+    .cta-section {
+        padding: 80px 0;
+    }
+
+    .cta-title {
+        font-size: 2.2rem;
+        text-align: center !important;
+    }
+
+    .cta-desc {
+        font-size: 1rem;
+        text-align: center !important;
+    }
+
+    .cta-location-tag {
+        display: flex;
+        width: fit-content;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .cta-actions {
+        justify-content: center !important;
+    }
 }
 
 
@@ -2285,9 +2323,9 @@ body.page-home .hero-carousel::after {
     border-color: rgba(196, 160, 82, 0.18) !important;
 }
 
-/* CTA：琥珀金漸層 */
+/* CTA 系列背景已在上方主樣式中定義 */
 .cta-section {
-    background: linear-gradient(135deg, #B58A30 0%, #8A6313 50%, #5C3F05 100%) !important;
+    background: linear-gradient(135deg, #1A0F05 0%, #2C1A05 100%) !important;
 }
 
 
