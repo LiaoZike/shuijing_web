@@ -1,6 +1,26 @@
 from django.db import models
-# from Claud import admin
 from django.utils import timezone
+import os
+import uuid
+
+def get_upload_path(instance, filename, prefix):
+    """
+    自定義上傳路徑處理函式
+    格式：[路徑]/[模型名]_[隨機碼].[副檔名]
+    """
+    ext = filename.split('.')[-1].lower()
+    # 使用 uuid 確保檔名唯一性
+    new_filename = f"{instance._meta.model_name}_{uuid.uuid4().hex[:8]}.{ext}"
+    return os.path.join(prefix, new_filename)
+
+def upload_slides(instance, filename): return get_upload_path(instance, filename, 'slides/')
+def upload_activities(instance, filename): return get_upload_path(instance, filename, 'activities/')
+def upload_usr_aiot(instance, filename): return get_upload_path(instance, filename, 'usr/aiot/')
+def upload_usr_achievements(instance, filename): return get_upload_path(instance, filename, 'usr/achievements/')
+def upload_usr_videos(instance, filename): return get_upload_path(instance, filename, 'usr/videos/')
+def upload_usr_video_images(instance, filename): return get_upload_path(instance, filename, 'usr/video_images/')
+def upload_usr_team(instance, filename): return get_upload_path(instance, filename, 'usr/team/')
+def upload_notices(instance, filename): return get_upload_path(instance, filename, 'notices/')
 
 ######################################################
 # Function:首頁輪播資料模型
@@ -10,7 +30,7 @@ class HeroSlide(models.Model):
     title        = models.CharField('標題', max_length=100)
     subtitle     = models.CharField('副標題', max_length=200, blank=True)
     description  = models.CharField('說明', max_length=300, blank=True)
-    image        = models.ImageField('圖片', upload_to='slides/')
+    image        = models.ImageField('圖片', upload_to=upload_slides)
     cc_credit    = models.CharField('創用CC來源標註', max_length=300, blank=True)
     is_active    = models.BooleanField('顯示', default=True)
     order        = models.PositiveIntegerField('排序', default=0)
@@ -66,7 +86,7 @@ class Activity(models.Model):
     time        = models.CharField('活動時間', max_length=50, blank=True,
                                    help_text='例如：09:00 - 17:00')
     location    = models.CharField('地點', max_length=100)  # 必填拿掉 blank=True
-    cover_image = models.ImageField('宣傳圖片', upload_to='activities/',
+    cover_image = models.ImageField('宣傳圖片', upload_to=upload_activities,
                                     blank=True, null=True)
     link_url    = models.URLField('報名/詳情連結', max_length=500, blank=True)
     max_participants = models.PositiveIntegerField('總人數上限', blank=True, null=True,
@@ -228,7 +248,7 @@ class AiotProject(models.Model):
     title       = models.CharField('專案名稱', max_length=100)
     tags        = models.CharField('標籤', max_length=100, help_text='例如：智慧養殖,水質監測')
     description = models.TextField('專案說明')
-    image       = models.ImageField('專案圖片', upload_to='usr/aiot/', blank=True, null=True)
+    image       = models.ImageField('專案圖片', upload_to=upload_usr_aiot, blank=True, null=True)
     link_url    = models.URLField('連結網址', max_length=500, blank=True, help_text='與在地故事結合的延伸連結')
     is_active   = models.BooleanField('顯示', default=True)
     order       = models.PositiveIntegerField('排序', default=0)
@@ -255,7 +275,7 @@ class UsrAchievement(models.Model):
     category    = models.CharField('分類/標籤', max_length=50, help_text='例如：社會實踐, AIoT 課程')
     title       = models.CharField('標題', max_length=100)
     description = models.TextField('說明')
-    image       = models.ImageField('活動照片', upload_to='usr/achievements/', blank=True, null=True)
+    image       = models.ImageField('活動照片', upload_to=upload_usr_achievements, blank=True, null=True)
     link_url    = models.URLField('詳細連結', max_length=500, blank=True)
     is_active   = models.BooleanField('顯示', default=True)
 
@@ -281,7 +301,7 @@ class UsrVideo(models.Model):
         blank=True, 
         help_text='可貼入來自 YouTube / Facebook 等平台的嵌入原始碼（iframe 格式）'  # ← 移除 < > 符號
     )
-    video_file  = models.FileField('直接上傳影片檔', upload_to='usr/videos/', blank=True, null=True)
+    video_file  = models.FileField('直接上傳影片檔', upload_to=upload_usr_videos, blank=True, null=True)
     is_active   = models.BooleanField('顯示', default=True)
 
     class Meta:
@@ -320,7 +340,7 @@ class UsrVideo(models.Model):
 
 class UsrVideoImage(models.Model):
     video       = models.ForeignKey(UsrVideo, on_delete=models.CASCADE, related_name='images', verbose_name='所屬紀錄')
-    image       = models.ImageField('圖片', upload_to='usr/video_images/')
+    image       = models.ImageField('圖片', upload_to=upload_usr_video_images)
     caption     = models.CharField('圖片說明', max_length=100, blank=True)
     order       = models.PositiveIntegerField('排序', default=0)
 
@@ -340,7 +360,7 @@ class UsrTeamMember(models.Model):
     name        = models.CharField('姓名', max_length=50)
     role        = models.CharField('稱謂/角色', max_length=100)
     description = models.TextField('介紹', blank=True)
-    image       = models.ImageField('成員照片', upload_to='usr/team/', blank=True, null=True)
+    image       = models.ImageField('成員照片', upload_to=upload_usr_team, blank=True, null=True)
     order       = models.PositiveIntegerField('排序', default=0)
     is_active   = models.BooleanField('顯示', default=True)
 
@@ -380,7 +400,7 @@ class Notice(models.Model):
 
 class NoticeImage(models.Model):
     notice      = models.ForeignKey(Notice, related_name='images', on_delete=models.CASCADE, verbose_name='公告')
-    image       = models.ImageField('圖片', upload_to='notices/')
+    image       = models.ImageField('圖片', upload_to=upload_notices)
     caption     = models.CharField('圖片說明', max_length=200, blank=True)
     order       = models.IntegerField('排序', default=0)
     created_at  = models.DateTimeField(auto_now_add=True)

@@ -29,6 +29,8 @@
     justify-content: center;
     /* Container floating motion */
     animation: mascot-container-bob 4s ease-in-out infinite;
+    /* Basic shadow for the character wrapper (more efficient than drop-shadow on image) */
+    filter: none !important; 
 }
 
 .shuijing-mascot-sprite {
@@ -40,14 +42,13 @@
     /* Because it's a 2x2 grid */
     background-repeat: no-repeat;
 
-    /* CSS MAGIC: Removes white background on light themes */
-    mix-blend-mode: multiply;
+    /* Removed: mix-blend-mode: multiply; (Moved to source image transparency) */
 
     /* Character vitality animation - Frame-by-frame limb motion */
     animation: mascot-sprite-play 2.5s steps(1) infinite;
 
-    /* Adds shadow to the character itself */
-    filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.1));
+    /* Removed expensive drop-shadow filter */
+    filter: none;
 }
 
 /* Speech Bubble */

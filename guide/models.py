@@ -1,4 +1,19 @@
 from django.db import models
+import os
+import uuid
+
+def get_guide_upload_path(instance, filename, prefix):
+    ext = filename.split('.')[-1].lower()
+    new_filename = f"{instance._meta.model_name}_{uuid.uuid4().hex[:8]}.{ext}"
+    return os.path.join(prefix, new_filename)
+
+def upload_story_spots(instance, filename): return get_guide_upload_path(instance, filename, 'guide/story_spots/')
+def upload_ar_markers(instance, filename): return get_guide_upload_path(instance, filename, 'guide/ar/markers/')
+def upload_ar_targets(instance, filename): return get_guide_upload_path(instance, filename, 'guide/ar/targets/')
+def upload_ar_videos(instance, filename): return get_guide_upload_path(instance, filename, 'guide/ar/videos/')
+def upload_ar_audios(instance, filename): return get_guide_upload_path(instance, filename, 'guide/ar/audios/')
+def upload_ar_images(instance, filename): return get_guide_upload_path(instance, filename, 'guide/ar/images/')
+def upload_ar_models(instance, filename): return get_guide_upload_path(instance, filename, 'guide/ar/models/')
 
 
 class StorySpot(models.Model):
@@ -26,7 +41,7 @@ class StorySpot(models.Model):
     )
     content = models.TextField(blank=True, verbose_name='詳細內容')
     cover_image = models.ImageField(
-        upload_to='guide/story_spots/',
+        upload_to=upload_story_spots,
         blank=True,
         null=True,
         verbose_name='封面圖片'
@@ -118,37 +133,37 @@ class ARAsset(models.Model):
         verbose_name='素材類型'
     )
     marker_image = models.ImageField(
-        upload_to='guide/ar/markers/',
+        upload_to=upload_ar_markers,
         blank=True,
         null=True,
         verbose_name='辨識圖片(marker)'
     )
     target_file = models.FileField(
-        upload_to='guide/ar/targets/',
+        upload_to=upload_ar_targets,
         blank=True,
         null=True,
         verbose_name='MindAR target 檔'
     )
     video_file = models.FileField(
-        upload_to='guide/ar/videos/',
+        upload_to=upload_ar_videos,
         blank=True,
         null=True,
         verbose_name='影片檔'
     )
     audio_file = models.FileField(
-        upload_to='guide/ar/audios/',
+        upload_to=upload_ar_audios,
         blank=True,
         null=True,
         verbose_name='音訊檔'
     )
     image_file = models.ImageField(
-        upload_to='guide/ar/images/',
+        upload_to=upload_ar_images,
         blank=True,
         null=True,
         verbose_name='圖片素材'
     )
     model_file = models.FileField(
-        upload_to='guide/ar/models/',
+        upload_to=upload_ar_models,
         blank=True,
         null=True,
         verbose_name='3D模型檔'

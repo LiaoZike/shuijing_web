@@ -213,7 +213,7 @@
 <script>
     // 初始化 Lenis (優化靈敏度，降低延遲感)
     const lenis = new Lenis({
-        duration: 0.65,
+        duration: 0.7,
         // easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), 
         easing: (t) => 1 - Math.pow(1 - t, 3), 
         direction: 'vertical',
