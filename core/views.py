@@ -184,6 +184,9 @@ def _get_companions_from_post(request):
 
 def _validate_event_registration(activity, user, name, phone, companions):
     """檢查活動報名資料是否合法（不再檢查名額，名額由 view 判斷 confirmed/waitlist）。"""
+    if activity.link_url:
+        return '抱歉! 此活動採外部報名（請見詳情頁連結），本站不開放直接報名。'
+
     if not name or not phone:
         return '抱歉! 姓名和電話為必填。'
 

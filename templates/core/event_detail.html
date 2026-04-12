@@ -166,6 +166,10 @@
                     <!-- 報名按鈕 -->
                     {% if activity.is_past %}
                         <a class="btn-register disabled">活動已結束</a>
+                    {% elif activity.link_url %}
+                        <a href="{{ activity.link_url }}" target="_blank" class="btn-register">
+                            <i class="bi bi-box-arrow-up-right me-2"></i>前往報名 / 了解詳情 →
+                        </a>
                     {% elif user_registration %}
                         {% if user_registration.status == 'waitlist' %}
                             <a href="{% url 'my_registration_detail' user_registration.pk %}" class="btn-register" style="background:#C4A052;">
