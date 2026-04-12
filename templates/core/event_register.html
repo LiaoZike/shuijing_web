@@ -63,8 +63,9 @@
                 <div class="section-divider"><span>同行人員</span></div>
 
                 <div id="companions-container"></div>
+                <p id="limit-hint" style="font-size:0.8rem; margin-bottom:12px;"></p>
 
-                <button type="button" class="btn-add-companion" onclick="addCompanion()">
+                <button type="button" class="btn-add-companion" id="btnAddCompanion" onclick="addCompanion()">
                     <i class="bi bi-plus-circle"></i> 新增同行人
                 </button>
 
@@ -95,8 +96,72 @@
 {% block extra_js %}
 <script>
 let companionCount = 0;
+const remainingSpots = {{ activity.remaining_spots|default:"null" }};
+const maxPerUser = {{ activity.max_per_user|default:"null" }};
+const allowWaitlist = {{ activity.allow_waitlist|yesno:"true,false" }};
+
+document.addEventListener('DOMContentLoaded', updateLimitStatus);
+
+function updateLimitStatus() {
+    const hint = document.getElementById('limit-hint');
+    const btn = document.getElementById('btnAddCompanion');
+    const totalCount = companionCount + 1;
+
+    let canAdd = true;
+    let message = "";
+
+    // 1. 檢查帳號上限
+    if (maxPerUser && totalCount >= maxPerUser) {
+        canAdd = false;
+        message = `已達每帳號報名上限 (${maxPerUser} 人)`;
+    }
+
+    // 2. 檢查活動剩餘名額 (如果不開放候補)
+    if (canAdd && !allowWaitlist && remainingSpots !== null && totalCount >= remainingSpots) {
+        canAdd = false;
+        message = `活動名額已滿，無法再新增人數`;
+    }
+
+    // 3. 檢查活動剩餘名額 (如果開放候補，提示即將進入候補)
+    if (canAdd && allowWaitlist && remainingSpots !== null && totalCount >= remainingSpots) {
+        message = `提示：目前名額已滿，接下來新增的人員將進入候補名單`;
+        hint.style.color = "#C4A052";
+    } else if (canAdd) {
+        // 計算還能加幾個
+        let left = 999;
+        if (maxPerUser) left = Math.min(left, maxPerUser - totalCount);
+        if (!allowWaitlist && remainingSpots !== null) left = Math.min(left, remainingSpots - totalCount);
+        
+        if (left < 100) {
+            message = `還可以新增 ${left} 位同行人`;
+            hint.style.color = "var(--green-mid)";
+        } else {
+            message = "";
+        }
+    }
+
+    hint.textContent = message;
+    if (!canAdd) {
+        hint.style.color = "#E07060";
+        if(btn) {
+            btn.style.opacity = "0.5";
+            btn.style.cursor = "not-allowed";
+        }
+    } else {
+        btn.style.opacity = "1";
+        btn.style.cursor = "pointer";
+    }
+    return canAdd;
+}
+
 
 function addCompanion() {
+    if (!updateLimitStatus()) {
+        const hint = document.getElementById('limit-hint').textContent;
+        alert(hint || "已達人數上限");
+        return;
+    }
+
     companionCount++;
     const container = document.getElementById('companions-container');
     const block = document.createElement('div');
@@ -123,6 +188,7 @@ function addCompanion() {
     `;
     container.appendChild(block);
     updateNumbers();
+    updateLimitStatus();
 }
 
 function removeCompanion(id) {
@@ -130,6 +196,7 @@ function removeCompanion(id) {
     if (block) block.remove();
     updateNumbers();
     reindexCompanions();
+    updateLimitStatus();
 }
 
 function updateNumbers() {

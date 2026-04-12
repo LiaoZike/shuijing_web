@@ -1176,3 +1176,66 @@ body {
     letter-spacing: 0.1em;
     margin-bottom: 24px;
 }
+
+@media (max-width: 576px) {
+
+    .reg-card {
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 16px;
+    }
+
+    /* 日期 + 箭頭 同一行 */
+    .reg-date-block {
+        flex: 0 0 auto;
+    }
+
+    .reg-arrow {
+        margin-left: auto;
+    }
+
+    /* 標題資訊佔滿整行 */
+    .reg-info {
+        flex: 1 1 100%;
+        order: 3;
+        min-width: 0;
+    }
+
+    .reg-title {
+        white-space: normal;
+        /* 允許換行 */
+        font-size: 0.95rem;
+    }
+
+    .reg-meta {
+        font-size: 0.75rem;
+        line-height: 1.6;
+    }
+
+    /* 標籤換到下面 */
+    .reg-tags {
+        flex: 1 1 100%;
+        order: 4;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .reg-badge {
+        font-size: 0.65rem;
+    }
+
+    /* 篩選按鈕縮小 */
+    .my-reg-filter-btn {
+        font-size: 0.72rem;
+        padding: 5px 12px;
+    }
+
+    /* 標題縮小 */
+    .my-reg-title {
+        font-size: 1.3rem;
+    }
+
+    .my-reg-wrap {
+        padding: 100px 0 60px;
+    }
+}
