@@ -1,0 +1,20 @@
+{% extends "admin/base.html" %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+/* 修正日曆選單跟著滾動跑位的問題 */
+.calendarbox,
+.clockbox {
+    position: absolute !important;
+    top: auto !important;
+    left: auto !important;
+    /* 讓它往上顯示在按鈕附近 */
+    margin-top: -300px !important;
+    z-index: 9999 !important;
+}
+.calendarbox{
+    background-color: aliceblue;
+}
+</style>
+{% endblock %}
