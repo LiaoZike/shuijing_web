@@ -166,7 +166,7 @@
                     <!-- 報名按鈕 -->
                     {% if activity.is_past %}
                         <a class="btn-register disabled">活動已結束</a>
-                    {% elif activity.link_url %}
+                    {% elif activity.link_url and activity.is_registration_open %}
                         <a href="{{ activity.link_url }}" target="_blank" class="btn-register">
                             <i class="bi bi-box-arrow-up-right me-2"></i>前往報名 / 了解詳情 →
                         </a>
