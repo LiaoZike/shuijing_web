@@ -14,6 +14,7 @@ urlpatterns = [
     path('story/', views.story, name='story'),
     path('usr/', views.usr_page, name='usr'),
     path('search/', views.global_search, name='global_search'),
+    path('links/', views.related_links_page, name='related_links'),
     
     # 公告頁 (Notice)
     path('notices/', views.notice_list, name='notice_list'),

@@ -22,6 +22,7 @@ def upload_usr_video_images(instance, filename): return get_upload_path(instance
 def upload_usr_team(instance, filename): return get_upload_path(instance, filename, 'usr/team/')
 def upload_notices(instance, filename): return get_upload_path(instance, filename, 'notices/')
 def upload_usr_achievement_images(instance, filename): return get_upload_path(instance, filename, 'usr/achievements/gallery/')
+def upload_related_links(instance, filename): return get_upload_path(instance, filename, 'related_links/')
 
 ######################################################
 # Function:首頁輪播資料模型
@@ -428,3 +429,29 @@ class NoticeImage(models.Model):
 
     def __str__(self):
         return f"Image for {self.notice.title}"
+
+##################################################
+# Function: 相關連結 (Related Links)
+##################################################
+class RelatedLink(models.Model):
+    CATEGORY_CHOICES = [
+        ('local', '在地商家'),
+        ('usr',   '相關 USR 連結'),
+    ]
+
+    category    = models.CharField('分類', max_length=20, choices=CATEGORY_CHOICES, default='local')
+    title       = models.CharField('標題', max_length=100)
+    description = models.TextField('說明', blank=True)
+    image       = models.ImageField('連結圖片', upload_to=upload_related_links, blank=True, null=True)
+    link_url    = models.CharField('連結網址', max_length=500)
+    link_text   = models.CharField('按鈕文字', max_length=50, default='了解更多')
+    is_active   = models.BooleanField('顯示', default=True)
+    order       = models.PositiveIntegerField('排序', default=0)
+
+    class Meta:
+        ordering = ['order', 'title']
+        verbose_name = '在地商家與相關連結'
+        verbose_name_plural = '在地商家與相關連結'
+
+    def __str__(self):
+        return f"[{self.get_category_display()}] {self.title}"

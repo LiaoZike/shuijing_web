@@ -425,6 +425,33 @@ body { background:#F5F0E8; color:#2E1F0F; }
         </div>
         {% endif %}
 
+        <!-- ════ 相關連結與商家 ════ -->
+        {% if link_results %}
+        <div class="results-section">
+            <div class="section-header">
+                <span class="section-icon">🔗</span>
+                <h2 class="section-heading">相關連結與商家</h2>
+                <span class="section-count">{{ link_results|length }} 筆</span>
+            </div>
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                {% for link in link_results %}
+                <div class="col" data-aos="fade-up">
+                    <a href="{{ link.link_url }}" target="_blank" rel="noopener noreferrer" class="grid-result-card d-block text-decoration-none">
+                        <span class="grid-card-icon">
+                            {% if link.category == 'local' %}🏪{% else %}🔗{% endif %}
+                        </span>
+                        <div class="grid-card-tags">
+                            <span class="grid-card-tag">{{ link.get_category_display }}</span>
+                        </div>
+                        <h3 class="grid-card-title">{{ link.title }}</h3>
+                        <p class="grid-card-desc">{{ link.description }}</p>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
         {% endif %}
     </div>
 </section>

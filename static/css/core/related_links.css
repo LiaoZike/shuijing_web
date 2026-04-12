@@ -1,0 +1,103 @@
+body {
+    background-color: #F5F0E8 !important;
+    color: var(--ink) !important;
+}
+
+.links-hero {
+    margin-top: -3px;
+    background-color: #8f867b;
+    background-image: radial-gradient(circle at 70% 30%, rgba(139, 105, 20, .06), transparent 55%);
+    padding: 80px 0 50px;
+    text-align: center;
+    position: relative;
+    border-bottom: 1px solid rgba(196, 160, 82, 0.12);
+    color: var(--text-light);
+}
+
+.links-hero-title {
+    font-family: 'Noto Serif TC', serif;
+    font-size: clamp(2.2rem, 5vw, 3.2rem);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    margin-bottom: 20px;
+}
+
+.links-hero-subtitle {
+    font-size: 0.9rem;
+    /* color: var(--bamboo); */
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+
+.links-section-divider {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin: 80px 0 48px;
+}
+
+.links-section-divider .line {
+    flex: 1;
+    height: 1px;
+    background: rgba(139, 105, 20, 0.2);
+}
+
+.links-section-divider .text {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--wood-dark);
+    letter-spacing: 0.05em;
+}
+
+.links-container {
+    padding-bottom: 120px;
+    background-color: #F5F0E8;
+}
+
+/* 強化卡片陰影與懸停效果 */
+.rel-link-card {
+    background: #fff;
+    box-shadow: 0 4px 20px rgba(46, 31, 15, 0.06);
+}
+
+.rel-link-img {
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    /* 調整為 3:2，比 16:9 更高，減少圖片被裁切的機會 */
+    background: #F8F9FA;
+    overflow: hidden;
+}
+
+.rel-link-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    /* 確保主體維持在中央 */
+}
+
+.rel-link-card:hover {
+    box-shadow: 0 15px 35px rgba(46, 31, 15, 0.12);
+}
+
+.rel-link-title {
+    color: var(--wood-dark) !important;
+}
+
+.rel-link-desc {
+    color: #4A3220 !important;
+}
+
+.rel-link-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 18px;
+    border-top: 1px solid rgba(139, 105, 20, 0.1);
+}
+
+.rel-link-btn {
+    width: fit-content;
+}

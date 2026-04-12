@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import (HeroSlide, ServiceItem, Activity, Registration, Participant, ContactMessage,
-                     AiotProject, UsrAchievement, UsrAchievementImage, UsrVideo, UsrVideoImage, UsrTeamMember, Notice, NoticeImage)
+                     AiotProject, UsrAchievement, UsrAchievementImage, UsrVideo, UsrVideoImage, UsrTeamMember, Notice, NoticeImage, RelatedLink)
 from django.db import models
 from django.forms import Textarea, ModelForm, TextInput
 admin.site.site_header = "風雲客棧管理系統"
@@ -172,3 +172,14 @@ class UsrTeamMemberAdmin(admin.ModelAdmin):
     list_display_links = ['name']
     list_editable = ['order', 'is_active']
     search_fields = ['name', 'role', 'description']
+
+#################################################
+# Admin: 相關連結管理
+#################################################
+@admin.register(RelatedLink)
+class RelatedLinkAdmin(admin.ModelAdmin):
+    list_display = ['order', 'category', 'title', 'link_url', 'is_active']
+    list_display_links = ['title']
+    list_editable = ['order', 'link_url', 'is_active']
+    list_filter = ['category', 'is_active']
+    search_fields = ['title', 'description', 'link_url']

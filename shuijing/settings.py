@@ -207,53 +207,60 @@ SIMPLEUI_LOGO = ''
 SIMPLEUI_DEFAULT_THEME = 'e-black-pro.css'
 SIMPLEUI_CONFIG = {
     'system_keep': False,
-    'menu_display': ['常用', 'USR', '導覽', '已停止使用', '認證和授權'],
+    'menu_display': ['活動管理', '內容與連結', 'USR 實踐', '數位導覽', '系統管理', '封存項目'],
     'dynamic': False,
     'menus': [
         {
-            'name': '常用',
-            'icon': 'fas fa-star',
+            'name': '活動管理',
+            'icon': 'fas fa-calendar-check',
             'models': [
-                {'name': '活動', 'url': 'core/activity/', 'icon': 'far fa-calendar-alt'},
+                {'name': '活動資訊', 'url': 'core/activity/', 'icon': 'fas fa-star'},
+                {'name': '報名記錄', 'url': 'core/registration/', 'icon': 'fas fa-file-signature'},
+            ]
+        },
+        {
+            'name': '內容與連結',
+            'icon': 'fas fa-edit',
+            'models': [
+                {'name': '首頁輪播', 'url': 'core/heroslide/', 'icon': 'fas fa-images'},
                 {'name': '最新公告', 'url': 'core/notice/', 'icon': 'fas fa-bullhorn'},
-                {'name': '報名記錄', 'url': 'core/registration/', 'icon': 'fas fa-clipboard-list'},
-                {'name': '首頁輪播', 'url': 'core/heroslide/', 'icon': 'far fa-images'},
-                {'name': '聯絡訊息', 'url': 'core/contactmessage/', 'icon': 'far fa-envelope'}
+                {'name': '在地商家與連結', 'url': 'core/relatedlink/', 'icon': 'fas fa-store'},
+                {'name': '聯絡訊息', 'url': 'core/contactmessage/', 'icon': 'fas fa-envelope-open-text'},
             ]
         },
         {
-            'name': 'USR',
-            'icon': 'fas fa-project-diagram',
+            'name': 'USR 實踐',
+            'icon': 'fas fa-graduation-cap',
             'models': [
-                {'name': 'AIoT 專案', 'url': 'core/aiotproject/', 'icon': 'fas fa-network-wired'},
-                {'name': '師生表現紀錄', 'url': 'core/usrachievement/', 'icon': 'fas fa-trophy'},
-                {'name': '影音紀錄', 'url': 'core/usrvideo/', 'icon': 'fas fa-video'}
+                {'name': 'AIoT 專案', 'url': 'core/aiotproject/', 'icon': 'fas fa-microchip'},
+                {'name': '師生成果紀錄', 'url': 'core/usrachievement/', 'icon': 'fas fa-award'},
+                {'name': '影音成果', 'url': 'core/usrvideo/', 'icon': 'fas fa-play-circle'},
             ]
         },
         {
-            'name': '導覽',
+            'name': '數位導覽',
             'icon': 'fas fa-map-marked-alt',
             'models': [
-                {'name': '導覽點', 'url': 'guide/storyspot/', 'icon': 'fas fa-map-pin'},
-                {'name': '細項_AR素材', 'url': 'guide/arasset/', 'icon': 'fas fa-cube'},
-                {'name': '細項_導覽說明', 'url': 'guide/storyfact/', 'icon': 'fas fa-info-circle'}
+                {'name': '導覽景點', 'url': 'guide/storyspot/', 'icon': 'fas fa-map-marker-alt'},
+                {'name': 'AR 素材管理', 'url': 'guide/arasset/', 'icon': 'fas fa-vr-cardboard'},
+                {'name': '景點知識說明', 'url': 'guide/storyfact/', 'icon': 'fas fa-book-reader'},
             ]
         },
         {
-            'name': '已停止使用',
+            'name': '系統管理',
+            'icon': 'fas fa-cogs',
+            'models': [
+                {'name': '使用者', 'url': 'auth/user/', 'icon': 'fas fa-user-shield'},
+                {'name': '群組', 'url': 'auth/group/', 'icon': 'fas fa-users-cog'},
+                {'name': '社交帳號', 'url': 'socialaccount/socialaccount/', 'icon': 'fas fa-share-alt'},
+            ]
+        },
+        {
+            'name': '封存項目',
             'icon': 'fas fa-archive',
             'models': [
-                {'name': 'USR 團隊成員', 'url': 'core/usrteammember/', 'icon': 'fas fa-users-slash'},
-                {'name': '服務項目', 'url': 'core/serviceitem/', 'icon': 'fas fa-ban'}
-            ]
-        },
-        {
-            'name': '認證和授權',
-            'icon': 'fas fa-shield-alt',
-            'models': [
-                {'name': '使用者', 'url': 'auth/user/', 'icon': 'fas fa-user'},
-                {'name': '群組', 'url': 'auth/group/', 'icon': 'fas fa-users'},
-                {'name': '社交帳號', 'url': 'socialaccount/socialaccount/', 'icon': 'fas fa-share-alt'}
+                {'name': 'USR 團隊成員', 'url': 'core/usrteammember/', 'icon': 'fas fa-user-times'},
+                {'name': '首頁服務項目', 'url': 'core/serviceitem/', 'icon': 'fas fa-trash-alt'},
             ]
         }
     ]

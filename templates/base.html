@@ -59,13 +59,14 @@
                 href="{% url 'home' %}">首 頁</a>
             </li>
             <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle {% if request.resolver_match.url_name == 'about' or request.resolver_match.url_name == 'story' %}active{% endif %}"
+                <a class="nav-link dropdown-toggle {% if request.resolver_match.url_name == 'about' or request.resolver_match.url_name == 'story' or request.resolver_match.url_name == 'related_links' %}active{% endif %}"
                 href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                     關 於
                 </a>
                 <ul class="dropdown-menu">
                     <li><a class="dropdown-item" href="{% url 'about' %}">關於風雲客棧</a></li>
                     <li><a class="dropdown-item" href="{% url 'story' %}">關於水井村</a></li>
+                    <li><a class="dropdown-item" href="{% url 'related_links' %}">在地商家連結</a></li>
                 </ul>
             </li>
             <li class="nav-item dropdown">
@@ -183,10 +184,10 @@
             <div class="col-6 col-lg-2 mb-4">
                 <p style="color:var(--cream-dark);font-size:0.8rem;letter-spacing:0.15em;margin-bottom:18px; font-weight: 600;">探索與訊息</p>
                 <ul class="list-unstyled">
-                    <li class="mb-2"><a href="{% url 'notice_list' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">最新公告消息</a></li>
-                    <li class="mb-2"><a href="{% url 'event_list' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">近期活動詳情</a></li>
+                    <li class="mb-2"><a href="{% url 'notice_list' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">最新公告</a></li>
+                    <li class="mb-2"><a href="{% url 'event_list' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">近期活動</a></li>
                     <li class="mb-2"><a href="{% url 'guide:home' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">互動導覽地圖</a></li>
-                    <li class="mb-2"><a href="{% url 'home' %}#services-section" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">三生共好服務</a></li>
+                    <li class="mb-2"><a href="{% url 'related_links' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">在地商家與連結</a></li>
                 </ul>
             </div>
             <div class="col-6 col-lg-2 mb-4">

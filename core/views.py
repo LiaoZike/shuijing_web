@@ -8,7 +8,6 @@ from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from django.core.mail import send_mail
 from allauth.account.signals import user_logged_in, user_logged_out
-
 from .models import (
     HeroSlide,
     Registration,
@@ -19,6 +18,7 @@ from .models import (
     AiotProject,
     UsrAchievement,
     Notice,
+    RelatedLink,
 )
 
 import threading
@@ -60,6 +60,7 @@ def home(request):
 
     notices = Notice.objects.filter(is_active=True).order_by('-publish_date')[:7]
     achievements = UsrAchievement.objects.filter(is_active=True).order_by('-date')[:3]
+
     return render(request, 'core/home.html', {
         'slides': slides,
         'services': services,
@@ -431,6 +432,7 @@ def global_search(request):
     activities = []
     aiot_results = []
     usr_results = []
+    link_results = []
 
     if query:
         # 搜尋：活動 (Activity)
@@ -462,13 +464,23 @@ def global_search(request):
             Q(category__icontains=query)
         ).order_by('-date')[:8]
 
-    total_count = len(activities) + len(aiot_results) + len(usr_results)
+        # 搜尋：相關連結 (RelatedLink)
+        link_results = RelatedLink.objects.filter(
+            is_active=True
+        ).filter(
+            Q(title__icontains=query) |
+            Q(description__icontains=query) |
+            Q(category__icontains=query)
+        ).order_by('order')[:8]
+
+    total_count = len(activities) + len(aiot_results) + len(usr_results) + len(link_results)
 
     return render(request, 'core/search_results.html', {
         'query': query,
         'activities': activities,
         'aiot_results': aiot_results,
         'usr_results': usr_results,
+        'link_results': link_results,
         'total_count': total_count,
         'today': today,
     })
@@ -489,10 +501,24 @@ def notice_list(request):
         'current_category': category,
         'categories': Notice.CATEGORY_CHOICES
     })
-
+    
 def notice_detail(request, pk):
     """公告詳情頁。"""
     notice = get_object_or_404(Notice, pk=pk, is_active=True)
     return render(request, 'core/notice_detail.html', {
         'notice': notice
+    })
+
+def related_links_page(request):
+    """在地連結頁面：顯示所有在地商家與 USR 相關連結。"""
+    links = RelatedLink.objects.filter(is_active=True).order_by('order')
+    
+    # 也可以在 View 內先分好類，方便前端顯示
+    local_links = links.filter(category='local')
+    usr_links = links.filter(category='usr')
+
+    return render(request, 'core/related_links.html', {
+        'local_links': local_links,
+        'usr_links': usr_links,
+        'page_title': '在地商家與相關連結',
     })
