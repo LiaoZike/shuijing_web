@@ -19,6 +19,303 @@
     /* Force GPU Acceleration */
 }
 
+.shuijing-mascot-container.is-chat-open .mascot-bubble {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
+
+.mascot-chat-panel {
+    position: fixed;
+    right: 32px;
+    bottom: 142px;
+    z-index: 1001;
+    width: min(398px, calc(100vw - 32px));
+    height: min(570px, calc(100vh - 176px));
+    display: grid;
+    grid-template-rows: auto 1fr auto auto;
+    overflow: hidden;
+    border: 1px solid rgba(139, 105, 20, 0.24);
+    border-radius: 8px;
+    background: #fffaf0;
+    box-shadow: 0 28px 70px rgba(25, 18, 8, 0.28);
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+    transform-origin: bottom right;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.mascot-chat-panel[hidden] {
+    display: none;
+}
+
+.mascot-chat-panel.is-open {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.mascot-chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px;
+    border-bottom: 1px solid rgba(139, 105, 20, 0.16);
+    background: linear-gradient(135deg, #2e1f0f, #456b4d);
+    color: #fdfbf7;
+}
+
+.mascot-chat-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.mascot-chat-avatar {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.mascot-chat-avatar::before {
+    content: "";
+    width: 38px;
+    height: 38px;
+    background-image: url('../../image/mascot/sprite.png');
+    background-size: 200% 200%;
+    background-position: 0 0;
+}
+
+.mascot-chat-title {
+    font-size: 0.98rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.mascot-chat-status {
+    margin-top: 3px;
+    color: rgba(253, 251, 247, 0.72);
+    font-size: 0.78rem;
+}
+
+.mascot-chat-icon-btn,
+.mascot-chat-form button {
+    border: 0;
+    cursor: pointer;
+    display: inline-grid;
+    place-items: center;
+}
+
+.mascot-chat-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mascot-chat-icon-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fdfbf7;
+    text-decoration: none;
+}
+
+.mascot-chat-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+.mascot-chat-log {
+    min-height: 0;
+    overflow-y: auto;
+    padding: 18px;
+    background:
+        linear-gradient(rgba(255, 250, 240, 0.92), rgba(255, 250, 240, 0.94)),
+        radial-gradient(circle at top left, rgba(78, 128, 94, 0.18), transparent 44%),
+        radial-gradient(circle at bottom right, rgba(196, 160, 82, 0.12), transparent 38%);
+}
+
+.mascot-chat-empty {
+    height: 100%;
+    min-height: 190px;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    color: #7b6a52;
+    line-height: 1.7;
+    font-size: 0.92rem;
+}
+
+.mascot-chat-empty-title {
+    margin-bottom: 6px;
+    color: #2e1f0f;
+    font-weight: 800;
+}
+
+.mascot-chat-message {
+    display: grid;
+    gap: 5px;
+    margin-bottom: 13px;
+}
+
+.mascot-chat-message.user {
+    justify-items: end;
+}
+
+.mascot-chat-message.bot,
+.mascot-chat-message.error {
+    justify-items: start;
+}
+
+.mascot-chat-message-label {
+    color: #7b6a52;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.mascot-chat-message-body {
+    max-width: 86%;
+    padding: 10px 13px;
+    border-radius: 8px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-size: 0.92rem;
+    line-height: 1.65;
+}
+
+.mascot-chat-message.user .mascot-chat-message-body {
+    background: #456b4d;
+    color: #ffffff;
+    border-bottom-right-radius: 3px;
+}
+
+.mascot-chat-message.bot .mascot-chat-message-body {
+    border: 1px solid rgba(139, 105, 20, 0.18);
+    background: #ffffff;
+    color: #2e1f0f;
+    border-bottom-left-radius: 3px;
+}
+
+.mascot-chat-message.error .mascot-chat-message-body {
+    border: 1px solid rgba(180, 35, 24, 0.22);
+    background: #fee4e2;
+    color: #9f1f18;
+}
+
+.mascot-chat-message.typing .mascot-chat-message-body {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+    min-width: 58px;
+}
+
+.mascot-chat-message.typing span {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: #7b6a52;
+    animation: mascot-chat-blink 1.1s infinite ease-in-out;
+}
+
+.mascot-chat-message.typing span:nth-child(2) {
+    animation-delay: 0.15s;
+}
+
+.mascot-chat-message.typing span:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.mascot-chat-prompts {
+    display: flex;
+    gap: 7px;
+    overflow-x: auto;
+    padding: 11px 12px;
+    border-top: 1px solid rgba(139, 105, 20, 0.12);
+    background: #fffaf0;
+}
+
+.mascot-chat-prompts button {
+    flex: 0 0 auto;
+    border: 1px solid rgba(139, 105, 20, 0.22);
+    border-radius: 999px;
+    background: #ffffff;
+    color: #4d3d26;
+    cursor: pointer;
+    padding: 7px 10px;
+    font: inherit;
+    font-size: 0.78rem;
+}
+
+.mascot-chat-prompts button:hover {
+    border-color: rgba(69, 107, 77, 0.48);
+    color: #31583d;
+}
+
+.mascot-chat-form {
+    display: grid;
+    grid-template-columns: 1fr 42px 42px;
+    gap: 8px;
+    padding: 12px;
+    border-top: 1px solid rgba(139, 105, 20, 0.14);
+    background: #ffffff;
+}
+
+.mascot-chat-form input {
+    min-width: 0;
+    height: 42px;
+    border: 1px solid rgba(139, 105, 20, 0.2);
+    border-radius: 8px;
+    padding: 0 12px;
+    color: #2e1f0f;
+    font: inherit;
+    outline: none;
+}
+
+.mascot-chat-form input:focus {
+    border-color: rgba(69, 107, 77, 0.68);
+    box-shadow: 0 0 0 3px rgba(69, 107, 77, 0.14);
+}
+
+.mascot-chat-form button {
+    width: 42px;
+    height: 42px;
+    border-radius: 8px;
+    color: #ffffff;
+}
+
+.mascot-chat-form button[type="submit"] {
+    background: #456b4d;
+}
+
+.mascot-chat-form button[type="button"] {
+    background: #7b6a52;
+}
+
+.mascot-chat-form button:disabled {
+    cursor: wait;
+    opacity: 0.55;
+}
+
+@keyframes mascot-chat-blink {
+    0%,
+    80%,
+    100% {
+        opacity: 0.35;
+        transform: translateY(0);
+    }
+
+    40% {
+        opacity: 1;
+        transform: translateY(-2px);
+    }
+}
+
 .shuijing-mascot-wrapper {
     width: 100px;
     /* Slightly larger for the sprite frame */
@@ -169,6 +466,13 @@
 
 /* Mobile Adjustments */
 @media (max-width: 768px) {
+    .mascot-chat-panel {
+        right: 12px;
+        bottom: 112px;
+        width: calc(100vw - 24px);
+        height: min(520px, calc(100vh - 130px));
+    }
+
     .shuijing-mascot-container {
         bottom: 15px;
         right: 15px;

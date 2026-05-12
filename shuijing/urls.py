@@ -25,6 +25,7 @@ from django.conf import settings
 urlpatterns = [
     path("adminx/", admin.site.urls),
     path('guide/', include('guide.urls')),
+    path('chat/', include('chat.urls')),
 
     path('accounts/login/',views.abort404),
     path('accounts/google/login/', oauth2_login, name='google_login'),

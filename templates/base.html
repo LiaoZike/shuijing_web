@@ -367,8 +367,52 @@
 </script>
 
 <!-- ===================== FLOATING MASCOT ===================== -->
-<div class="shuijing-mascot-container" id="shuijingMascot" onclick="scrollToTop(1200);">
-    <div class="mascot-bubble">哈囉！點我回頂部唷 🐢</div>
+<div class="mascot-chat-panel"
+     id="mascotChatPanel"
+     data-chat-api="{% url 'chat-api' %}"
+     data-clear-api="{% url 'chat-clear' %}"
+     hidden>
+    <div class="mascot-chat-header">
+        <div class="mascot-chat-brand">
+            <div class="mascot-chat-avatar" aria-hidden="true"></div>
+            <div>
+                <div class="mascot-chat-title">水井龜導覽</div>
+                <div class="mascot-chat-status">活動、公告、USR 資訊查詢</div>
+            </div>
+        </div>
+        <div class="mascot-chat-actions">
+            <a href="{% url 'chat-page' %}" class="mascot-chat-icon-btn" aria-label="開啟完整聊天頁">
+                <i class="bi bi-box-arrow-up-right"></i>
+            </a>
+            <button type="button" class="mascot-chat-icon-btn" data-chat-close aria-label="關閉聊天">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+    </div>
+    <div class="mascot-chat-log" data-chat-log>
+        <div class="mascot-chat-empty" data-chat-empty>
+            <div class="mascot-chat-empty-title">需要水井村資訊嗎？</div>
+            <div>可以問我活動、公告、USR 成果或 AIoT 專案。</div>
+        </div>
+    </div>
+    <div class="mascot-chat-prompts">
+        <button type="button" data-chat-prompt>近期有什麼活動？</button>
+        <button type="button" data-chat-prompt>最新公告有哪些？</button>
+        <button type="button" data-chat-prompt>介紹 USR 成果</button>
+    </div>
+    <form class="mascot-chat-form" data-chat-form>
+        <input type="text" data-chat-input placeholder="輸入想問的問題..." autocomplete="off">
+        <button type="submit" data-chat-send aria-label="送出訊息">
+            <i class="bi bi-send-fill"></i>
+        </button>
+        <button type="button" data-chat-clear aria-label="清除聊天">
+            <i class="bi bi-trash3"></i>
+        </button>
+    </form>
+</div>
+
+<div class="shuijing-mascot-container" id="shuijingMascot" role="button" tabindex="0" aria-controls="mascotChatPanel" aria-expanded="false">
+    <div class="mascot-bubble">哈囉！點我聊天</div>
     <div class="shuijing-mascot-wrapper">
         <div class="shuijing-mascot-sprite"></div>
     </div>
@@ -376,6 +420,7 @@
 </div>
 
 {% block link_js %}{% endblock %}
+<script src="{% static 'js/core/mascot_chat.js' %}"></script>
 {% block extra_js %}{% endblock %}
 <script>
     /**
