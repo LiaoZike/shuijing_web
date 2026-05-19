@@ -4,6 +4,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from core.models import Activity, AiotProject, Notice, RelatedLink, UsrAchievement
+from water.models import Pond
 
 
 def _trim(value: str | None, limit: int = 180) -> str:
@@ -175,6 +176,122 @@ def list_usr_highlights(limit: int = 5) -> dict:
     }
 
 
+def get_latest_water_quality(pond_name: str) -> dict:
+    try:
+        pond = Pond.objects.get(name=pond_name)
+    except Pond.DoesNotExist:
+        return {
+            "error": f"unknown pond: {pond_name}",
+            "available_ponds": list(Pond.objects.values_list("name", flat=True)),
+        }
+
+    latest = pond.readings.first()
+    if not latest:
+        return {"error": f"no sensor readings for {pond_name}"}
+
+    return {
+        "pond": pond.name,
+        "species": pond.species,
+        "measured_at": latest.measured_at.isoformat(),
+        "temperature_c": latest.temperature,
+        "ph": latest.ph,
+        "dissolved_oxygen_mg_l": latest.dissolved_oxygen,
+        "salinity_ppt": latest.salinity,
+    }
+
+
+def get_average_do(pond_name: str, days: int = 7) -> dict:
+    from datetime import timedelta
+    from django.db.models import Avg
+
+    try:
+        pond = Pond.objects.get(name=pond_name)
+    except Pond.DoesNotExist:
+        return {
+            "error": f"unknown pond: {pond_name}",
+            "available_ponds": list(Pond.objects.values_list("name", flat=True)),
+        }
+
+    days = max(1, min(int(days or 7), 30))
+    since = timezone.now() - timedelta(days=days)
+    average = pond.readings.filter(measured_at__gte=since).aggregate(
+        avg_do=Avg("dissolved_oxygen")
+    )
+    return {
+        "pond": pond.name,
+        "days": days,
+        "average_dissolved_oxygen_mg_l": round(average["avg_do"] or 0, 2),
+    }
+
+
+def get_pond_summary(days: int = 7) -> dict:
+    from datetime import timedelta
+    from django.db.models import Avg, Count, Max, Min
+
+    days = max(1, min(int(days or 7), 30))
+    since = timezone.now() - timedelta(days=days)
+    ponds = Pond.objects.all().order_by("name")
+    summaries = []
+
+    for pond in ponds:
+        latest = pond.readings.first()
+        recent = pond.readings.filter(measured_at__gte=since)
+        stats = recent.aggregate(
+            reading_count=Count("id"),
+            avg_temperature=Avg("temperature"),
+            avg_ph=Avg("ph"),
+            avg_do=Avg("dissolved_oxygen"),
+            min_do=Min("dissolved_oxygen"),
+            max_do=Max("dissolved_oxygen"),
+            avg_salinity=Avg("salinity"),
+        )
+        avg_do = stats["avg_do"]
+        latest_do = latest.dissolved_oxygen if latest else None
+        min_do = stats["min_do"]
+        status = "no_recent_data"
+        if avg_do is not None:
+            if (latest_do is not None and latest_do < 4) or (min_do is not None and min_do < 4):
+                status = "low_oxygen"
+            elif (
+                (latest_do is not None and latest_do < 5)
+                or (min_do is not None and min_do < 5)
+                or avg_do < 5
+            ):
+                status = "watch"
+            else:
+                status = "normal"
+
+        summaries.append(
+            {
+                "pond": pond.name,
+                "species": pond.species,
+                "description": pond.description,
+                "latest_measured_at": latest.measured_at.isoformat() if latest else "",
+                "latest_temperature_c": latest.temperature if latest else None,
+                "latest_ph": latest.ph if latest else None,
+                "latest_dissolved_oxygen_mg_l": latest.dissolved_oxygen if latest else None,
+                "latest_salinity_ppt": latest.salinity if latest else None,
+                "recent_days": days,
+                "recent_reading_count": stats["reading_count"],
+                "avg_temperature_c": round(stats["avg_temperature"], 2)
+                if stats["avg_temperature"] is not None
+                else None,
+                "avg_ph": round(stats["avg_ph"], 2) if stats["avg_ph"] is not None else None,
+                "avg_dissolved_oxygen_mg_l": round(avg_do, 2)
+                if avg_do is not None
+                else None,
+                "min_dissolved_oxygen_mg_l": stats["min_do"],
+                "max_dissolved_oxygen_mg_l": stats["max_do"],
+                "avg_salinity_ppt": round(stats["avg_salinity"], 2)
+                if stats["avg_salinity"] is not None
+                else None,
+                "status": status,
+            }
+        )
+
+    return {"days": days, "pond_count": len(summaries), "ponds": summaries}
+
+
 TOOL_SCHEMAS = [
     {
         "type": "function",
@@ -242,6 +359,60 @@ TOOL_SCHEMAS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_latest_water_quality",
+            "description": "Get the latest water quality reading for a pond, including temperature, pH, dissolved oxygen, and salinity.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "pond_name": {
+                        "type": "string",
+                        "description": "Pond name, for example: 1 號池, 2 號池, 3 號池.",
+                    }
+                },
+                "required": ["pond_name"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_average_do",
+            "description": "Calculate the average dissolved oxygen for a pond over the recent N days.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "pond_name": {
+                        "type": "string",
+                        "description": "Pond name, for example: 1 號池.",
+                    },
+                    "days": {
+                        "type": "integer",
+                        "description": "Number of recent days to average. Defaults to 7 and is capped at 30.",
+                    },
+                },
+                "required": ["pond_name"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_pond_summary",
+            "description": "Summarize all ponds with latest readings and recent averages, including dissolved oxygen status.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "days": {
+                        "type": "integer",
+                        "description": "Number of recent days to summarize. Defaults to 7 and is capped at 30.",
+                    }
+                },
+            },
+        },
+    },
 ]
 
 
@@ -250,6 +421,9 @@ _TOOL_REGISTRY = {
     "search_site_content": search_site_content,
     "get_latest_notices": get_latest_notices,
     "list_usr_highlights": list_usr_highlights,
+    "get_latest_water_quality": get_latest_water_quality,
+    "get_average_do": get_average_do,
+    "get_pond_summary": get_pond_summary,
 }
 
 

@@ -20,12 +20,17 @@ cd ~
 rm -rf shuijing
 unzip shuijing.zip -d shuijing
 
-# 4.產生靜態檔案
+# 4.更改權限/產生靜態檔案
 cd shuijing
+chmod -R 755 /home/web41243166/shuijing/static
 python manage.py collectstatic
-
+chmod -R 755 /home/web41243166/shuijing/staticfiles
+chmod -R 755 /home/web41243166/shuijing/media
+find /home/web41243166/shuijing/media -type f -exec chmod 644 {} \;
 
 /static/ => /home/web41243166/shuijing/staticfiles/
+# 5.安裝套件
+pip install -r requirements.txt
 pip freeze > requirements.txt
 
 

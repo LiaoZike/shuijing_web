@@ -58,12 +58,22 @@
 
     const body = document.createElement("div");
     body.className = "mascot-chat-message-body";
-    body.textContent = text;
+    body.innerHTML = formatMessage(text);
 
     item.append(who, body);
     log.appendChild(item);
     scrollLog();
     return item;
+  }
+
+  function formatMessage(text) {
+    const escaped = String(text || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+    return escaped
+      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\n/g, "<br>");
   }
 
   function addTyping() {
@@ -142,7 +152,7 @@
   chips.forEach((chip) => {
     chip.addEventListener("click", () => {
       openPanel();
-      sendMessage(chip.textContent || "");
+      sendMessage(chip.dataset.chatPrompt || chip.textContent || "");
     });
   });
 

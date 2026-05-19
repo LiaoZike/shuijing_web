@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'core',
     'guide',
     'chat',
+    'water',
 ]
 
 MIDDLEWARE = [
