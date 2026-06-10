@@ -1,0 +1,283 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}編輯魚池｜水井村{% endblock %}
+
+{% block link_css %}
+    <link rel="stylesheet" href="{% static 'css/water/form.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="form-page">
+    <div class="container">
+        <header class="form-header">
+            <a href="{% url 'water:pond_detail' pond.pk %}" class="btn-back">
+                <i class="bi bi-chevron-left"></i> 返回池區詳情
+            </a>
+            <div>
+                <p class="form-kicker">WATER MANAGEMENT</p>
+                <h1>管理池區設定</h1>
+                <p class="form-lead">
+                    編輯魚池基本資訊、設定穩定度指標權重以及管理共享成員。
+                </p>
+            </div>
+        </header>
+
+        <div class="manage-pond-grid-container">
+            
+            {# ================= 左欄：基本資訊表單 ================= #}
+            <div class="manage-pond-column-left">
+                <form id="editPondForm" method="POST" class="pond-form" style="max-width: none; margin-bottom: 0;">
+                    {% csrf_token %}
+                    <div class="form-card">
+                        <h2 style="font-size: 1.25rem; font-weight: 850; color: #112522; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
+                            <i class="bi bi-card-text" style="color: #0f766e;"></i>
+                            基本資訊
+                        </h2>
+
+                        <div class="form-group">
+                            <label for="pond_name" class="form-label">
+                                <span class="required">*</span> 魚池名稱
+                            </label>
+                            <input type="text" id="pond_name" name="name" 
+                                   value="{{ pond.name }}"
+                                   maxlength="50" required
+                                   class="form-control">
+                            <small class="form-help">池區的識別名稱，在儀表板中顯示</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="pond_species" class="form-label">
+                                養殖物種
+                            </label>
+                            <input type="text" id="pond_species" name="species" 
+                                   value="{{ pond.species }}"
+                                   maxlength="50"
+                                   class="form-control">
+                            <small class="form-help">主要養殖的物種</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="pond_description" class="form-label">
+                                池區描述
+                            </label>
+                            <textarea id="pond_description" name="description" 
+                                      maxlength="200" rows="3"
+                                      class="form-control">{{ pond.description }}</textarea>
+                            <small class="form-help">描述池區的特點、面積、位置等資訊（選填，最多 200 字）</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="pond_map_note" class="form-label">
+                                地圖備註
+                            </label>
+                            <input type="text" id="pond_map_note" name="map_note" 
+                                   value="{{ pond.map_note }}"
+                                   maxlength="200"
+                                   class="form-control">
+                            <small class="form-help">地圖上顯示的位置備註，幫助感測器配置</small>
+                        </div>
+
+                        <div class="form-info">
+                            <h3>
+                                <i class="bi bi-info-circle"></i> 池區數據摘要
+                            </h3>
+                            <div class="info-grid">
+                                <div>
+                                    <span class="info-label">感測器數</span>
+                                    <span class="info-value" style="font-weight: 700; color: #0f766e;">{{ pond.sensors.count }} 個</span>
+                                </div>
+                                <div>
+                                    <span class="info-label">你的角色</span>
+                                    <span class="info-value">
+                                        {% if is_owner %}
+                                            <strong style="color: #0f766e;">擁有者</strong>
+                                        {% else %}
+                                            <strong style="color: #64748b;">檢視者</strong>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-actions" style="margin-top: 32px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+                            <button type="submit" class="btn-submit" style="margin-bottom: 0; flex: 1; min-width: 120px;">
+                                <i class="bi bi-check-circle"></i> 保存修改
+                            </button>
+                            <a href="{% url 'water:pond_detail' pond.pk %}" class="btn-cancel" style="display: inline-flex; align-items: center; justify-content: center; border: 1px solid rgba(19, 67, 62, 0.2); background: transparent; color: #627974; border-radius: 8px; padding: 10px 16px; font-weight: 600; text-decoration: none; text-align: center; height: 42px; min-width: 80px; transition: all 0.2s;">
+                                取消
+                            </a>
+                            {% if is_owner %}
+                            <button type="button" class="btn-delete-trigger" data-bs-toggle="modal" data-bs-target="#deletePondModal" style="border: 1px solid #ef4444; color: #ef4444; border-radius: 8px; padding: 10px 16px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: transparent; cursor: pointer; height: 42px; transition: all 0.2s; min-width: 120px;">
+                                <i class="bi bi-trash"></i> 刪除此池區
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            {# ================= 右欄：權重與協作者共享 ================= #}
+            <div class="manage-pond-column-right">
+                
+                {# 穩定度公式權重設定卡片 #}
+                <div class="form-card" style="margin-bottom: 24px;">
+                    <h2 style="font-size: 1.25rem; font-weight: 850; color: #112522; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                        <i class="bi bi-sliders" style="color: #0f766e;"></i>
+                        穩定度指標權重設定
+                    </h2>
+                    <p class="section-desc" style="color: #627974; font-size: 0.85rem; margin-bottom: 20px; line-height: 1.5;">
+                        設定計算「整體水質穩定度」時各指標的權重百分比。數值越高代表該指標在計算中佔比越重。
+                    </p>
+                    
+                    <div class="form-group">
+                        <label for="stability_w_do" class="form-label">
+                            溶氧量 (DO) 權重 (%)
+                        </label>
+                        <input type="number" id="stability_w_do" name="stability_w_do" 
+                               value="{{ pond.stability_w_do }}" min="0" max="100" required
+                               class="form-control" form="editPondForm">
+                        <small class="form-help">預設為 40%</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="stability_w_ph" class="form-label">
+                            pH 值權重 (%)
+                        </label>
+                        <input type="number" id="stability_w_ph" name="stability_w_ph" 
+                               value="{{ pond.stability_w_ph }}" min="0" max="100" required
+                               class="form-control" form="editPondForm">
+                        <small class="form-help">預設為 30%</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="stability_w_temp" class="form-label">
+                            水溫權重 (%)
+                        </label>
+                        <input type="number" id="stability_w_temp" name="stability_w_temp" 
+                               value="{{ pond.stability_w_temp }}" min="0" max="100" required
+                               class="form-control" form="editPondForm">
+                        <small class="form-help">預設為 30%</small>
+                    </div>
+                </div>
+
+                {# 協作者與共享管理卡片 #}
+                <div class="form-card">
+                    <div class="sharing-section">
+                        <h2 style="font-size: 1.25rem; font-weight: 850; color: #112522; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                            <i class="bi bi-people-fill" style="color: #0f766e;"></i>
+                            池區協作者與共享管理
+                        </h2>
+                        <p class="section-desc" style="color: #627974; font-size: 0.85rem; margin-bottom: 24px; line-height: 1.5;">
+                            與其他協作者共享此池區。編輯者可以修改感測器與池區設定，檢視者則僅能查看數值與歷史紀錄。
+                        </p>
+
+                        <!-- 新增共享表單 -->
+                        <form method="POST" action="{% url 'water:share_pond' pond.pk %}" class="share-invite-form" style="margin-bottom: 28px;">
+                            {% csrf_token %}
+                            <div class="share-form-row" style="display: flex; flex-direction: column; gap: 12px;">
+                                <div class="form-group" style="margin-bottom: 0; width: 100%;">
+                                    <label for="share_email" class="form-label">受邀者 Gmail / 帳號</label>
+                                    <input type="email" id="share_email" name="email" placeholder="對方註冊的 Gmail 帳號" required class="form-control">
+                                </div>
+                                <div style="display: flex; gap: 12px; align-items: flex-end; width: 100%;">
+                                    <div class="form-group" style="min-width: 140px; margin-bottom: 0; flex: 1;">
+                                        <label for="share_role" class="form-label">權限角色</label>
+                                        <select id="share_role" name="role" class="form-control">
+                                            <option value="viewer" selected>檢視者 (唯讀)</option>
+                                            <option value="editor">編輯者 (可修改)</option>
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn-submit btn-share-invite" style="margin-bottom: 0; padding: 10px 20px; white-space: nowrap; height: 42px;">
+                                        <i class="bi bi-person-plus"></i> 分享
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+
+                        <!-- 成員清單 -->
+                        <div class="members-list">
+                            <h3 style="font-size: 1.05rem; font-weight: 800; color: #112522; margin-bottom: 16px; border-bottom: 1px solid rgba(19, 67, 62, 0.1); padding-bottom: 8px;">
+                                目前有權限的成員
+                            </h3>
+                            
+                            <!-- 管理者 / 擁有者 -->
+                            {% for owner in owners %}
+                            <div class="member-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(19, 67, 62, 0.05);">
+                                <div class="member-info" style="display: flex; align-items: center; gap: 10px;">
+                                    <span class="member-avatar" style="color: #0f766e; font-size: 1.25rem;"><i class="bi bi-person-badge-fill"></i></span>
+                                    <div>
+                                        <div class="member-email" style="font-weight: 600; font-size: 0.9rem; color: #112522;">{{ owner.email|default:owner.username }}</div>
+                                        <span class="member-role badge-editor" style="background: rgba(15,118,110,0.1); color: #0f766e; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; font-weight: 700;">編輯者 (擁有者)</span>
+                                    </div>
+                                </div>
+                                <div class="member-actions">
+                                    <form method="POST" action="{% url 'water:unshare_pond' pond.pk %}" onsubmit="return confirm('確定要移除此成員的權限嗎？');">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="user_id" value="{{ owner.pk }}">
+                                        <button type="submit" class="btn-remove-member" style="background: transparent; border: none; color: #ef4444; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 4px;" {% if owners|length <= 1 and owner == user %}disabled title="您是唯一的管理者，無法移除自己" style="opacity: 0.4; cursor: not-allowed; color: #9ca3af;"{% endif %}>
+                                            <i class="bi bi-trash3"></i> 移除
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            {% endfor %}
+
+                            <!-- 檢視者 -->
+                            {% for viewer in viewers %}
+                            <div class="member-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(19, 67, 62, 0.05);">
+                                <div class="member-info" style="display: flex; align-items: center; gap: 10px;">
+                                    <span class="member-avatar" style="color: #64748b; font-size: 1.25rem;"><i class="bi bi-person-fill"></i></span>
+                                    <div>
+                                        <div class="member-email" style="font-weight: 600; font-size: 0.9rem; color: #112522;">{{ viewer.email|default:viewer.username }}</div>
+                                        <span class="member-role badge-viewer" style="background: rgba(100,116,139,0.1); color: #64748b; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; font-weight: 700;">檢視者 (唯讀)</span>
+                                    </div>
+                                </div>
+                                <div class="member-actions">
+                                    <form method="POST" action="{% url 'water:unshare_pond' pond.pk %}" onsubmit="return confirm('確定要移除此成員的權限嗎？');">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="user_id" value="{{ viewer.pk }}">
+                                        <button type="submit" class="btn-remove-member" style="background: transparent; border: none; color: #ef4444; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                            <i class="bi bi-trash3"></i> 移除
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+</section>
+
+<!-- 刪除確認 Modal -->
+{% if is_owner %}
+<div class="modal fade" id="deletePondModal" tabindex="-1" aria-labelledby="deletePondModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="background: rgba(17, 37, 34, 0.95); backdrop-filter: blur(12px); border: 1px solid rgba(220, 38, 38, 0.3); border-radius: 12px; color: #fff;">
+      <div class="modal-header" style="border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+        <h5 class="modal-title" id="deletePondModalLabel" style="font-weight: 700; color: #ef4444;"><i class="bi bi-exclamation-triangle-fill"></i> 刪除魚池</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" style="padding: 20px;">
+        <p>確認要刪除魚池「<strong>{{ pond.name }}</strong>」嗎？</p>
+        <p style="font-size: 0.85rem; color: rgba(255, 255, 255, 0.7); margin-bottom: 0;">此動作為永久刪除，該池區下的所有感測器與歷史數據都將被移除，且無法復原！</p>
+      </div>
+      <div class="modal-footer" style="border-top: 1px solid rgba(255, 255, 255, 0.1);">
+        <form action="{% url 'water:delete_pond' pond.pk %}" method="post" style="margin: 0; width: 100%; display: flex; gap: 12px;">
+          {% csrf_token %}
+          <button type="button" class="btn" style="flex: 1; border: 1px solid rgba(255, 255, 255, 0.2); color: #fff; background: transparent; border-radius: 6px;" data-bs-dismiss="modal">取消</button>
+          <button type="submit" class="btn btn-danger" style="flex: 1; background: #dc2626; border: none; border-radius: 6px;">確認刪除</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

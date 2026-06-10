@@ -209,7 +209,7 @@ SIMPLEUI_LOGO = ''
 SIMPLEUI_DEFAULT_THEME = 'e-black-pro.css'
 SIMPLEUI_CONFIG = {
     'system_keep': False,
-    'menu_display': ['活動管理', '內容與連結', 'USR 實踐', '數位導覽', '系統管理', '封存項目'],
+    'menu_display': ['活動管理', '內容與連結', 'USR 實踐', '數位導覽', '水質監控', '系統管理', '封存項目'],
     'dynamic': False,
     'menus': [
         {
@@ -246,6 +246,16 @@ SIMPLEUI_CONFIG = {
                 {'name': '導覽景點', 'url': 'guide/storyspot/', 'icon': 'fas fa-map-marker-alt'},
                 {'name': 'AR 素材管理', 'url': 'guide/arasset/', 'icon': 'fas fa-vr-cardboard'},
                 {'name': '景點知識說明', 'url': 'guide/storyfact/', 'icon': 'fas fa-book-reader'},
+            ]
+        },
+        {
+            'name': '水質監控',
+            'icon': 'fas fa-tint',
+            'models': [
+                {'name': '魚池池區', 'url': 'water/pond/', 'icon': 'fas fa-water'},
+                {'name': '魚池感測器', 'url': 'water/pondsensor/', 'icon': 'fas fa-broadcast-tower'},
+                {'name': '感測器讀值', 'url': 'water/sensorreading/', 'icon': 'fas fa-chart-line'},
+                {'name': '警戒值設定', 'url': 'water/waterthreshold/', 'icon': 'fas fa-exclamation-triangle'},
             ]
         },
         {

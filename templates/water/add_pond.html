@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}新增魚池｜水井村{% endblock %}
+
+{% block link_css %}
+    <link rel="stylesheet" href="{% static 'css/water/form.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="form-page">
+    <div class="container">
+        <header class="form-header">
+            <a href="{% url 'water:dashboard' %}" class="btn-back">
+                <i class="bi bi-chevron-left"></i> 返回儀表板
+            </a>
+            <div>
+                <p class="form-kicker">WATER MANAGEMENT</p>
+                <h1>新增魚池</h1>
+                <p class="form-lead">
+                    建立新的養殖池區，設定基本資訊。建立後你將成為該池區的管理者。
+                </p>
+            </div>
+        </header>
+
+        <div class="form-card">
+            <form method="POST" class="pond-form">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label for="pond_name" class="form-label">
+                        <span class="required">*</span> 魚池名稱
+                    </label>
+                    <input type="text" id="pond_name" name="name" 
+                           placeholder="例如：東北角水池、一號池..." 
+                           maxlength="50" required
+                           class="form-control">
+                    <small class="form-help">池區的識別名稱，在儀表板中顯示</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="pond_species" class="form-label">
+                        養殖物種
+                    </label>
+                    <input type="text" id="pond_species" name="species" 
+                           placeholder="例如：文蛤、虱目魚、石斑..." 
+                           maxlength="50" value="文蛤"
+                           class="form-control">
+                    <small class="form-help">主要養殖的物種（預設：文蛤）</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="pond_description" class="form-label">
+                        池區描述
+                    </label>
+                    <textarea id="pond_description" name="description" 
+                              placeholder="描述這個池區的特點、面積、位置等資訊..."
+                              maxlength="200" rows="3"
+                              class="form-control"></textarea>
+                    <small class="form-help">選填，最多 200 字</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="pond_map_note" class="form-label">
+                        地圖備註
+                    </label>
+                    <input type="text" id="pond_map_note" name="map_note" 
+                           placeholder="例如：進水口在東側、靠近宿舍..." 
+                           maxlength="200"
+                           class="form-control">
+                    <small class="form-help">地圖上顯示的位置備註，幫助感測器配置</small>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-submit">
+                        <i class="bi bi-check-circle"></i> 建立魚池
+                    </button>
+                    <a href="{% url 'water:dashboard' %}" class="btn-cancel">
+                        取消
+                    </a>
+                </div>
+            </form>
+
+            <div class="form-tips">
+                <h3><i class="bi bi-lightbulb"></i> 建立後可以做什麼？</h3>
+                <ul>
+                    <li>在儀表板中配置感測器位置和數量</li>
+                    <li>為每個水質指標設定個人化警戒值</li>
+                    <li>實時監控池區水質狀況</li>
+                    <li>邀請其他使用者共同查看（由管理員在後台設定）</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

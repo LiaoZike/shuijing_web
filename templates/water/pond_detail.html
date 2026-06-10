@@ -1,0 +1,520 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ pond.name }} | 水井村{% endblock %}
+
+{% block link_css %}
+    <link rel="stylesheet" href="{% static 'css/water/pond_detail.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="pond-detail-page">
+    <div class="container">
+        {# ========== 頁面導航 ========== #}
+        <nav class="breadcrumb-nav">
+            <a href="{% url 'water:pond_list' %}" class="breadcrumb-link">
+                <i class="bi bi-chevron-left"></i>
+                <span>回到池區列表</span>
+            </a>
+        </nav>
+
+        {# ========== 池區頭部 ========== #}
+        <header class="detail-header">
+            <div class="header-info">
+                <h1 class="header-title">{{ pond.name }}</h1>
+                <p class="header-subtitle">
+                    <i class="bi bi-fish"></i> {{ pond.species }}
+                    {% if status.tone != "muted" %}
+                    <span class="inline-status inline-status--{{ status.tone }}">{{ status.label }}</span>
+                    {% endif %}
+                </p>
+                {% if pond.description %}
+                <p class="header-description">{{ pond.description }}</p>
+                {% endif %}
+            </div>
+            {% if can_manage %}
+            <div class="header-actions">
+                <a href="{% url 'water:manage_pond' pond.pk %}" class="btn-action-header" title="編輯池區資訊">
+                    <i class="bi bi-pencil"></i> 編輯資訊
+                </a>
+                <button type="button" class="btn-action-header btn-danger-header" data-bs-toggle="modal" data-bs-target="#deletePondModal" title="刪除此池區">
+                    <i class="bi bi-trash"></i> 刪除
+                </button>
+            </div>
+            {% endif %}
+        </header>
+
+        {# ========== 雙欄戰情室大屏佈局 ========== #}
+        <div class="detail-grid-container">
+            
+            {# 左側欄：即時指標、分佈地圖與警戒值設定 #}
+            <div class="detail-column-left">
+                
+                {# ========== 即時水質狀態區塊 (重構設計) ========== #}
+                <section class="metrics-section">
+                    <div class="metrics-bar">
+                        <h2 class="section-title"><i class="bi bi-activity"></i> 即時水質狀態</h2>
+                        {% if latest %}
+                        <p class="metrics-timestamp">
+                            <i class="bi bi-clock"></i> {{ latest.measured_at|date:"Y/m/d H:i" }} 更新
+                        </p>
+                        {% endif %}
+                    </div>
+
+                    <div class="metrics-flex-layout">
+
+
+                        <!-- 2. 各個感測器數據卡片網格 -->
+                        <div class="sensors-metrics-grid">
+                            {% for card in sensor_cards %}
+                            <div class="sensor-metric-card sensor-metric-card--{{ card.status.tone }}">
+                                <div class="sensor-card-header">
+                                    <span class="sensor-card-idx">{{ forloop.counter }}</span>
+                                    <div class="sensor-card-title-wrap">
+                                        <strong class="sensor-card-name">{{ card.sensor.name }}</strong>
+                                        <span class="sensor-card-type">{{ card.sensor.get_sensor_type_display }}</span>
+                                    </div>
+                                </div>
+                                <div class="sensor-card-body">
+                                    {% if card.reading %}
+                                    <div class="sensor-values-compact-grid">
+                                        <div class="val-item" title="溫度">
+                                            <i class="bi bi-thermometer-half"></i>
+                                            <span class="val-num">{{ card.reading.temperature|floatformat:1 }}°C</span>
+                                        </div>
+                                        <div class="val-item" title="pH 值">
+                                            <i class="bi bi-droplet"></i>
+                                            <span class="val-num">pH {{ card.reading.ph|floatformat:2 }}</span>
+                                        </div>
+                                        <div class="val-item" title="溶氧量">
+                                            <i class="bi bi-wind"></i>
+                                            <span class="val-num">DO {{ card.reading.dissolved_oxygen|floatformat:1 }}</span>
+                                        </div>
+                                        {% if card.reading.ammonia_nitrogen is not None %}
+                                        <div class="val-item" title="氨氮">
+                                            <i class="bi bi-flask"></i>
+                                            <span class="val-num">NH₃ {{ card.reading.ammonia_nitrogen|floatformat:2 }}</span>
+                                        </div>
+                                        {% endif %}
+                                        {% if card.reading.nitrite is not None %}
+                                        <div class="val-item" title="亞硝酸鹽">
+                                            <i class="bi bi-hash"></i>
+                                            <span class="val-num">NO₂ {{ card.reading.nitrite|floatformat:2 }}</span>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    {% else %}
+                                    <p class="sensor-card-empty" style="font-size: 0.74rem; color: rgba(224, 242, 254, 0.4); font-style: italic; margin: 0; text-align: center; padding: 12px 0;">此感測器尚未有數據</p>
+                                    {% endif %}
+                                </div>
+                                <div class="sensor-card-status sensor-card-status--{{ card.status.tone }}">
+                                    {{ card.status.label }}
+                                    {% if card.status.message and card.status.tone == "warning" %}
+                                        <span class="status-msg-detail">({{ card.status.message }})</span>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if can_manage %}
+                                <div class="sensor-card-api-box" style="margin: 0 14px 12px; border-top: 1px dashed rgba(224, 242, 254, 0.1); padding-top: 8px;">
+                                    <details style="cursor: pointer; outline: none;">
+                                        <summary style="font-size: 0.85rem; color: #2dd4bf; font-weight: 700; user-select: none;">📮 API 對接連線資訊</summary>
+                                        <div class="api-info-content" style="margin-top: 6px; padding: 10px; background: rgba(0, 0, 0, 0.35); border-radius: 8px; font-size: 0.8rem; color: rgba(224, 242, 254, 0.85); line-height: 1.5; font-family: monospace; cursor: default;" onclick="event.stopPropagation();">
+                                            <div style="margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
+                                                <span><strong>上傳金鑰:</strong> <code class="api-token-display" style="background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; color: #6ee7b7; font-weight: 700; font-family: monospace; user-select: all;">{{ card.sensor.secret_token }}</code></span>
+                                                <button type="button" class="btn-regenerate-token" data-sensor-id="{{ card.sensor.pk }}" style="background: #0f766e; color: #fff; border: none; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; cursor: pointer; transition: background 150ms;">
+                                                    <i class="bi bi-arrow-clockwise"></i> 重刷
+                                                </button>
+                                            </div>
+                                            <div style="margin-bottom: 6px;"><strong>POST URL:</strong> <code style="background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; color: #a5f3fc; font-family: monospace; font-size: 0.72rem; word-break: break-all; user-select: all;">{{ request.scheme }}://{{ request.get_host }}/water/api/upload/</code></div>
+                                            <div style="margin-top: 8px; border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 6px;">
+                                                <strong style="color: #2dd4bf; display: block; margin-bottom: 4px;">上傳 JSON 範例 (5欄位)：</strong>
+                                                <pre class="api-json-display" style="margin: 0; background: rgba(0,0,0,0.25); padding: 8px; border-radius: 6px; color: #e2e8f0; font-size: 0.72rem; white-space: pre-wrap; font-family: monospace; line-height: 1.3;">{
+  "secret_token": "{{ card.sensor.secret_token }}",
+  "temperature": 26.5,
+  "ph": 7.8,
+  "dissolved_oxygen": 6.2,
+  "salinity": 15.0
+}</pre>
+                                            </div>
+                                        </div>
+                                    </details>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% empty %}
+                            <div class="no-sensors-placeholder" style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--muted); padding: 32px; text-align: center; gap: 8px;">
+                                <i class="bi bi-broadcast-pin" style="font-size: 2.2rem; opacity: 0.4;"></i>
+                                <p style="margin: 0; font-size: 0.9rem;">此池區尚未配置感測器</p>
+                                {% if can_manage %}<p style="margin: 0; font-size: 0.78rem; color: var(--text-2);">點擊「管理感測器」開始配置</p>{% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </section>
+
+                {# ========== 感測器地圖 ========== #}
+                <section class="map-section" id="mapSection">
+                    <div class="map-topbar">
+                        <h2 class="section-title">感測器分布</h2>
+                        <div class="map-topbar-right">
+                            <div id="ajaxStatus" class="ajax-status" style="display: none;"></div>
+                            <div class="map-legend">
+                                <span class="legend-item"><span class="legend-dot legend-dot--good"></span> 穩定</span>
+                                <span class="legend-item"><span class="legend-dot legend-dot--warning"></span> 留意</span>
+                                <span class="legend-item"><span class="legend-dot legend-dot--muted"></span> 無資料</span>
+                            </div>
+                            {% if can_manage %}
+                            <button type="button" class="btn-edit-toggle" id="btnEditMode">
+                                <i class="bi bi-sliders"></i>
+                                <span class="edit-label">管理感測器</span>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="pond-map" id="pondMap">
+                        <div class="map-bg-wrapper" style="position: absolute; inset: 0; border-radius: 6px; overflow: hidden; pointer-events: none; z-index: 0;">
+                            <div class="map-water"></div>
+                            <div class="map-grid"></div>
+                        </div>
+                        <div class="map-gate map-gate--in" data-gate-type="in" style="left: {{ pond.inlet_x }}%; top: {{ pond.inlet_y }}%;">進水</div>
+                        <div class="map-gate map-gate--out" data-gate-type="out" style="left: {{ pond.outlet_x }}%; top: {{ pond.outlet_y }}%;">排水</div>
+
+                        <div id="pinsContainer">
+                            {% for item in sensor_cards %}
+                            <div class="sensor-wrapper {% if item.sensor.y_position < 35 %}tooltip-down{% endif %}" data-sensor-id="{{ item.sensor.pk }}"
+                                 data-x="{{ item.sensor.x_position }}"
+                                 data-y="{{ item.sensor.y_position }}"
+                                 style="left: {{ item.sensor.x_position }}%; top: {{ item.sensor.y_position }}%;">
+                                <button type="button"
+                                        class="sensor-pin sensor-pin--{{ item.status.tone }} {% if not item.sensor.is_active %}sensor-pin--off{% endif %}"
+                                        aria-label="感測器 {{ forloop.counter }}: {{ item.sensor.name }}">
+                                    <span class="pin-pulse"></span>
+                                    <strong class="pin-number">{{ forloop.counter }}</strong>
+                                </button>
+                                <div class="sensor-tooltip">
+                                    <div class="tooltip-header">
+                                        <span class="tooltip-idx">{{ forloop.counter }}</span>
+                                        <strong class="tooltip-sensor-name">{{ item.sensor.name }}</strong>
+                                        <span class="tooltip-type">{{ item.sensor.get_sensor_type_display }}</span>
+                                    </div>
+                                    <div class="tooltip-body">
+                                        {% if item.reading %}
+                                        <div class="tooltip-metrics">
+                                            <span><i class="bi bi-thermometer-half"></i> {{ item.reading.temperature|floatformat:1 }}°C</span>
+                                            <span><i class="bi bi-droplet"></i> pH {{ item.reading.ph|floatformat:2 }}</span>
+                                            <span><i class="bi bi-wind"></i> DO {{ item.reading.dissolved_oxygen|floatformat:1 }}</span>
+                                            {% if item.reading.ammonia_nitrogen %}<span>NH₃ {{ item.reading.ammonia_nitrogen|floatformat:2 }}</span>{% endif %}
+                                            {% if item.reading.nitrite %}<span>NO₂ {{ item.reading.nitrite|floatformat:2 }}</span>{% endif %}
+                                        </div>
+                                        {% else %}
+                                        <p class="tooltip-empty">尚無感測資料</p>
+                                        {% endif %}
+                                    </div>
+                                    <div class="tooltip-status tooltip-status--{{ item.status.tone }}">
+                                        {{ item.status.label }}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="map-empty" id="mapEmptyState" {% if sensor_cards %}style="display: none;"{% endif %}>
+                            <i class="bi bi-broadcast-pin"></i>
+                            <p>尚未放置感測器</p>
+                            {% if can_manage %}<p class="hint">點擊「管理感測器」開始配置</p>{% endif %}
+                        </div>
+
+                        {# 編輯模式浮動提示 #}
+                        <div class="map-edit-bar" id="mapEditBar">
+                            <i class="bi bi-info-circle"></i>
+                            <span>點擊地圖空白處新增 · 拖拽元件移動位置</span>
+                        </div>
+                    </div>
+                </section>
+
+                {# ========== 感測器管理面板（編輯模式才顯示）========== #}
+                {% if can_manage %}
+                <section class="workbench-section" id="sensorWorkbench">
+                    <div class="workbench-header">
+                        <h2 class="section-title">感測器管理</h2>
+                        <button type="button" class="btn-close-workbench" id="btnCloseWorkbench">
+                            <i class="bi bi-x-lg"></i> 關閉
+                        </button>
+                    </div>
+
+                    <div class="workbench-list" id="workbenchList">
+                        {% for item in sensor_cards %}
+                        <div class="wb-row" data-sensor-id="{{ item.sensor.pk }}">
+                            <div class="wb-main">
+                                <span class="wb-idx">{{ forloop.counter }}</span>
+                                <div class="wb-info">
+                                    <input type="text" class="input-name input-wb-field" value="{{ item.sensor.name }}"
+                                           data-sensor-id="{{ item.sensor.pk }}" placeholder="感測器名稱" required>
+                                    <select class="select-type input-wb-field" data-sensor-id="{{ item.sensor.pk }}">
+                                        {% for val, label in sensor_type_choices %}
+                                        <option value="{{ val }}" {% if item.sensor.sensor_type == val %}selected{% endif %}>{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="sensor-api-info" style="font-size: 0.85rem; color: var(--text-2); margin-top: 6px; border-top: 1px dashed rgba(15,118,110,0.12); padding-top: 6px; line-height: 1.5;">
+                                        <div style="font-weight: 700; color: var(--primary); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
+                                            <span>🔑 上傳金鑰 (secret_token)</span>
+                                            <button type="button" class="btn-regenerate-token btn-regenerate-token--wb" data-sensor-id="{{ item.sensor.pk }}" style="background: #0f766e; color: #fff; border: none; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; cursor: pointer; transition: background 150ms;">
+                                                <i class="bi bi-arrow-clockwise"></i> 重刷
+                                            </button>
+                                        </div>
+                                        <code class="api-token-display" style="background: rgba(15,118,110,0.06); padding: 2px 6px; border-radius: 4px; font-weight: 700; color: #0f766e; display: block; width: fit-content; margin: 4px 0; user-select: all; font-family: monospace;">{{ item.sensor.secret_token }}</code>
+                                        <div style="font-weight: 700; color: var(--primary);">📮 POST URL</div>
+                                        <code style="background: rgba(15,118,110,0.06); padding: 2px 6px; border-radius: 4px; color: #334155; display: block; font-size: 0.75rem; word-break: break-all; user-select: all; font-family: monospace; margin: 4px 0;">{{ request.scheme }}://{{ request.get_host }}/water/api/upload/</code>
+                                        
+                                        <details class="sensor-post-details" style="margin-top: 8px; border-top: 1px dashed rgba(15,118,110,0.12); padding-top: 6px; cursor: pointer;">
+                                            <summary style="font-size: 0.8rem; font-weight: 700; color: var(--primary); outline: none;">📋 檢視 API POST 說明與 JSON 範例</summary>
+                                            <div style="font-size: 0.78rem; color: var(--text-2); background: rgba(15, 118, 110, 0.04); border-radius: 6px; padding: 8px; margin-top: 6px; line-height: 1.45; cursor: default;" onclick="event.stopPropagation();">
+                                                <p style="margin: 0 0 6px 0; font-weight: 700;"><i class="bi bi-info-circle"></i> 請使用 <strong>HTTP POST</strong> 方法發送資料：</p>
+                                                <div style="margin-bottom: 6px;">
+                                                    <strong>Headers:</strong>
+                                                    <code style="display: block; background: rgba(0,0,0,0.04); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.72rem; margin-top: 2px;">Content-Type: application/json</code>
+                                                </div>
+                                                <div>
+                                                    <strong>JSON Payload:</strong>
+                                                    <pre class="api-json-display" style="margin: 4px 0 0 0; background: rgba(0,0,0,0.04); padding: 8px; border-radius: 4px; font-family: monospace; font-size: 0.72rem; overflow-x: auto; line-height: 1.25; color: #0d5f58;">{
+  "secret_token": "{{ item.sensor.secret_token }}",
+  "temperature": 26.5,
+  "ph": 7.8,
+  "dissolved_oxygen": 6.2,
+  "salinity": 15.0
+}</pre>
+                                                </div>
+                                            </div>
+                                        </details>
+                                    </div>
+                                </div>
+                                <div class="wb-active-control">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" class="input-active input-wb-field" data-sensor-id="{{ item.sensor.pk }}"
+                                               {% if item.sensor.is_active %}checked{% endif %}>
+                                        <span class="checkmark"></span>
+                                        <span class="checkbox-label">啟用</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="wb-edit">
+                                <div class="wb-pos">
+                                    <label>X</label>
+                                    <input type="number" class="input-pos input-wb-field" value="{{ item.sensor.x_position }}"
+                                           data-sensor-id="{{ item.sensor.pk }}" data-axis="x"
+                                           min="0" max="100">
+                                    <label>Y</label>
+                                    <input type="number" class="input-pos input-wb-field" value="{{ item.sensor.y_position }}"
+                                           data-sensor-id="{{ item.sensor.pk }}" data-axis="y"
+                                           min="0" max="100">
+                                </div>
+                                <button type="button" class="btn-delete-sensor" data-sensor-id="{{ item.sensor.pk }}" title="刪除">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="workbench-empty" id="workbenchEmptyState" {% if sensor_cards %}style="display: none;"{% endif %}>
+                        尚無感測器，在上方地圖中點擊空白處新增。
+                    </div>
+                </section>
+                {% endif %}
+
+                {# ========== 警戒值設定 ========== #}
+                {% if can_manage or metric_definitions %}
+                <section class="thresholds-section" id="thresholdsSection">
+                    <div class="threshold-section-header">
+                        <h2 class="section-title">警戒值設定</h2>
+                        {% if can_manage %}
+                        <div class="target-selector-wrapper">
+                            <label for="thresholdTargetSelect"><i class="bi bi-gear-wide-connected"></i> 警戒對象：</label>
+                            <select id="thresholdTargetSelect" class="select-threshold-target">
+                                <option value="default" selected>🌊 池區預設警戒值</option>
+                                {% for item in sensor_cards %}
+                                <option value="{{ item.sensor.pk }}">📟 感測器 {{ forloop.counter }}: {{ item.sensor.name }} ({% if item.has_custom_threshold %}自訂警戒值{% else %}套用預設{% endif %})</option>
+                                {% endfor %}
+                            </select>
+                            <span id="thresholdStatusBadge" class="threshold-status-badge">套用池區預設</span>
+                            <button type="button" id="btnRestoreThresholds" class="btn-restore-thresholds" style="display: none;">
+                                <i class="bi bi-arrow-counterclockwise"></i> 改為標準警戒值
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <form id="thresholdsForm" method="post" class="thresholds-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="save_thresholds">
+                        <input type="hidden" id="formTargetSensorId" name="sensor_id" value="default">
+
+                        <div class="thresholds-grid">
+                            {% for item in threshold_items %}
+                            <div class="threshold-item">
+                                <div class="threshold-label">{{ item.label }}</div>
+                                <div class="threshold-inputs">
+                                    <input type="number" name="{{ item.key }}_min"
+                                           id="input_{{ item.key }}_min"
+                                           class="input-threshold"
+                                           value="{{ item.min|default:'' }}"
+                                           step="0.1"
+                                           {% if not can_manage %}disabled{% endif %}
+                                           placeholder="最小">
+                                    <span class="threshold-separator">~</span>
+                                    <input type="number" name="{{ item.key }}_max"
+                                           id="input_{{ item.key }}_max"
+                                           class="input-threshold"
+                                           value="{{ item.max|default:'' }}"
+                                           step="0.1"
+                                           {% if not can_manage %}disabled{% endif %}
+                                           placeholder="最大">
+                                    <span class="threshold-unit">{{ item.unit }}</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        {% if can_manage %}
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i>
+                                <span>儲存警戒值</span>
+                            </button>
+                        </div>
+                        {% endif %}
+                    </form>
+                </section>
+                {% endif %}
+
+            </div>
+
+            {# 右側欄：數據分析與歷史紀錄 #}
+            <div class="detail-column-right">
+                
+                {# ========== 歷史數據圖表與列表 ========== #}
+                <section class="history-section">
+                    <div class="history-header">
+                        <h2 class="section-title">數據分析與歷史紀錄</h2>
+                        <div class="history-header-actions">
+                            {% if can_manage %}
+                            <button type="button" id="btnGenerateMock" class="btn-generate-mock" title="隨機產生最近 24 小時感測測試數據">
+                                <i class="bi bi-magic"></i> 產生測試數據
+                            </button>
+                            {% endif %}
+                            <a id="btnExportCSV" href="#" class="btn-export-csv" title="匯出 CSV 格式資料 (Excel 相容)" target="_blank">
+                                <i class="bi bi-file-earmark-excel"></i> 匯出 CSV 資料
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- 過濾控制項 -->
+                    <div class="history-filters">
+                        <div class="filter-item">
+                            <label for="historySensorSelect"><i class="bi bi-broadcast"></i> 感測器：</label>
+                            <select id="historySensorSelect" class="filter-select">
+                                <option value="all" selected>全部感測器</option>
+                                {% for item in sensor_cards %}
+                                <option value="{{ item.sensor.pk }}">{{ item.sensor.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="filter-item">
+                            <label for="historyMetricSelect"><i class="bi bi-graph-up"></i> 監測指標：</label>
+                            <select id="historyMetricSelect" class="filter-select">
+                                <option value="dissolved_oxygen" selected>溶氧量 (DO)</option>
+                                <option value="ph">pH 值</option>
+                                <option value="temperature">溫度</option>
+                                <option value="ammonia_nitrogen">氨氮 (NH₃-N)</option>
+                                <option value="nitrite">亞硝酸鹽 (NO₂)</option>
+                                <option value="stability_index">穩定度 (%)</option>
+                            </select>
+                        </div>
+                        <div class="filter-item">
+                            <label for="historyTimeSelect"><i class="bi bi-calendar3"></i> 時間範圍：</label>
+                            <select id="historyTimeSelect" class="filter-select">
+                                <option value="24h" selected>最近 24 小時</option>
+                                <option value="7d">最近 7 天</option>
+                                <option value="30d">最近 30 天</option>
+                                <option value="custom">自定義區間</option>
+                            </select>
+                        </div>
+                        <div id="customDateContainer" class="filter-item" style="display: none; align-items: center; gap: 6px;">
+                            <input type="date" id="historyStartDate" class="filter-select date-input" style="width: auto; padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(19, 67, 62, 0.18);">
+                            <span style="color: var(--text-2); font-size: 0.85rem;">至</span>
+                            <input type="date" id="historyEndDate" class="filter-select date-input" style="width: auto; padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(19, 67, 62, 0.18);">
+                        </div>
+                    </div>
+
+                    <!-- 圖表區 -->
+                    <div class="history-chart-container">
+                        <canvas id="historyChart"></canvas>
+                        <div id="chartEmptyState" class="chart-empty-state" style="display: none;">
+                            <i class="bi bi-bar-chart-line"></i>
+                            <p>此時間區段內尚無檢測數據</p>
+                        </div>
+                    </div>
+
+                    <!-- 數據列表 -->
+                    <div class="history-table-container" data-lenis-prevent>
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th>檢測時間</th>
+                                    <th>感測器</th>
+                                    <th>溫度</th>
+                                    <th>pH 值</th>
+                                    <th>溶氧量</th>
+                                    <th>氨氮</th>
+                                    <th>亞硝酸鹽</th>
+                                    <th>鹽度</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody">
+                                <!-- 由 JS 動態填充 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+            </div>
+
+        </div>
+
+    </div>
+</section>
+
+{# 傳遞所有對象的警戒值資料 JSON 至前端 JS #}
+<script id="thresholdsData" type="application/json">
+    {{ thresholds_json_str|safe }}
+</script>
+
+<!-- 刪除確認 Modal -->
+<div class="modal fade" id="deletePondModal" tabindex="-1" aria-labelledby="deletePondModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="background: rgba(17, 37, 34, 0.95); backdrop-filter: blur(12px); border: 1px solid rgba(220, 38, 38, 0.3); border-radius: 12px; color: #fff;">
+      <div class="modal-header" style="border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+        <h5 class="modal-title" id="deletePondModalLabel" style="font-weight: 700; color: #ef4444;"><i class="bi bi-exclamation-triangle-fill"></i> 刪除魚池</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" style="padding: 20px;">
+        <p>確認要刪除魚池「<strong>{{ pond.name }}</strong>」嗎？</p>
+        <p style="font-size: 0.85rem; color: rgba(255, 255, 255, 0.7); margin-bottom: 0;">此動作為永久刪除，該池區下的所有感測器與歷史數據都將被移除，且無法復原！</p>
+      </div>
+      <div class="modal-footer" style="border-top: 1px solid rgba(255, 255, 255, 0.1);">
+        <form action="{% url 'water:delete_pond' pond.pk %}" method="post" style="margin: 0; width: 100%; display: flex; gap: 12px;">
+          {% csrf_token %}
+          <button type="button" class="btn" style="flex: 1; border: 1px solid rgba(255, 255, 255, 0.2); color: #fff; background: transparent; border-radius: 6px;" data-bs-dismiss="modal">取消</button>
+          <button type="submit" class="btn btn-danger" style="flex: 1; background: #dc2626; border: none; border-radius: 6px;">確認刪除</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block script %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'js/water/pond_detail.js' %}"></script>
+{% endblock %}

@@ -26,6 +26,7 @@ urlpatterns = [
     path("adminx/", admin.site.urls),
     path('guide/', include('guide.urls')),
     path('chat/', include('chat.urls')),
+    path('water/', include('water.urls')),
 
     path('accounts/login/',views.abort404),
     path('accounts/google/login/', oauth2_login, name='google_login'),

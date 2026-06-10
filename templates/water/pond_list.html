@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}我的魚池｜水井村{% endblock %}
+
+{% block link_css %}
+    <link rel="stylesheet" href="{% static 'css/water/pond_list.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="pond-list-page">
+    <div class="container">
+        <header class="page-header">
+            <div class="header-left">
+                <p class="page-kicker">WATER QUALITY MONITORING</p>
+                <h1>我的魚池</h1>
+            </div>
+            <div class="header-right">
+                <div class="stat-group">
+                    <div class="stat-chip">
+                        <i class="bi bi-grid-3x3-gap"></i>
+                        <span class="stat-number">{{ pond_count }}</span>
+                        <span class="stat-label">魚池</span>
+                    </div>
+                    <div class="stat-chip stat-chip--warn">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <span class="stat-number">{{ alert_count }}</span>
+                        <span class="stat-label">需留意</span>
+                    </div>
+                </div>
+                <a href="{% url 'water:add_pond' %}" class="btn-add-pond">
+                    <i class="bi bi-plus-lg"></i>
+                    <span>新增魚池</span>
+                </a>
+            </div>
+        </header>
+
+        {% if pond_cards %}
+        <div class="pond-grid">
+            {% for item in pond_cards %}
+            <div class="pond-card pond-card--{{ item.status.tone }}">
+                <!-- Card Header -->
+                <div class="card-header">
+                    <div class="header-left-info">
+                        <a href="{% url 'water:pond_detail' item.pond.pk %}" class="card-name-link">
+                            <h3 class="card-name">{{ item.pond.name }}</h3>
+                        </a>
+                        <p class="card-species"><i class="bi bi-fish"></i> {{ item.pond.species }}</p>
+                    </div>
+                    <span class="card-tone">{{ item.status.label }}</span>
+                    
+                    {% if item.can_manage %}
+                    <div class="card-actions">
+                        <a href="{% url 'water:manage_pond' item.pond.pk %}" class="card-action-btn" title="編輯魚池"><i class="bi bi-pencil"></i></a>
+                        <button type="button" class="card-action-btn card-action-btn--danger btn-delete-pond-trigger" 
+                                data-bs-toggle="modal" data-bs-target="#deletePondModal"
+                                data-pond-id="{{ item.pond.pk }}" data-pond-name="{{ item.pond.name }}"
+                                title="刪除魚池" style="border: none; background: transparent; cursor: pointer;">
+                            <i class="bi bi-trash3"></i>
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Card Map Wrapper -->
+                <div class="card-map-wrapper">
+                    <a href="{% url 'water:pond_detail' item.pond.pk %}" class="card-map-link">
+                        <div class="mini-pond-map">
+                            <div class="map-bg-wrapper">
+                                <div class="map-water"></div>
+                                <div class="map-grid"></div>
+                            </div>
+                            <div class="map-gate map-gate--in" style="left: {{ item.pond.inlet_x }}%; top: {{ item.pond.inlet_y }}%;">進水</div>
+                            <div class="map-gate map-gate--out" style="left: {{ item.pond.outlet_x }}%; top: {{ item.pond.outlet_y }}%;">排水</div>
+
+                            {% for s_item in item.sensor_cards %}
+                            <div class="sensor-wrapper {% if s_item.sensor.y_position < 35 %}tooltip-down{% endif %}"
+                                 style="left: {{ s_item.sensor.x_position }}%; top: {{ s_item.sensor.y_position }}%;">
+                                <button type="button" class="sensor-pin sensor-pin--{{ s_item.status.tone }} {% if not s_item.sensor.is_active %}sensor-pin--off{% endif %}"
+                                     aria-label="感測器 {{ forloop.counter }}: {{ s_item.sensor.name }}">
+                                    <span class="pin-pulse"></span>
+                                    <strong class="pin-number">{{ forloop.counter }}</strong>
+                                </button>
+                                <div class="sensor-tooltip">
+                                    <div class="tooltip-header">
+                                        <span class="tooltip-idx">{{ forloop.counter }}</span>
+                                        <strong>{{ s_item.sensor.name }}</strong>
+                                        <span class="tooltip-type">{{ s_item.sensor.get_sensor_type_display }}</span>
+                                    </div>
+                                    <div class="tooltip-body">
+                                        {% if s_item.reading %}
+                                        <div class="tooltip-metrics">
+                                            <span><i class="bi bi-thermometer-half"></i> {{ s_item.reading.temperature|floatformat:1 }}°C</span>
+                                            <span><i class="bi bi-droplet"></i> pH {{ s_item.reading.ph|floatformat:2 }}</span>
+                                            <span><i class="bi bi-wind"></i> DO {{ s_item.reading.dissolved_oxygen|floatformat:1 }}</span>
+                                            {% if s_item.reading.ammonia_nitrogen %}<span>NH₃ {{ s_item.reading.ammonia_nitrogen|floatformat:2 }}</span>{% endif %}
+                                            {% if s_item.reading.nitrite %}<span>NO₂ {{ s_item.reading.nitrite|floatformat:2 }}</span>{% endif %}
+                                        </div>
+                                        {% else %}
+                                        <p class="tooltip-empty">尚無感測資料</p>
+                                        {% endif %}
+                                    </div>
+                                    <div class="tooltip-status tooltip-status--{{ s_item.status.tone }}">
+                                        {{ s_item.status.label }}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Card Sensors Data Panel -->
+                <div class="card-sensors-data">
+                    {% for s_item in item.sensor_cards %}
+                    <div class="sensor-data-item sensor-data-item--{{ s_item.status.tone }}">
+                        <div class="sensor-data-header">
+                            <span class="sensor-badge sensor-badge--{{ s_item.status.tone }}">{{ forloop.counter }}</span>
+                            <span class="sensor-name">{{ s_item.sensor.name }}</span>
+                            <span class="sensor-status-text text-{{ s_item.status.tone }}">{{ s_item.status.label }}</span>
+                        </div>
+                        <div class="sensor-values">
+                            {% if s_item.reading %}
+                            <div class="val-item" title="溫度"><i class="bi bi-thermometer-half"></i> <span>{{ s_item.reading.temperature|floatformat:1 }}°C</span></div>
+                            <div class="val-item" title="酸鹼值"><i class="bi bi-droplet"></i> <span>pH {{ s_item.reading.ph|floatformat:2 }}</span></div>
+                            <div class="val-item" title="溶氧量"><i class="bi bi-wind"></i> <span>DO {{ s_item.reading.dissolved_oxygen|floatformat:1 }}</span></div>
+                            {% if s_item.reading.ammonia_nitrogen is not None %}<div class="val-item" title="氨氮"><span>NH₃ {{ s_item.reading.ammonia_nitrogen|floatformat:2 }}</span></div>{% endif %}
+                            {% if s_item.reading.nitrite is not None %}<div class="val-item" title="亞硝酸鹽"><span>NO₂ {{ s_item.reading.nitrite|floatformat:2 }}</span></div>{% endif %}
+                            {% else %}
+                            <span class="no-data-text">尚無最新感測數據</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="no-sensors-placeholder">尚無感測器</div>
+                    {% endfor %}
+                </div>
+
+                <!-- Card Footer -->
+                <div class="card-footer">
+                    {% if item.reading %}
+                    <span class="card-time"><i class="bi bi-clock-history"></i> {{ item.reading.measured_at|date:"m/d H:i" }} 更新</span>
+                    {% else %}
+                    <span class="card-time"><i class="bi bi-clock-history"></i> 尚無資料</span>
+                    {% endif %}
+                    <a href="{% url 'water:pond_detail' item.pond.pk %}" class="btn-detail-link">
+                        詳細數據 <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <section class="empty-state">
+            <div class="empty-icon">
+                <i class="bi bi-water"></i>
+            </div>
+            <h2>還沒有綁定魚池</h2>
+            <p>開始監控水質，請先新增一個魚池</p>
+            <a href="{% url 'water:add_pond' %}" class="btn-add-pond-empty">
+                <i class="bi bi-plus-circle"></i>
+                <span>新增我的第一個魚池</span>
+            </a>
+        </section>
+        {% endif %}
+    </div>
+</section>
+
+<!-- 刪除確認 Modal -->
+<div class="modal fade" id="deletePondModal" tabindex="-1" aria-labelledby="deletePondModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="background: rgba(17, 37, 34, 0.95); backdrop-filter: blur(12px); border: 1px solid rgba(220, 38, 38, 0.3); border-radius: 12px; color: #fff;">
+      <div class="modal-header" style="border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+        <h5 class="modal-title" id="deletePondModalLabel" style="font-weight: 700; color: #ef4444;"><i class="bi bi-exclamation-triangle-fill"></i> 刪除魚池</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" style="padding: 20px;">
+        <p>確認要刪除魚池「<strong id="deletePondName"></strong>」嗎？</p>
+        <p style="font-size: 0.85rem; color: rgba(255, 255, 255, 0.7); margin-bottom: 0;">此動作為永久刪除，該池區下的所有感測器與歷史數據都將被移除，且無法復原！</p>
+      </div>
+      <div class="modal-footer" style="border-top: 1px solid rgba(255, 255, 255, 0.1);">
+        <form id="deletePondForm" method="post" style="margin: 0; width: 100%; display: flex; gap: 12px;">
+          {% csrf_token %}
+          <button type="button" class="btn" style="flex: 1; border: 1px solid rgba(255, 255, 255, 0.2); color: #fff; background: transparent; border-radius: 6px;" data-bs-dismiss="modal">取消</button>
+          <button type="submit" class="btn btn-danger" style="flex: 1; background: #dc2626; border: none; border-radius: 6px;">確認刪除</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const deletePondModal = document.getElementById('deletePondModal');
+    if (deletePondModal) {
+        deletePondModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const pondId = button.getAttribute('data-pond-id');
+            const pondName = button.getAttribute('data-pond-name');
+            
+            const form = deletePondModal.querySelector('#deletePondForm');
+            const nameSpan = deletePondModal.querySelector('#deletePondName');
+            
+            if (form) form.action = `/water/pond/${pondId}/delete/`;
+            if (nameSpan) nameSpan.textContent = pondName;
+        });
+    }
+
+    // 30 秒自動重新整理頁面以撈取最新數據 (僅在無 Modal 顯示時觸發)
+    setInterval(function() {
+        const modalOpen = document.querySelector('.modal.show');
+        if (!modalOpen) {
+            let url = new URL(window.location.href);
+            url.searchParams.set('refresh', 'true');
+            window.location.href = url.toString();
+        }
+    }, 30000);
+});
+</script>
+
+{% endblock %}

@@ -176,13 +176,15 @@ def list_usr_highlights(limit: int = 5) -> dict:
     }
 
 
-def get_latest_water_quality(pond_name: str) -> dict:
+def get_latest_water_quality(pond_name: str, user=None) -> dict:
+    from water.views import visible_ponds_for
+    visible_ponds = visible_ponds_for(user)
     try:
-        pond = Pond.objects.get(name=pond_name)
+        pond = visible_ponds.get(name=pond_name)
     except Pond.DoesNotExist:
         return {
-            "error": f"unknown pond: {pond_name}",
-            "available_ponds": list(Pond.objects.values_list("name", flat=True)),
+            "error": f"unknown pond or permission denied: {pond_name}",
+            "available_ponds": list(visible_ponds.values_list("name", flat=True)),
         }
 
     latest = pond.readings.first()
@@ -200,16 +202,18 @@ def get_latest_water_quality(pond_name: str) -> dict:
     }
 
 
-def get_average_do(pond_name: str, days: int = 7) -> dict:
+def get_average_do(pond_name: str, days: int = 7, user=None) -> dict:
     from datetime import timedelta
     from django.db.models import Avg
+    from water.views import visible_ponds_for
 
+    visible_ponds = visible_ponds_for(user)
     try:
-        pond = Pond.objects.get(name=pond_name)
+        pond = visible_ponds.get(name=pond_name)
     except Pond.DoesNotExist:
         return {
-            "error": f"unknown pond: {pond_name}",
-            "available_ponds": list(Pond.objects.values_list("name", flat=True)),
+            "error": f"unknown pond or permission denied: {pond_name}",
+            "available_ponds": list(visible_ponds.values_list("name", flat=True)),
         }
 
     days = max(1, min(int(days or 7), 30))
@@ -224,13 +228,14 @@ def get_average_do(pond_name: str, days: int = 7) -> dict:
     }
 
 
-def get_pond_summary(days: int = 7) -> dict:
+def get_pond_summary(days: int = 7, user=None) -> dict:
     from datetime import timedelta
     from django.db.models import Avg, Count, Max, Min
+    from water.views import visible_ponds_for
 
     days = max(1, min(int(days or 7), 30))
     since = timezone.now() - timedelta(days=days)
-    ponds = Pond.objects.all().order_by("name")
+    ponds = visible_ponds_for(user).order_by("name")
     summaries = []
 
     for pond in ponds:
@@ -427,11 +432,13 @@ _TOOL_REGISTRY = {
 }
 
 
-def dispatch(name: str, arguments: dict) -> dict:
+def dispatch(name: str, arguments: dict, user=None) -> dict:
     fn = _TOOL_REGISTRY.get(name)
     if fn is None:
         return {"error": f"unknown tool: {name}"}
     try:
+        if name in ("get_latest_water_quality", "get_average_do", "get_pond_summary"):
+            return fn(**arguments, user=user)
         return fn(**arguments)
     except TypeError as exc:
         return {"error": f"tool arguments error: {exc}"}

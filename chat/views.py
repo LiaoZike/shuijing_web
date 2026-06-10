@@ -27,7 +27,7 @@ def chat_api(request):
     history = request.session.get("chat_history", [])
 
     try:
-        reply = llm.chat(message, history=history)
+        reply = llm.chat(message, history=history, user=request.user)
     except Exception as exc:  # noqa: BLE001
         return JsonResponse(
             {"error": f"聊天服務暫時無法回應：{type(exc).__name__}: {exc}"},

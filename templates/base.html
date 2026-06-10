@@ -34,6 +34,11 @@
         <div class="loader-text">載入中</div>
     </div>
 </div>
+<script>
+    if (window.location.search.indexOf('refresh=true') !== -1) {
+        document.getElementById('pageLoader').style.display = 'none';
+    }
+</script>
 <style>
     {% block extra_css %}{% endblock %}
 </style>
@@ -59,13 +64,15 @@
                 href="{% url 'home' %}">首 頁</a>
             </li>
             <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle {% if request.resolver_match.url_name == 'about' or request.resolver_match.url_name == 'story' or request.resolver_match.url_name == 'related_links' %}active{% endif %}"
+                <a class="nav-link dropdown-toggle {% if request.resolver_match.url_name == 'about' or request.resolver_match.url_name == 'story' or request.resolver_match.url_name == 'related_links' or request.resolver_match.url_name == 'usr' or request.resolver_match.app_name == 'guide' %}active{% endif %}"
                 href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                     關 於
                 </a>
                 <ul class="dropdown-menu">
                     <li><a class="dropdown-item" href="{% url 'about' %}">關於風雲客棧</a></li>
                     <li><a class="dropdown-item" href="{% url 'story' %}">關於水井村</a></li>
+                    <li><a class="dropdown-item" href="{% url 'usr' %}">USR 成果</a></li>
+                    <li><a class="dropdown-item" href="{% url 'guide:home' %}">互動導覽</a></li>
                     <li><a class="dropdown-item" href="{% url 'related_links' %}">在地商家連結</a></li>
                 </ul>
             </li>
@@ -80,12 +87,8 @@
                 </ul>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if request.resolver_match.url_name == 'usr' %}active{% endif %}"
-                href="{% url 'usr' %}">USR 成果</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {% if request.resolver_match.app_name == 'guide' %}active{% endif %}"
-                href="{% url 'guide:home' %}">互動導覽</a>
+                <a class="nav-link {% if request.resolver_match.namespace == 'water' %}active{% endif %}"
+                href="{% url 'water:dashboard' %}">水質監控</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}"
@@ -371,6 +374,7 @@
      id="mascotChatPanel"
      data-chat-api="{% url 'chat-api' %}"
      data-clear-api="{% url 'chat-clear' %}"
+     data-lenis-prevent
      hidden>
     <div class="mascot-chat-header">
         <div class="mascot-chat-brand">
@@ -381,7 +385,7 @@
             </div>
         </div>
         <div class="mascot-chat-actions">
-            <a href="{% url 'chat-page' %}" class="mascot-chat-icon-btn" aria-label="開啟完整聊天頁">
+            <a href="{% url 'chat-page' %}" target="_blank" rel="noopener noreferrer" class="mascot-chat-icon-btn" aria-label="開啟完整聊天頁">
                 <i class="bi bi-box-arrow-up-right"></i>
             </a>
             <button type="button" class="mascot-chat-icon-btn" data-chat-close aria-label="關閉聊天">
@@ -389,7 +393,7 @@
             </button>
         </div>
     </div>
-    <div class="mascot-chat-log" data-chat-log>
+    <div class="mascot-chat-log" data-chat-log data-lenis-prevent>
         <div class="mascot-chat-empty" data-chat-empty>
             <div class="mascot-chat-empty-title">需要水井村資訊嗎？</div>
             <div>可以問我活動、公告、USR 成果或 AIoT 專案。</div>
@@ -423,6 +427,7 @@
 {% block link_js %}{% endblock %}
 <script src="{% static 'js/core/mascot_chat.js' %}"></script>
 {% block extra_js %}{% endblock %}
+{% block script %}{% endblock %}
 <script>
     /**
      * 緩慢回到頂部函式

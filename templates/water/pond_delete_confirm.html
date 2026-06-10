@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}刪除池區 - {{ pond.name }} | 水井村{% endblock %}
+
+{% block link_css %}
+    <link rel="stylesheet" href="{% static 'css/water/form.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="form-page delete-confirm-page">
+    <div class="container">
+        <div class="form-card delete-confirm-card">
+            <div class="delete-icon">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+
+            <h1>刪除池區</h1>
+            
+            <div class="confirm-info">
+                <p class="info-pond-name">{{ pond.name }}</p>
+                <p class="info-pond-species">
+                    <span>物種：</span>{{ pond.species }}
+                </p>
+            </div>
+
+            <div class="confirm-message">
+                <p><strong>⚠️ 警告</strong></p>
+                <ul>
+                    <li>此操作無法復原</li>
+                    <li>池區中的所有感測器 ({{ sensor_count }}) 將被刪除</li>
+                    <li>所有相關的水質讀值記錄將保留用於查詢</li>
+                </ul>
+            </div>
+
+            <form method="post" class="delete-form">
+                {% csrf_token %}
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-danger btn-lg">
+                        <i class="bi bi-trash"></i>
+                        <span>確認刪除</span>
+                    </button>
+                    <a href="{% url 'water:pond_detail' pond.pk %}" class="btn btn-secondary btn-lg">
+                        <i class="bi bi-arrow-left"></i>
+                        <span>取消</span>
+                    </a>
+                </div>
+            </form>
+
+            <p class="delete-hint">
+                如果你只是想停止監控此池區，可以<a href="{% url 'water:pond_detail' pond.pk %}">返回詳情頁</a>。
+            </p>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

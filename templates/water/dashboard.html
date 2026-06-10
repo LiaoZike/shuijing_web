@@ -1,0 +1,298 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}水質監控儀表板｜水井村{% endblock %}
+
+{% block link_css %}
+    <link rel="stylesheet" href="{% static 'css/water/dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="water-dashboard">
+    <div class="container">
+        <header class="dashboard-head">
+            <div>
+                <p class="dashboard-kicker">WATER QUALITY MONITORING</p>
+                <h1>我的魚池監控</h1>
+                <p class="dashboard-lead">
+                    查看已綁定帳號的魚池、配置感測器位置，並為每個水質指標設定自己的警戒值。
+                </p>
+            </div>
+            <div class="dashboard-meta">
+                <span>可查看魚池 {{ pond_count }} 座</span>
+                <span>需留意 {{ alert_count }} 座</span>
+                {% if latest_time %}
+                    <span>最新 {{ latest_time|date:"Y.m.d H:i" }}</span>
+                {% else %}
+                    <span>尚無讀值</span>
+                {% endif %}
+                <a href="{% url 'water:add_pond' %}" class="btn-add-pond">
+                    <i class="bi bi-plus-circle"></i> 新增魚池
+                </a>
+            </div>
+        </header>
+
+        {% if selected_pond %}
+        <div class="dashboard-layout">
+            <aside class="pond-sidebar" aria-label="魚池清單">
+                <div class="panel-title">
+                    <span>池區</span>
+                    <strong>選擇魚池</strong>
+                </div>
+                <div class="pond-list">
+                    {% for item in pond_cards %}
+                    <a class="pond-link {% if item.is_selected %}active{% endif %} pond-link--{{ item.status.tone }}"
+                       href="{% url 'water:dashboard' %}?pond={{ item.pond.pk }}">
+                        <span>
+                            <strong>{{ item.pond.name }}</strong>
+                            <small>{{ item.pond.species }}</small>
+                        </span>
+                        <em>{{ item.status.label }}</em>
+                    </a>
+                    {% endfor %}
+                </div>
+            </aside>
+
+            <main class="map-panel">
+                <div class="map-toolbar">
+                    <div>
+                        <p class="dashboard-kicker">POND MAP</p>
+                        <h2>{{ selected_pond.name }}</h2>
+                    </div>
+                    <div class="map-toolbar-actions">
+                        <span class="status-pill status-pill--{{ selected_status.tone }}">{{ selected_status.label }}</span>
+                        {% if can_manage_selected %}
+                        <button type="button" class="btn-edit-mode" id="btnEditMode" title="切換編輯模式">
+                            <i class="bi bi-pencil"></i> 編輯配置
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {# =============== 地圖容器 =============== #}
+                <div class="pond-map" id="pondMap" aria-label="{{ selected_pond.name }} 感測器配置圖">
+                    <div class="map-water"></div>
+                    <div class="map-grid"></div>
+                    <div class="map-gate map-gate--in">進水</div>
+                    <div class="map-gate map-gate--out">排水</div>
+                    
+                    {% for item in sensor_cards %}
+                    <div class="sensor-wrapper" data-sensor-id="{{ item.sensor.pk }}" data-x="{{ item.sensor.x_position }}" data-y="{{ item.sensor.y_position }}">
+                        <button type="button"
+                                class="sensor-pin sensor-pin--{{ item.status.tone }} {% if not item.sensor.is_active %}sensor-pin--off{% endif %}"
+                                style="left: {{ item.sensor.x_position }}%; top: {{ item.sensor.y_position }}%;"
+                                title="{{ item.sensor.name }}"
+                                aria-label="感測器 {{ forloop.counter }}: {{ item.sensor.name }}">
+                            <span class="pin-dot"></span>
+                            <strong>{{ forloop.counter }}</strong>
+                        </button>
+                    </div>
+                    {% empty %}
+                    <div class="map-empty">尚未放置感測器</div>
+                    {% endfor %}
+                    
+                    {# 編輯模式提示 #}
+                    <div class="map-edit-hint" id="mapEditHint" style="display: none;">
+                        點擊地圖空白處新增感測器 · 拖拽調整位置 · 右鍵刪除
+                    </div>
+                </div>
+
+                <div class="metric-strip">
+                    {% for metric in selected_metrics %}
+                    <div class="metric-card">
+                        <span>{{ metric.index }}. {{ metric.label }}</span>
+                        <strong>
+                            {% if metric.value is not None %}
+                                {{ metric.value|floatformat:2 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </strong>
+                        <small>
+                            {% if metric.unit %}{{ metric.unit }}{% else %}目前值{% endif %}
+                            {% if metric.min is not None or metric.max is not None %}
+                                ・{{ metric.min|default_if_none:"-" }} 至 {{ metric.max|default_if_none:"-" }}
+                            {% endif %}
+                        </small>
+                    </div>
+                    {% endfor %}
+                </div>
+            </main>
+
+            <aside class="detail-panel">
+                {# 池區概況 #}
+                <section class="info-card">
+                    <div class="panel-title">
+                        <span>資訊欄</span>
+                        <strong>池區概況</strong>
+                    </div>
+                    <dl class="info-grid">
+                        <div>
+                            <dt>養殖物種</dt>
+                            <dd>{{ selected_pond.species }}</dd>
+                        </div>
+                        <div>
+                            <dt>感測器</dt>
+                            <dd>
+                                <strong>{{ sensor_cards|length }}</strong> 組
+                                <span class="sensor-status-badge">
+                                    <i class="bi bi-circle-fill" style="color: #10b981;"></i>
+                                    {% widthratio sensor_cards|length 1 100 as pct %}
+                                    {{ pct }}%
+                                </span>
+                            </dd>
+                        </div>
+                        <div>
+                            <dt>最新讀值</dt>
+                            <dd>
+                                {% if selected_latest %}
+                                    {{ selected_latest.measured_at|date:"Y.m.d H:i" }}
+                                {% else %}
+                                    尚無資料
+                                {% endif %}
+                            </dd>
+                        </div>
+                    </dl>
+                    {% if selected_pond.description %}
+                    <p class="pond-desc">{{ selected_pond.description }}</p>
+                    {% endif %}
+                    {% if selected_pond.map_note %}
+                    <p class="pond-note">📌 {{ selected_pond.map_note }}</p>
+                    {% endif %}
+                </section>
+
+                {# 警戒值設定（折疊式tab） #}
+                <section class="info-card">
+                    <div class="panel-title">
+                        <span>設定</span>
+                        <strong>自訂警戒值</strong>
+                    </div>
+                    <form method="post" class="threshold-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="save_thresholds">
+                        <input type="hidden" name="pond_id" value="{{ selected_pond.pk }}">
+                        
+                        <div class="threshold-tabs">
+                            {% for metric in selected_metrics %}
+                            <details class="threshold-item" {% if forloop.first %}open{% endif %}>
+                                <summary>
+                                    <span class="metric-badge">{{ metric.index }}</span>
+                                    <span class="metric-name">{{ metric.label }}</span>
+                                    {% if metric.value is not None %}
+                                    <span class="metric-current">{{ metric.value|floatformat:2 }}{{ metric.unit }}</span>
+                                    {% endif %}
+                                </summary>
+                                <div class="threshold-inputs">
+                                    <div class="threshold-defaults">
+                                        推薦值: {{ metric.min|default_if_none:"-" }} 至 {{ metric.max|default_if_none:"-" }} {{ metric.unit }}
+                                    </div>
+                                    <div class="range-inputs">
+                                        <input type="number" step="0.01" name="{{ metric.key }}_min" 
+                                               value="{{ metric.min|default_if_none:'' }}" 
+                                               placeholder="下限" 
+                                               class="input-min">
+                                        <span class="range-dash">—</span>
+                                        <input type="number" step="0.01" name="{{ metric.key }}_max" 
+                                               value="{{ metric.max|default_if_none:'' }}" 
+                                               placeholder="上限" 
+                                               class="input-max">
+                                        <span class="range-unit">{{ metric.unit }}</span>
+                                    </div>
+                                </div>
+                            </details>
+                            {% endfor %}
+                        </div>
+                        
+                        <button type="submit" class="btn-save-thresholds">儲存警戒值</button>
+                    </form>
+                </section>
+            </aside>
+        </div>
+
+        {% if can_manage_selected %}
+        <section class="sensor-workbench" id="sensorWorkbench">
+            <div class="sensor-workbench-head">
+                <div>
+                    <p class="dashboard-kicker">SENSOR LAYOUT</p>
+                    <h2>感測器配置</h2>
+                    <p class="workbench-hint">
+                        🔧 在上方地圖中點擊空白區域即可新增感測器 · 拖拽感測器調整位置 · 在下方表格中編輯詳細設定
+                    </p>
+                </div>
+            </div>
+
+            <div class="sensor-table">
+                {% if sensor_cards %}
+                    <div class="sensor-table-header">
+                        <span class="col-idx">#</span>
+                        <span class="col-name">感測器名稱</span>
+                        <span class="col-type">類型</span>
+                        <span class="col-pos">位置 (X, Y)</span>
+                        <span class="col-active">狀態</span>
+                        <span class="col-actions">操作</span>
+                    </div>
+                    {% for item in sensor_cards %}
+                    <form method="post" class="sensor-row" data-sensor-id="{{ item.sensor.pk }}">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="update_sensor">
+                        <input type="hidden" name="pond_id" value="{{ selected_pond.pk }}">
+                        <input type="hidden" name="sensor_id" value="{{ item.sensor.pk }}">
+                        
+                        <div class="col-idx">{{ forloop.counter }}</div>
+                        <div class="col-name">
+                            <input type="text" name="sensor_name" value="{{ item.sensor.name }}" class="input-sensor-name" required>
+                        </div>
+                        <div class="col-type">
+                            <select name="sensor_type" class="input-sensor-type">
+                                {% for value, label in sensor_type_choices %}
+                                <option value="{{ value }}" {% if item.sensor.sensor_type == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-pos">
+                            <div class="pos-inputs">
+                                <input type="number" name="x_position" min="0" max="100" value="{{ item.sensor.x_position }}" class="input-pos-x" title="水平位置 (0-100)">
+                                <span class="pos-sep">,</span>
+                                <input type="number" name="y_position" min="0" max="100" value="{{ item.sensor.y_position }}" class="input-pos-y" title="垂直位置 (0-100)">
+                            </div>
+                        </div>
+                        <div class="col-active">
+                            <label class="checkbox-toggle">
+                                <input type="checkbox" name="is_active" {% if item.sensor.is_active %}checked{% endif %} class="toggle-active">
+                                <span class="toggle-label">{{ item.sensor.is_active|yesno:"在線,離線" }}</span>
+                            </label>
+                        </div>
+                        <div class="col-actions">
+                            <button type="submit" class="btn-save-row" title="保存修改">
+                                <i class="bi bi-check-lg"></i> 保存
+                            </button>
+                            <button type="button" class="btn-delete-sensor" title="刪除感測器" data-sensor-id="{{ item.sensor.pk }}">
+                                <i class="bi bi-trash"></i> 刪除
+                            </button>
+                        </div>
+                    </form>
+                    {% endfor %}
+                {% else %}
+                <div class="empty-board">
+                    <i class="bi bi-cone-striped"></i>
+                    <h3>尚未建立感測器</h3>
+                    <p>在上方地圖中點擊空白區域新增第一個感測器</p>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
+        {% else %}
+        <div class="empty-board empty-board--large">
+            <h2>尚未綁定魚池</h2>
+            <p>請由管理員在後台把魚池綁定到你的帳號；綁定後即可在這裡查看監控與設定警戒值。</p>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+{% block link_js %}
+<script src="{% static 'js/water/dashboard.js' %}"></script>
+{% endblock %}
+
+{% endblock %}

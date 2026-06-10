@@ -20,6 +20,8 @@ from .models import (
     Notice,
     RelatedLink,
 )
+from water.models import Pond
+from water.utils import reading_status
 
 import threading
 
@@ -27,6 +29,8 @@ import threading
 @receiver(user_logged_in)
 def on_login(request, user, **kwargs):
     """使用者登入後顯示歡迎訊息。"""
+    if request is None:
+        return
     storage = messages.get_messages(request)
     storage.used = True
     name = user.first_name or user.email
@@ -36,6 +40,8 @@ def on_login(request, user, **kwargs):
 @receiver(user_logged_out)
 def on_logout(request, user, **kwargs):
     """使用者登出後顯示提示訊息。"""
+    if request is None:
+        return
     messages.success(request, '已成功登出，期待您再次造訪。')
 
 
@@ -60,6 +66,24 @@ def home(request):
 
     notices = Notice.objects.filter(is_active=True).order_by('-publish_date')[:7]
     achievements = UsrAchievement.objects.filter(is_active=True).order_by('-date')[:3]
+    water_preview = []
+    if request.user.is_authenticated:
+        if request.user.is_staff or request.user.is_superuser:
+            preview_ponds = Pond.objects.all().order_by('name')[:3]
+        else:
+            preview_ponds = (
+                Pond.objects.filter(owners=request.user)
+                .distinct()
+                .order_by('name')[:3]
+            )
+
+        for pond in preview_ponds:
+            latest = pond.readings.first()
+            water_preview.append({
+                'pond': pond,
+                'reading': latest,
+                'status': reading_status(latest),
+            })
 
     return render(request, 'core/home.html', {
         'slides': slides,
@@ -67,6 +91,7 @@ def home(request):
         'activities': activities,
         'notices': notices,
         'achievements': achievements,
+        'water_preview': water_preview,
         'today': today,
     })
 

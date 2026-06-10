@@ -1,27 +1,4 @@
-(function () {
-    const counters = document.querySelectorAll('.stat-num[data-count]');
-    if (!counters.length) return;
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (!entry.isIntersecting) return;
-            const el = entry.target;
-            const target = parseInt(el.dataset.count, 10);
-            const duration = 1400;
-            const start = performance.now();
-            function update(now) {
-                const elapsed = now - start;
-                const progress = Math.min(elapsed / duration, 1);
-                const ease = 1 - Math.pow(1 - progress, 3);
-                el.textContent = Math.floor(ease * target);
-                if (progress < 1) requestAnimationFrame(update);
-                else el.textContent = target;
-            }
-            requestAnimationFrame(update);
-            observer.unobserve(el);
-        });
-    }, { threshold: 0.4 });
-    counters.forEach(el => observer.observe(el));
-})();
+
 (function () {
     document.body.classList.add('page-home');
     const nav = document.getElementById('mainNav');
