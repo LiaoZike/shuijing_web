@@ -455,3 +455,172 @@ textarea.form-control {
     color: #dc2626 !important;
 }
 
+/* Add pond page */
+.add-pond-page {
+    background: linear-gradient(180deg, rgba(248, 251, 249, 0.94) 0%, rgba(237, 244, 241, 0.98) 100%);
+}
+
+.add-pond-container {
+    max-width: 1180px;
+}
+
+.add-pond-header {
+    max-width: 760px;
+    margin-bottom: 24px;
+}
+
+.add-pond-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.8fr);
+    gap: 24px;
+    align-items: start;
+}
+
+.add-pond-form {
+    max-width: none;
+    margin-bottom: 0;
+}
+
+.add-pond-panel {
+    padding: 28px;
+}
+
+.add-pond-section-title {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding-bottom: 20px;
+    margin-bottom: 22px;
+    border-bottom: 1px solid rgba(19, 67, 62, 0.1);
+}
+
+.add-pond-section-title > i {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #0f766e;
+    background: rgba(15, 118, 110, 0.08);
+    border: 1px solid rgba(15, 118, 110, 0.14);
+    flex-shrink: 0;
+}
+
+.add-pond-section-title h2,
+.add-pond-side-card h2 {
+    margin: 0;
+    color: #112522;
+    font-size: 1.12rem;
+    font-weight: 850;
+    letter-spacing: 0;
+}
+
+.add-pond-section-title p {
+    margin: 5px 0 0;
+    color: #627974;
+    line-height: 1.6;
+    font-size: 0.88rem;
+}
+
+.add-pond-two-col {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.add-pond-actions {
+    grid-template-columns: minmax(0, 1fr) 132px;
+    margin-top: 24px;
+}
+
+.add-pond-side {
+    display: grid;
+    gap: 14px;
+    position: sticky;
+    top: calc(var(--nav-height) + 24px);
+}
+
+.add-pond-side-card,
+.add-pond-side-note {
+    background: #fbfdfc;
+    border: 1px solid rgba(15, 118, 110, 0.16);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.045);
+}
+
+.add-pond-side-card {
+    padding: 24px;
+}
+
+.add-pond-side-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    color: #0f766e;
+    background: rgba(15, 118, 110, 0.08);
+    border: 1px solid rgba(15, 118, 110, 0.14);
+}
+
+.add-pond-side-card ol {
+    margin: 16px 0 0;
+    padding-left: 20px;
+    color: #48615c;
+    line-height: 1.85;
+    font-size: 0.92rem;
+}
+
+.add-pond-side-card li {
+    padding-left: 4px;
+    margin-bottom: 8px;
+}
+
+.add-pond-side-note {
+    display: flex;
+    gap: 10px;
+    padding: 16px;
+    color: #48615c;
+    background: rgba(15, 118, 110, 0.06);
+}
+
+.add-pond-side-note i {
+    color: #0f766e;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.add-pond-side-note p {
+    margin: 0;
+    line-height: 1.7;
+    font-size: 0.88rem;
+}
+
+@media (max-width: 991.98px) {
+    .add-pond-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .add-pond-side {
+        position: static;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .add-pond-panel {
+        padding: 20px;
+    }
+
+    .add-pond-two-col,
+    .add-pond-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .add-pond-side-card {
+        padding: 20px;
+    }
+}
+

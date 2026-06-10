@@ -68,36 +68,41 @@
                         <div class="sensors-metrics-grid">
                             {% for card in sensor_cards %}
                             <div class="sensor-metric-card sensor-metric-card--{{ card.status.tone }}">
-                                <div class="sensor-card-header">
-                                    <span class="sensor-card-idx">{{ forloop.counter }}</span>
-                                    <div class="sensor-card-title-wrap">
-                                        <strong class="sensor-card-name">{{ card.sensor.name }}</strong>
-                                        <span class="sensor-card-type">{{ card.sensor.get_sensor_type_display }}</span>
+                                <div class="sensor-card-header" style="justify-content: space-between; align-items: center; width: 100%;">
+                                    <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1;">
+                                        <span class="sensor-card-idx">{{ forloop.counter }}</span>
+                                        <div class="sensor-card-title-wrap">
+                                            <strong class="sensor-card-name">{{ card.sensor.name }}</strong>
+                                            <span class="sensor-card-type">{{ card.sensor.get_sensor_type_display }}</span>
+                                        </div>
                                     </div>
+                                    <button type="button" class="btn-link-to-history" data-sensor-id="{{ card.sensor.pk }}" title="快速檢視此感測器的數據分析與歷史趨勢" style="background: transparent; border: none; color: #2dd4bf; font-size: 1.15rem; cursor: pointer; padding: 4px; display: inline-flex; align-items: center; transition: transform 150ms; outline: none; margin-left: auto;">
+                                        <i class="bi bi-graph-up"></i>
+                                    </button>
                                 </div>
                                 <div class="sensor-card-body">
                                     {% if card.reading %}
                                     <div class="sensor-values-compact-grid">
-                                        <div class="val-item" title="溫度">
+                                        <div class="val-item val-item--{{ card.metric_status.temperature|default:'good' }} btn-metric-link" title="點擊檢視溫度歷史分析" data-sensor-id="{{ card.sensor.pk }}" data-metric="temperature" style="cursor: pointer;">
                                             <i class="bi bi-thermometer-half"></i>
                                             <span class="val-num">{{ card.reading.temperature|floatformat:1 }}°C</span>
                                         </div>
-                                        <div class="val-item" title="pH 值">
+                                        <div class="val-item val-item--{{ card.metric_status.ph|default:'good' }} btn-metric-link" title="點擊檢視 pH 值歷史分析" data-sensor-id="{{ card.sensor.pk }}" data-metric="ph" style="cursor: pointer;">
                                             <i class="bi bi-droplet"></i>
                                             <span class="val-num">pH {{ card.reading.ph|floatformat:2 }}</span>
                                         </div>
-                                        <div class="val-item" title="溶氧量">
+                                        <div class="val-item val-item--{{ card.metric_status.dissolved_oxygen|default:'good' }} btn-metric-link" title="點擊檢視溶氧量歷史分析" data-sensor-id="{{ card.sensor.pk }}" data-metric="dissolved_oxygen" style="cursor: pointer;">
                                             <i class="bi bi-wind"></i>
                                             <span class="val-num">DO {{ card.reading.dissolved_oxygen|floatformat:1 }}</span>
                                         </div>
                                         {% if card.reading.ammonia_nitrogen is not None %}
-                                        <div class="val-item" title="氨氮">
+                                        <div class="val-item val-item--{{ card.metric_status.ammonia_nitrogen|default:'good' }} btn-metric-link" title="點擊檢視氨氮歷史分析" data-sensor-id="{{ card.sensor.pk }}" data-metric="ammonia_nitrogen" style="cursor: pointer;">
                                             <i class="bi bi-flask"></i>
                                             <span class="val-num">NH₃ {{ card.reading.ammonia_nitrogen|floatformat:2 }}</span>
                                         </div>
                                         {% endif %}
                                         {% if card.reading.nitrite is not None %}
-                                        <div class="val-item" title="亞硝酸鹽">
+                                        <div class="val-item val-item--{{ card.metric_status.nitrite|default:'good' }} btn-metric-link" title="點擊檢視亞硝酸鹽歷史分析" data-sensor-id="{{ card.sensor.pk }}" data-metric="nitrite" style="cursor: pointer;">
                                             <i class="bi bi-hash"></i>
                                             <span class="val-num">NO₂ {{ card.reading.nitrite|floatformat:2 }}</span>
                                         </div>
@@ -201,11 +206,11 @@
                                     <div class="tooltip-body">
                                         {% if item.reading %}
                                         <div class="tooltip-metrics">
-                                            <span><i class="bi bi-thermometer-half"></i> {{ item.reading.temperature|floatformat:1 }}°C</span>
-                                            <span><i class="bi bi-droplet"></i> pH {{ item.reading.ph|floatformat:2 }}</span>
-                                            <span><i class="bi bi-wind"></i> DO {{ item.reading.dissolved_oxygen|floatformat:1 }}</span>
-                                            {% if item.reading.ammonia_nitrogen %}<span>NH₃ {{ item.reading.ammonia_nitrogen|floatformat:2 }}</span>{% endif %}
-                                            {% if item.reading.nitrite %}<span>NO₂ {{ item.reading.nitrite|floatformat:2 }}</span>{% endif %}
+                                            <span {% if item.metric_status.temperature == 'warning' %}style="color: #fca5a5;"{% endif %}><i class="bi bi-thermometer-half" {% if item.metric_status.temperature == 'warning' %}style="color: #ef4444; opacity: 1;"{% endif %}></i> {{ item.reading.temperature|floatformat:1 }}°C</span>
+                                            <span {% if item.metric_status.ph == 'warning' %}style="color: #fca5a5;"{% endif %}><i class="bi bi-droplet" {% if item.metric_status.ph == 'warning' %}style="color: #ef4444; opacity: 1;"{% endif %}></i> pH {{ item.reading.ph|floatformat:2 }}</span>
+                                            <span {% if item.metric_status.dissolved_oxygen == 'warning' %}style="color: #fca5a5;"{% endif %}><i class="bi bi-wind" {% if item.metric_status.dissolved_oxygen == 'warning' %}style="color: #ef4444; opacity: 1;"{% endif %}></i> DO {{ item.reading.dissolved_oxygen|floatformat:1 }}</span>
+                                            {% if item.reading.ammonia_nitrogen %}<span {% if item.metric_status.ammonia_nitrogen == 'warning' %}style="color: #fca5a5;"{% endif %}><i class="bi bi-flask" {% if item.metric_status.ammonia_nitrogen == 'warning' %}style="color: #ef4444; opacity: 1;"{% endif %}></i> NH₃ {{ item.reading.ammonia_nitrogen|floatformat:2 }}</span>{% endif %}
+                                            {% if item.reading.nitrite %}<span {% if item.metric_status.nitrite == 'warning' %}style="color: #fca5a5;"{% endif %}><i class="bi bi-hash" {% if item.metric_status.nitrite == 'warning' %}style="color: #ef4444; opacity: 1;"{% endif %}></i> NO₂ {{ item.reading.nitrite|floatformat:2 }}</span>{% endif %}
                                         </div>
                                         {% else %}
                                         <p class="tooltip-empty">尚無感測資料</p>
@@ -397,7 +402,7 @@
                     <div class="history-header">
                         <h2 class="section-title">數據分析與歷史紀錄</h2>
                         <div class="history-header-actions">
-                            {% if can_manage %}
+                            {% if request.user.is_staff or request.user.is_superuser %}
                             <button type="button" id="btnGenerateMock" class="btn-generate-mock" title="隨機產生最近 24 小時感測測試數據">
                                 <i class="bi bi-magic"></i> 產生測試數據
                             </button>
@@ -433,7 +438,9 @@
                         <div class="filter-item">
                             <label for="historyTimeSelect"><i class="bi bi-calendar3"></i> 時間範圍：</label>
                             <select id="historyTimeSelect" class="filter-select">
-                                <option value="24h" selected>最近 24 小時</option>
+                                <option value="1h">最近 1 小時</option>
+                                <option value="3h" selected>最近 3 小時</option>
+                                <option value="24h">最近 24 小時</option>
                                 <option value="7d">最近 7 天</option>
                                 <option value="30d">最近 30 天</option>
                                 <option value="custom">自定義區間</option>
@@ -490,6 +497,7 @@
 </script>
 
 <!-- 刪除確認 Modal -->
+{% if can_delete %}
 <div class="modal fade" id="deletePondModal" tabindex="-1" aria-labelledby="deletePondModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content" style="background: rgba(17, 37, 34, 0.95); backdrop-filter: blur(12px); border: 1px solid rgba(220, 38, 38, 0.3); border-radius: 12px; color: #fff;">
@@ -511,6 +519,7 @@
     </div>
   </div>
 </div>
+{% endif %}
 
 {% endblock %}
 

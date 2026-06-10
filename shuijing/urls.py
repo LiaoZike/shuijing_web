@@ -21,8 +21,11 @@ from accounts import views  # 或 from your_app import views
 from allauth.socialaccount.providers.google.views import oauth2_login, oauth2_callback
 from django.conf.urls.static import static
 from django.conf import settings
+from water import views as water_views
 
 urlpatterns = [
+    path("adminx/cron/", water_views.admin_cron_page, name="admin_cron_page"),
+    path("adminx/cron/run/", water_views.admin_cron_run, name="admin_cron_run"),
     path("adminx/", admin.site.urls),
     path('guide/', include('guide.urls')),
     path('chat/', include('chat.urls')),

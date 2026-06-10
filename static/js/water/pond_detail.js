@@ -51,6 +51,7 @@
     let dragType = null; // 'sensor' or 'gate'
     let dragOffset = { x: 0, y: 0 };
     let statusTimeout = null;
+    let ignoreNextMapClick = false;
     let thresholdsData = {};
 
     if (thresholdsDataEl) {
@@ -60,6 +61,43 @@
             console.error('Failed to parse thresholds data', e);
         }
     }
+
+    const historyFilterStorageKey = `water-history-filters:v2:${window.location.pathname}`;
+
+    function restoreHistoryFilters() {
+        if (!historySensorSelect || !historyMetricSelect || !historyTimeSelect) return;
+
+        try {
+            const saved = JSON.parse(localStorage.getItem(historyFilterStorageKey) || '{}');
+            if (saved.sensor && historySensorSelect.querySelector(`option[value="${saved.sensor}"]`)) {
+                historySensorSelect.value = saved.sensor;
+            }
+            if (saved.metric && historyMetricSelect.querySelector(`option[value="${saved.metric}"]`)) {
+                historyMetricSelect.value = saved.metric;
+            }
+            if (saved.time && historyTimeSelect.querySelector(`option[value="${saved.time}"]`)) {
+                historyTimeSelect.value = saved.time;
+            }
+            if (saved.startDate && historyStartDate) historyStartDate.value = saved.startDate;
+            if (saved.endDate && historyEndDate) historyEndDate.value = saved.endDate;
+        } catch (e) {
+            console.warn('Failed to restore history filters', e);
+        }
+    }
+
+    function saveHistoryFilters() {
+        if (!historySensorSelect || !historyMetricSelect || !historyTimeSelect) return;
+
+        localStorage.setItem(historyFilterStorageKey, JSON.stringify({
+            sensor: historySensorSelect.value,
+            metric: historyMetricSelect.value,
+            time: historyTimeSelect.value,
+            startDate: historyStartDate ? historyStartDate.value : '',
+            endDate: historyEndDate ? historyEndDate.value : '',
+        }));
+    }
+
+    restoreHistoryFilters();
 
     // ========== 編輯模式切換 ==========
 
@@ -97,6 +135,81 @@
     if (btnCloseWorkbench) {
         btnCloseWorkbench.addEventListener('click', () => toggleEditMode(false));
     }
+
+    // ========== 點擊卡片跳轉與連動右邊圖表 ==========
+    document.querySelectorAll('.btn-link-to-history').forEach(btn => {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const sensorId = this.dataset.sensorId;
+            if (sensorId && historySensorSelect) {
+                // 1. 連動右側歷史分析感測器下拉選單
+                if (historySensorSelect.querySelector(`option[value="${sensorId}"]`)) {
+                    historySensorSelect.value = sensorId;
+                    historySensorSelect.dispatchEvent(new Event('change'));
+                }
+                
+                // 2. 連動左側警戒值設定（如果存在對應的選項）
+                if (thresholdTargetSelect && thresholdTargetSelect.querySelector(`option[value="${sensorId}"]`)) {
+                    thresholdTargetSelect.value = sensorId;
+                    thresholdTargetSelect.dispatchEvent(new Event('change'));
+                }
+                
+                // 3. 平滑滾動到右側「歷史紀錄」區塊
+                const historySection = document.querySelector('.history-section');
+                if (historySection) {
+                    historySection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }
+        });
+    });
+
+    // ========== 點擊個別指標跳轉與連動右邊圖表 ==========
+    document.querySelectorAll('.btn-metric-link').forEach(pill => {
+        pill.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const sensorId = this.dataset.sensorId;
+            const metricKey = this.dataset.metric;
+            
+            if (sensorId && metricKey && historySensorSelect && historyMetricSelect) {
+                let updated = false;
+                
+                // 1. 連動右側歷史分析感測器下拉選單
+                if (historySensorSelect.value !== sensorId) {
+                    if (historySensorSelect.querySelector(`option[value="${sensorId}"]`)) {
+                        historySensorSelect.value = sensorId;
+                        updated = true;
+                    }
+                }
+                
+                // 2. 連動右側監測指標下拉選單
+                if (historyMetricSelect.value !== metricKey) {
+                    if (historyMetricSelect.querySelector(`option[value="${metricKey}"]`)) {
+                        historyMetricSelect.value = metricKey;
+                        updated = true;
+                    }
+                }
+                
+                // 3. 觸發更新
+                if (updated) {
+                    historySensorSelect.dispatchEvent(new Event('change'));
+                }
+                
+                // 4. 連動左側警戒值設定（如果存在對應的選項）
+                if (thresholdTargetSelect && thresholdTargetSelect.querySelector(`option[value="${sensorId}"]`)) {
+                    thresholdTargetSelect.value = sensorId;
+                    thresholdTargetSelect.dispatchEvent(new Event('change'));
+                }
+                
+                // 5. 平滑滾動至歷史圖表區塊
+                const historySection = document.querySelector('.history-section');
+                if (historySection) {
+                    historySection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }
+        });
+    });
 
     // ========== AJAX 狀態指示器 ==========
 
@@ -196,9 +309,16 @@
         document.querySelectorAll('.map-gate').forEach(gate => {
             gate.removeEventListener('mousedown', onGateDragStart);
             gate.removeEventListener('touchstart', onGateTouchStart);
+            gate.removeEventListener('click', onGateClick);
             gate.addEventListener('mousedown', onGateDragStart);
             gate.addEventListener('touchstart', onGateTouchStart, { passive: false });
+            gate.addEventListener('click', onGateClick);
         });
+    }
+
+    function onGateClick(e) {
+        e.preventDefault();
+        e.stopPropagation();
     }
 
     function onPinClick(e) {
@@ -208,9 +328,16 @@
         if (!wrapper) return;
         
         const sensorId = wrapper.dataset.sensorId;
-        if (sensorId && thresholdTargetSelect) {
-            thresholdTargetSelect.value = sensorId;
-            thresholdTargetSelect.dispatchEvent(new Event('change'));
+        if (sensorId) {
+            if (thresholdTargetSelect) {
+                thresholdTargetSelect.value = sensorId;
+                thresholdTargetSelect.dispatchEvent(new Event('change'));
+            }
+
+            if (historySensorSelect && historySensorSelect.querySelector(`option[value="${sensorId}"]`)) {
+                historySensorSelect.value = sensorId;
+                historySensorSelect.dispatchEvent(new Event('change'));
+            }
             
             const thresholdsSection = document.getElementById('thresholdsSection');
             if (thresholdsSection) {
@@ -247,6 +374,7 @@
     function onGateDragStart(e) {
         if (!isEditMode) return;
         e.preventDefault();
+        e.stopPropagation();
         draggedElement = e.currentTarget;
         dragType = 'gate';
         startDrag(e.clientX, e.clientY);
@@ -255,6 +383,7 @@
     function onGateTouchStart(e) {
         if (!isEditMode) return;
         e.preventDefault();
+        e.stopPropagation();
         draggedElement = e.currentTarget;
         dragType = 'gate';
         startDrag(e.touches[0].clientX, e.touches[0].clientY);
@@ -272,6 +401,7 @@
         if (dragType === 'sensor') {
             const pin = draggedElement.querySelector('.sensor-pin');
             if (pin) pin.classList.add('dragging');
+            draggedElement.classList.add('dragging-wrapper');
             document.addEventListener('mousemove', onDragMove);
             document.addEventListener('mouseup', onDragEnd);
             document.addEventListener('touchmove', onTouchMove, { passive: false });
@@ -314,6 +444,7 @@
         if (draggedElement) {
             const pin = draggedElement.querySelector('.sensor-pin');
             if (pin) pin.classList.remove('dragging');
+            draggedElement.classList.remove('dragging-wrapper');
             saveSensorAjax(draggedElement.dataset.sensorId);
         }
         draggedElement = null;
@@ -334,6 +465,10 @@
             draggedElement.classList.remove('dragging');
             saveGatesAjax();
         }
+        ignoreNextMapClick = true;
+        window.setTimeout(() => {
+            ignoreNextMapClick = false;
+        }, 250);
         draggedElement = null;
         document.removeEventListener('mousemove', onGateDragMove);
         document.removeEventListener('mouseup', onGateDragEnd);
@@ -456,9 +591,14 @@
     if (pondMap) {
         pondMap.addEventListener('click', function (e) {
             if (!isEditMode) return;
+            if (ignoreNextMapClick || isDraggingOccurred) {
+                ignoreNextMapClick = false;
+                return;
+            }
 
             // 只有點到空白區域才新增
             const target = e.target;
+            if (target.closest('.map-gate') || target.closest('.sensor-wrapper')) return;
             if (!target.classList.contains('map-water') &&
                 !target.classList.contains('map-grid') &&
                 target !== pondMap &&
@@ -608,7 +748,7 @@
                                 <i class="bi bi-arrow-clockwise"></i> 重刷
                             </button>
                         </div>
-                        <code class="api-token-display" style="background: rgba(15,118,110,0.06); padding: 2px 6px; border-radius: 4px; font-weight: 700; color: #0f766e; display: block; width: fit-content; margin: 4px 0; user-select: all; font-family: monospace;">${s.secret_token}</code>
+                        <code class="api-token-display" data-token-sensor-id="${s.id}" style="background: rgba(15,118,110,0.06); padding: 2px 6px; border-radius: 4px; font-weight: 700; color: #0f766e; display: block; width: fit-content; margin: 4px 0; user-select: all; font-family: monospace;">${s.secret_token}</code>
                         <div style="font-weight: 700; color: var(--primary);">📮 POST URL</div>
                         <code style="background: rgba(15,118,110,0.06); padding: 2px 6px; border-radius: 4px; color: #334155; display: block; font-size: 0.75rem; word-break: break-all; user-select: all; font-family: monospace; margin: 4px 0;">${postUrl}</code>
                         
@@ -622,7 +762,7 @@
                                 </div>
                                 <div>
                                     <strong>JSON Payload:</strong>
-                                    <pre class="api-json-display" style="margin: 4px 0 0 0; background: rgba(0,0,0,0.04); padding: 8px; border-radius: 4px; font-family: monospace; font-size: 0.72rem; overflow-x: auto; line-height: 1.25; color: #0d5f58;">{
+                                    <pre class="api-json-display" data-token-json-sensor-id="${s.id}" style="margin: 4px 0 0 0; background: rgba(0,0,0,0.04); padding: 8px; border-radius: 4px; font-family: monospace; font-size: 0.72rem; overflow-x: auto; line-height: 1.25; color: #0d5f58;">{
   "secret_token": "${s.secret_token}",
   "temperature": 26.5,
   "ph": 7.8,
@@ -1001,6 +1141,28 @@
                     pointBorderWidth: 1.5,
                     pointRadius: 4.5,
                     pointHoverRadius: 7
+                }, {
+                    label: '標準下限',
+                    data: [],
+                    borderColor: '#f97316',
+                    backgroundColor: 'transparent',
+                    borderWidth: 1.6,
+                    borderDash: [7, 5],
+                    pointRadius: 0,
+                    pointHoverRadius: 0,
+                    tension: 0,
+                    fill: false
+                }, {
+                    label: '標準上限',
+                    data: [],
+                    borderColor: '#ef4444',
+                    backgroundColor: 'transparent',
+                    borderWidth: 1.6,
+                    borderDash: [7, 5],
+                    pointRadius: 0,
+                    pointHoverRadius: 0,
+                    tension: 0,
+                    fill: false
                 }]
             },
             options: {
@@ -1009,7 +1171,19 @@
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        display: false
+                        display: true,
+                        position: 'top',
+                        align: 'end',
+                        labels: {
+                            boxWidth: 28,
+                            boxHeight: 3,
+                            color: '#47615c',
+                            font: { size: 11, weight: '700' },
+                            filter: function (legendItem, chartData) {
+                                const dataset = chartData.datasets[legendItem.datasetIndex];
+                                return dataset && dataset.data && dataset.data.length > 0;
+                            }
+                        }
                     },
                     tooltip: {
                         mode: 'index',
@@ -1022,7 +1196,10 @@
                         bodyFont: { size: 12 },
                         borderColor: 'rgba(15, 118, 110, 0.3)',
                         borderWidth: 1,
-                        displayColors: false
+                        displayColors: false,
+                        filter: function (tooltipItem) {
+                            return tooltipItem.datasetIndex === 0;
+                        }
                     }
                 },
                 scales: {
@@ -1068,6 +1245,8 @@
             }
         }
 
+        saveHistoryFilters();
+
         let queryParams = `sensor_id=${sensorId}&time_range=${timeRange}`;
         if (timeRange === 'custom') {
             queryParams += `&start_date=${start_date}&end_date=${end_date}`;
@@ -1097,6 +1276,23 @@
         });
     }
 
+    function getHistoryThresholds(sensorId, metricKey) {
+        if (!metricKey || metricKey === 'stability_index') return null;
+
+        const targetKey = sensorId && sensorId !== 'all' ? String(sensorId) : 'default';
+        const targetData = thresholdsData[targetKey] || thresholdsData.default;
+        if (!targetData || !targetData.values || !targetData.values[metricKey]) return null;
+
+        return targetData.values[metricKey];
+    }
+
+    function thresholdLineData(labels, value) {
+        if (value === null || value === undefined || value === '') return [];
+        const numericValue = Number(value);
+        if (!Number.isFinite(numericValue)) return [];
+        return labels.map(() => numericValue);
+    }
+
     function updateHistoryUI(data, metricKey) {
         if (!historyTableBody) return;
         historyTableBody.innerHTML = '';
@@ -1106,6 +1302,8 @@
             if (historyChart) {
                 historyChart.data.labels = [];
                 historyChart.data.datasets[0].data = [];
+                historyChart.data.datasets[1].data = [];
+                historyChart.data.datasets[2].data = [];
                 historyChart.update();
             }
             historyTableBody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--muted); font-style: italic; padding: 36px 0;">該時間區段與篩選條件下尚無檢測數據</td></tr>`;
@@ -1119,7 +1317,7 @@
         const timeRange = historyTimeSelect ? historyTimeSelect.value : '7d';
         const labels = chartData.map(d => {
             const date = new Date(d.measured_at);
-            if (timeRange === '24h') {
+            if (timeRange === '24h' || timeRange === 'recent20' || timeRange === '1h' || timeRange === '3h') {
                 return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
             } else {
                 return `${date.getMonth() + 1}/${date.getDate()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
@@ -1145,10 +1343,20 @@
             historyChart.data.datasets[0].borderColor = opt.color;
             historyChart.data.datasets[0].pointBackgroundColor = opt.color;
             historyChart.data.datasets[0].backgroundColor = opt.color + '0A'; // opacity 0.04
+
+            const sensorId = historySensorSelect ? historySensorSelect.value : 'all';
+            const limits = getHistoryThresholds(sensorId, metricKey);
+            const minLine = limits ? thresholdLineData(labels, limits.min) : [];
+            const maxLine = limits ? thresholdLineData(labels, limits.max) : [];
+            historyChart.data.datasets[1].label = minLine.length ? `標準下限 ${limits.min}` : '標準下限';
+            historyChart.data.datasets[1].data = minLine;
+            historyChart.data.datasets[2].label = maxLine.length ? `標準上限 ${limits.max}` : '標準上限';
+            historyChart.data.datasets[2].data = maxLine;
             historyChart.update();
         }
 
         // 填充表格 (保持最新數據在最上方，即原本 data 的順序)
+        const tableLabels = ['檢測時間', '感測器', '溫度', 'pH值', '溶氧', '氨氮', '亞硝酸鹽', '鹽度'];
         data.forEach(row => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
@@ -1161,6 +1369,9 @@
                 <td>${row.nitrite !== null && row.nitrite !== undefined ? row.nitrite.toFixed(3) + ' mg/L' : '–'}</td>
                 <td>${row.salinity !== null && row.salinity !== undefined ? row.salinity.toFixed(1) + ' ppt' : '–'}</td>
             `;
+            tr.querySelectorAll('td').forEach((cell, index) => {
+                cell.dataset.label = tableLabels[index] || '';
+            });
             historyTableBody.appendChild(tr);
         });
     }
@@ -1218,12 +1429,120 @@
         thresholdTargetSelect.dispatchEvent(new Event('change'));
     }
 
-    // 30 秒自動重新整理頁面以撈取最新數據 (僅在非編輯且無 Modal 時觸發)
-    setInterval(function() {
-        if (!isEditMode && !document.querySelector('.modal.show')) {
-            let url = new URL(window.location.href);
-            url.searchParams.set('refresh', 'true');
-            window.location.href = url.toString();
+    function refreshPondData() {
+        if (isEditMode || document.querySelector('.modal.show')) {
+            return;
         }
-    }, 30000);
+
+        fetch(window.location.pathname + '?ajax=true', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Update last updated timestamp
+                const timestampText = document.getElementById('latestMeasuredAtText');
+                if (timestampText && data.latest_measured_at) {
+                    timestampText.innerHTML = `<i class="bi bi-clock"></i> ${data.latest_measured_at} 更新`;
+                }
+
+                // Update each sensor card and map pin
+                if (data.sensor_cards) {
+                    data.sensor_cards.forEach(cardData => {
+                        // 1. Update Card
+                        const cardElement = document.querySelector(`.sensor-metric-card[data-sensor-id="${cardData.sensor_id}"]`);
+                        if (cardElement) {
+                            // Update card status bar
+                            const statusEl = cardElement.querySelector('.sensor-card-status');
+                            if (statusEl) {
+                                statusEl.className = `sensor-card-status sensor-card-status--${cardData.tone}`;
+                                let msgHtml = '';
+                                if (cardData.message && cardData.tone === 'warning') {
+                                    msgHtml = ` <span class="status-msg-detail">(${cardData.message})</span>`;
+                                }
+                                statusEl.innerHTML = cardData.label + msgHtml;
+                            }
+
+                            // Update card outer class
+                            cardElement.className = cardElement.className.replace(/sensor-metric-card--(good|warning|danger|muted|normal)/g, '');
+                            cardElement.classList.add(`sensor-metric-card--${cardData.tone}`);
+
+                            // Update individual metrics inside card
+                            if (cardData.reading) {
+                                const metrics = ['temperature', 'ph', 'dissolved_oxygen', 'ammonia_nitrogen', 'nitrite'];
+                                metrics.forEach(m => {
+                                    const valItem = cardElement.querySelector(`.val-item[data-metric="${m}"]`);
+                                    if (valItem) {
+                                        const statusVal = cardData.metric_status[m] || 'muted';
+                                        valItem.className = valItem.className.replace(/val-item--(good|warning|danger|muted)/g, '');
+                                        valItem.classList.add(`val-item--${statusVal}`);
+
+                                        const valNum = valItem.querySelector('.val-num');
+                                        if (valNum && cardData.reading[m] !== null && cardData.reading[m] !== undefined) {
+                                            let text = '';
+                                            if (m === 'temperature') text = `${cardData.reading[m].toFixed(1)}°C`;
+                                            else if (m === 'ph') text = `pH ${cardData.reading[m].toFixed(2)}`;
+                                            else if (m === 'dissolved_oxygen') text = `DO ${cardData.reading[m].toFixed(1)}`;
+                                            else if (m === 'ammonia_nitrogen') text = `NH₃ ${cardData.reading[m].toFixed(2)}`;
+                                            else if (m === 'nitrite') text = `NO₂ ${cardData.reading[m].toFixed(2)}`;
+                                            valNum.textContent = text;
+                                        }
+                                    }
+                                });
+                            }
+                        }
+
+                        // 2. Update Map Pin
+                        const wrapperElement = document.querySelector(`.sensor-wrapper[data-sensor-id="${cardData.sensor_id}"]`);
+                        if (wrapperElement) {
+                            // Update pin tone
+                            const pinBtn = wrapperElement.querySelector('.sensor-pin');
+                            if (pinBtn) {
+                                pinBtn.className = pinBtn.className.replace(/sensor-pin--(good|warning|danger|muted|normal)/g, '');
+                                pinBtn.classList.add(`sensor-pin--${cardData.tone}`);
+                            }
+
+                            // Update tooltip status
+                            const tooltipStatus = wrapperElement.querySelector('.tooltip-status');
+                            if (tooltipStatus) {
+                                tooltipStatus.className = `tooltip-status tooltip-status--${cardData.tone}`;
+                                tooltipStatus.textContent = cardData.label;
+                            }
+
+                            // Update tooltip metrics
+                            const tooltipMetrics = wrapperElement.querySelector('.tooltip-metrics');
+                            if (tooltipMetrics && cardData.reading) {
+                                let metricsHtml = '';
+                                if (cardData.reading.temperature !== null && cardData.reading.temperature !== undefined) {
+                                    metricsHtml += `<span><i class="bi bi-thermometer-half"></i> ${cardData.reading.temperature.toFixed(1)}°C</span> `;
+                                }
+                                if (cardData.reading.ph !== null && cardData.reading.ph !== undefined) {
+                                    metricsHtml += `<span><i class="bi bi-droplet"></i> pH ${cardData.reading.ph.toFixed(2)}</span> `;
+                                }
+                                if (cardData.reading.dissolved_oxygen !== null && cardData.reading.dissolved_oxygen !== undefined) {
+                                    metricsHtml += `<span><i class="bi bi-wind"></i> DO ${cardData.reading.dissolved_oxygen.toFixed(1)}</span> `;
+                                }
+                                if (cardData.reading.ammonia_nitrogen !== null && cardData.reading.ammonia_nitrogen !== undefined) {
+                                    metricsHtml += `<span><i class="bi bi-flask"></i> NH₃ ${cardData.reading.ammonia_nitrogen.toFixed(2)}</span> `;
+                                }
+                                if (cardData.reading.nitrite !== null && cardData.reading.nitrite !== undefined) {
+                                    metricsHtml += `<span><i class="bi bi-hash"></i> NO₂ ${cardData.reading.nitrite.toFixed(2)}</span> `;
+                                }
+                                tooltipMetrics.innerHTML = metricsHtml;
+                            }
+                        }
+                    });
+                }
+
+                // Smoothly refresh history chart and table
+                fetchHistoryData();
+            }
+        })
+        .catch(err => console.error('Error auto-refreshing pond data:', err));
+    }
+
+    // 30 秒自動重新整理撈取最新數據 (透過 AJAX 避免整頁跳動)
+    setInterval(refreshPondData, 30000);
 })();

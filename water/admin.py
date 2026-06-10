@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Pond, PondSensor, SensorReading, WaterThreshold
+from .models import Pond, PondSensor, SensorReading, WaterSimulationCron, WaterThreshold, WaterSensorAlert
 
 
 @admin.register(Pond)
@@ -49,3 +49,18 @@ class SensorReadingAdmin(admin.ModelAdmin):
 class WaterThresholdAdmin(admin.ModelAdmin):
     list_display = ("user", "pond", "metric", "min_value", "max_value")
     list_filter = ("pond", "metric")
+
+
+@admin.register(WaterSimulationCron)
+class WaterSimulationCronAdmin(admin.ModelAdmin):
+    list_display = ("name", "is_enabled", "target_user", "interval_seconds", "anomaly_rate", "anomaly_mode", "last_run_at", "discord_suppression_interval_seconds")
+    filter_horizontal = ("ponds",)
+
+
+
+@admin.register(WaterSensorAlert)
+class WaterSensorAlertAdmin(admin.ModelAdmin):
+    list_display = ("sensor", "metric", "is_active", "first_triggered_at", "last_triggered_at", "last_notified_at", "resolved_at")
+    list_filter = ("is_active", "metric", "sensor__pond")
+
+

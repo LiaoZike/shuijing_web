@@ -1,217 +1,378 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-simulate_sensor_upload.py
-模擬硬體感測器上傳水質讀值的腳本。
-支援自動讀取 Django 資料庫中的感測器金鑰，或手動指定金鑰進行模擬。
+Periodically simulate water sensor readings and POST them to the upload API.
+
+The default configuration groups sensors by pond. Sensors in the same pond
+share one slowly drifting water state, so their values stay close unless an
+anomaly is generated.
+
+Examples:
+    python scratch/simulate_sensor_upload.py
+    python scratch/simulate_sensor_upload.py --interval 30 --limit 20
+    python scratch/simulate_sensor_upload.py --anomaly 0.25
+    python scratch/simulate_sensor_upload.py --pond pond2:token_a,token_b
 """
 
+from __future__ import annotations
+
+import argparse
 import os
+import random
 import sys
 import time
-import random
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass, field
+from typing import Iterable
+
 import requests
-import argparse
 
-# 預設 POST 的網址
+
+# ========== Common settings ==========
+# Most day-to-day tuning can be done here. Command-line args still override these.
+
 DEFAULT_URL = "http://127.0.0.1:8000/water/api/upload/"
+DEFAULT_INTERVAL_SECONDS = 300
+DEFAULT_ANOMALY_RATE = 0.20
+DEFAULT_ANOMALY_MODE = "mixed"  # mixed, pond, or sensor
+DEFAULT_ANOMALY_DURATION_ROUNDS = 3
+DEFAULT_LIMIT_ROUNDS = 0  # 0 means forever
 
-def setup_django():
-    """設定 Django 環境以存取資料庫中的感測器金鑰"""
-    try:
-        # 將專案根目錄加入 path
-        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        sys.path.append(project_root)
-        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "shuijing.settings")
-        import django
-        django.setup()
-        return True
-    except Exception as e:
-        print(f"⚠️ 無法初始化 Django 環境 (可能未在專案目錄下執行或未安裝相依套件): {e}")
-        print("💡 將切換為【獨立運行模式】，請使用 --tokens 參數手動指定金鑰。")
-        return False
+DEFAULT_PONDS = {
+    "pond1": [
+        "6c61dd51d65e4870b6d4aecd632dda40",
+        "991f2bcf95974f8e80741445d56ffe75",
+    ],
+}
 
-def get_active_sensors():
-    """從 Django 資料庫撈取所有啟用的感測器資訊"""
-    from water.models import PondSensor
-    sensors = PondSensor.objects.filter(is_active=True).select_related('pond')
-    sensor_list = []
-    for s in sensors:
-        sensor_list.append({
-            "id": s.pk,
-            "name": s.name,
-            "pond_name": s.pond.name,
-            "token": s.secret_token,
-            "type": s.sensor_type
-        })
-    return sensor_list
 
-def generate_base_reading(anomaly_rate):
-    """產生一個池區的基礎水質讀值"""
-    # 決定這次是否產生異常數據
-    is_anomaly = random.random() < anomaly_rate
+# ========== Simulation behavior ==========
 
-    if is_anomaly:
-        anomaly_type = random.choice(["low_do", "high_ph", "high_temp", "high_chem"])
-        print(f"🚨 [模擬觸發異常狀態: {anomaly_type}]")
-        if anomaly_type == "low_do":
-            return {
-                "temperature": random.uniform(26.0, 29.0),
-                "ph": random.uniform(7.5, 8.2),
-                "dissolved_oxygen": random.uniform(2.5, 4.0),  # 偏低 (標準一般 > 4.5)
-                "ammonia_nitrogen": random.uniform(0.01, 0.05),
-                "nitrite": random.uniform(0.02, 0.08),
-                "salinity": random.uniform(12.0, 16.0)
+NORMAL_LIMITS = {
+    "temperature": (26.5, 29.5),
+    "ph": (7.65, 8.25),
+    "dissolved_oxygen": (5.7, 7.1),
+    "ammonia_nitrogen": (0.02, 0.12),
+    "nitrite": (0.02, 0.10),
+    "salinity": (13.0, 15.5),
+}
+
+DRIFT = {
+    "temperature": 0.08,
+    "ph": 0.015,
+    "dissolved_oxygen": 0.08,
+    "ammonia_nitrogen": 0.003,
+    "nitrite": 0.003,
+    "salinity": 0.03,
+}
+
+SENSOR_NOISE = {
+    "temperature": 0.15,
+    "ph": 0.03,
+    "dissolved_oxygen": 0.12,
+    "ammonia_nitrogen": 0.005,
+    "nitrite": 0.005,
+    "salinity": 0.08,
+}
+
+
+@dataclass
+class PondState:
+    name: str
+    tokens: list[str]
+    values: dict[str, float] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if not self.values:
+            self.values = {
+                key: random.uniform(low, high)
+                for key, (low, high) in NORMAL_LIMITS.items()
             }
-        elif anomaly_type == "high_ph":
-            return {
-                "temperature": random.uniform(26.0, 29.0),
-                "ph": random.uniform(8.9, 9.5),  # 偏高 (標準一般 7.5~8.5)
-                "dissolved_oxygen": random.uniform(5.5, 7.5),
-                "ammonia_nitrogen": random.uniform(0.01, 0.05),
-                "nitrite": random.uniform(0.02, 0.08),
-                "salinity": random.uniform(12.0, 16.0)
-            }
-        elif anomaly_type == "high_temp":
-            return {
-                "temperature": random.uniform(32.5, 35.0),  # 偏高 (標準一般 20~30)
-                "ph": random.uniform(7.8, 8.4),
-                "dissolved_oxygen": random.uniform(5.0, 7.0),
-                "ammonia_nitrogen": random.uniform(0.01, 0.05),
-                "nitrite": random.uniform(0.02, 0.08),
-                "salinity": random.uniform(12.0, 16.0)
-            }
-        else:  # high_chem
-            return {
-                "temperature": random.uniform(26.0, 29.0),
-                "ph": random.uniform(7.8, 8.4),
-                "dissolved_oxygen": random.uniform(5.5, 7.5),
-                "ammonia_nitrogen": random.uniform(0.25, 0.45),  # 偏高 (標準一般 < 0.2)
-                "nitrite": random.uniform(0.22, 0.35),  # 偏高 (標準一般 < 0.2)
-                "salinity": random.uniform(12.0, 16.0)
-            }
-    else:
-        # 正常狀態
-        return {
-            "temperature": random.uniform(27.5, 29.5),
-            "ph": random.uniform(7.8, 8.3),
-            "dissolved_oxygen": random.uniform(5.8, 7.2),
-            "ammonia_nitrogen": random.uniform(0.01, 0.04),
-            "nitrite": random.uniform(0.02, 0.06),
-            "salinity": random.uniform(13.0, 15.0)
-        }
 
-def run_simulator(url, interval, anomaly_rate, limit, tokens_arg):
-    print("=" * 60)
-    print("🚀 水井村魚池感測數據上傳模擬器啟動")
-    print(f"🔗 目標網址: {url}")
-    print(f"⏱️ 發送間隔: {interval} 秒")
-    print(f"⚡ 異常機率: {anomaly_rate * 100:.1f}%")
-    if limit > 0:
-        print(f"🔢 限制次數: {limit} 次")
-    print("=" * 60)
+    def drift(self) -> None:
+        for key, step in DRIFT.items():
+            low, high = NORMAL_LIMITS[key]
+            self.values[key] = clamp(self.values[key] + random.uniform(-step, step), low, high)
 
-    # 取得感測器金鑰
-    sensors = []
-    if tokens_arg:
-        # 手動指定 tokens
-        for idx, token in enumerate(tokens_arg):
-            sensors.append({
-                "id": idx + 1,
-                "name": f"手動感測器_{idx+1}",
-                "pond_name": "手動池區",
-                "token": token,
-                "type": "multi"
-            })
-    else:
-        # 自資料庫讀取
-        django_ok = setup_django()
-        if django_ok:
-            sensors = get_active_sensors()
-            if not sensors:
-                print("❌ 資料庫中沒有任何啟用的感測器，請先在網頁後台建立感測器。")
-                return
-        else:
-            print("❌ 未指定 tokens 且無法連線資料庫，程式結束。")
-            return
 
-    print(f"📋 載入感測器清單 ({len(sensors)} 個):")
-    for s in sensors:
-        print(f"   - [{s['pond_name']}] {s['name']} (金鑰: {s['token'][:8]}...)")
-    print("-" * 60)
+@dataclass
+class ActiveAnomaly:
+    pond_name: str
+    scope: str
+    anomaly_type: str
+    remaining_rounds: int
+    sensor_index: int | None = None
 
+    @property
+    def label(self) -> str:
+        target = f"sensor{self.sensor_index + 1}" if self.sensor_index is not None else "pond"
+        return f"{self.anomaly_type}:{target}:{self.remaining_rounds}r"
+
+
+def clamp(value: float, low: float, high: float) -> float:
+    return max(low, min(high, value))
+
+
+def jitter(values: dict[str, float]) -> dict[str, float]:
+    return {
+        key: values[key] + random.uniform(-SENSOR_NOISE[key], SENSOR_NOISE[key])
+        for key in values
+    }
+
+
+def apply_anomaly(values: dict[str, float], anomaly_type: str) -> dict[str, float]:
+    reading = dict(values)
+
+    if anomaly_type == "low_do":
+        reading["dissolved_oxygen"] = random.uniform(2.7, 4.0)
+    elif anomaly_type == "high_ph":
+        reading["ph"] = random.uniform(8.75, 9.25)
+    elif anomaly_type == "high_temp":
+        reading["temperature"] = random.uniform(31.0, 34.0)
+        reading["dissolved_oxygen"] = random.uniform(4.3, 5.3)
+    elif anomaly_type == "high_chem":
+        reading["ammonia_nitrogen"] = random.uniform(0.24, 0.42)
+        reading["nitrite"] = random.uniform(0.20, 0.34)
+
+    return reading
+
+
+def format_payload(token: str, reading: dict[str, float]) -> dict:
+    return {
+        "secret_token": token,
+        "temperature": round(reading["temperature"], 1),
+        "ph": round(reading["ph"], 2),
+        "dissolved_oxygen": round(reading["dissolved_oxygen"], 1),
+        "ammonia_nitrogen": round(reading["ammonia_nitrogen"], 3),
+        "nitrite": round(reading["nitrite"], 3),
+        "salinity": round(reading["salinity"], 1),
+    }
+
+
+def choose_anomaly_mode(configured_mode: str) -> str:
+    if configured_mode == "mixed":
+        return random.choice(["pond", "sensor"])
+    return configured_mode
+
+
+def build_round_payloads(
+    pond: PondState,
+    active_anomaly: ActiveAnomaly | None,
+) -> Iterable[tuple[str, int, dict]]:
+    pond.drift()
+
+    for index, token in enumerate(pond.tokens, start=1):
+        base = pond.values
+        anomaly_label = "normal"
+        if active_anomaly and active_anomaly.pond_name == pond.name:
+            is_affected = active_anomaly.scope == "pond" or active_anomaly.sensor_index == index - 1
+            if is_affected:
+                base = apply_anomaly(base, active_anomaly.anomaly_type)
+                anomaly_label = active_anomaly.label
+
+        yield anomaly_label, index, format_payload(token, jitter(base))
+
+
+def post_payload(url: str, pond_name: str, sensor_index: int, anomaly: str, payload: dict) -> None:
+    response = requests.post(url, json=payload, timeout=8)
+    prefix = f"[{pond_name} sensor{sensor_index}]"
+
+    if response.ok:
+        data = response.json()
+        print(
+            f"OK {prefix} reading_id={data.get('reading_id')} anomaly={anomaly} "
+            f"temp={payload['temperature']} pH={payload['ph']} "
+            f"DO={payload['dissolved_oxygen']} "
+            f"NH3={payload['ammonia_nitrogen']} NO2={payload['nitrite']}"
+        )
+        return
+
+    print(f"FAIL {prefix} status={response.status_code} body={response.text}")
+
+
+def post_round_payloads(url: str, round_payloads: list[tuple[str, int, str, dict]]) -> None:
+    if not round_payloads:
+        return
+
+    with ThreadPoolExecutor(max_workers=len(round_payloads)) as executor:
+        futures = [
+            executor.submit(post_payload, url, pond_name, sensor_index, anomaly, payload)
+            for pond_name, sensor_index, anomaly, payload in round_payloads
+        ]
+        for future in as_completed(futures):
+            future.result()
+
+
+def parse_pond_spec(spec: str) -> tuple[str, list[str]]:
+    if ":" not in spec:
+        raise argparse.ArgumentTypeError("pond format must be name:token1,token2")
+
+    name, token_text = spec.split(":", 1)
+    tokens = [token.strip() for token in token_text.split(",") if token.strip()]
+    if not name.strip() or not tokens:
+        raise argparse.ArgumentTypeError("pond format must be name:token1,token2")
+
+    return name.strip(), tokens
+
+
+def build_ponds(args: argparse.Namespace) -> list[PondState]:
+    pond_map = {name: list(tokens) for name, tokens in DEFAULT_PONDS.items()}
+
+    for name, tokens in args.pond or []:
+        pond_map[name] = tokens
+
+    if args.tokens:
+        pond_map = {"manual": args.tokens}
+
+    return [PondState(name=name, tokens=tokens) for name, tokens in pond_map.items()]
+
+
+def maybe_start_anomaly(
+    ponds: list[PondState],
+    anomaly_rate: float,
+    anomaly_mode: str,
+    anomaly_duration: int,
+) -> ActiveAnomaly | None:
+    if not ponds or random.random() >= anomaly_rate:
+        return None
+
+    pond = random.choice(ponds)
+    scope = choose_anomaly_mode(anomaly_mode)
+    sensor_index = random.randrange(len(pond.tokens)) if scope == "sensor" else None
+
+    return ActiveAnomaly(
+        pond_name=pond.name,
+        scope=scope,
+        anomaly_type=random.choice(["low_do", "high_ph", "high_temp", "high_chem"]),
+        remaining_rounds=anomaly_duration,
+        sensor_index=sensor_index,
+    )
+
+
+def run(
+    url: str,
+    ponds: list[PondState],
+    interval: float,
+    anomaly_rate: float,
+    anomaly_mode: str,
+    anomaly_duration: int,
+    limit: int,
+) -> None:
     count = 0
+    active_anomaly: ActiveAnomaly | None = None
+    print(f"POST URL: {url}")
+    print(
+        f"Interval: {interval}s, anomaly rate: {anomaly_rate * 100:.1f}%, "
+        f"mode: {anomaly_mode}, duration: {anomaly_duration} rounds"
+    )
+    for pond in ponds:
+        print(f"{pond.name}: {', '.join(token[:8] + '...' for token in pond.tokens)}")
+    print("Press Ctrl+C to stop.")
+
     try:
         while True:
-            # 依魚池分群，讓同一個池區的感測器數值相近（不至於兩個相鄰感測器溫差十度）
-            ponds_base = {}
-            
-            for s in sensors:
-                pond_name = s['pond_name']
-                if pond_name not in ponds_base:
-                    # 為該池區產生一個基礎水質快照
-                    ponds_base[pond_name] = generate_base_reading(anomaly_rate)
-                
-                base = ponds_base[pond_name]
-                
-                # 加上微小雜訊，模擬不同位置的差異
-                payload = {
-                    "secret_token": s['token'],
-                    "temperature": round(base['temperature'] + random.uniform(-0.2, 0.2), 1),
-                    "ph": round(base['ph'] + random.uniform(-0.05, 0.05), 2),
-                    "dissolved_oxygen": round(base['dissolved_oxygen'] + random.uniform(-0.15, 0.15), 1),
-                }
+            round_started_at = time.monotonic()
+            if active_anomaly is None:
+                active_anomaly = maybe_start_anomaly(ponds, anomaly_rate, anomaly_mode, anomaly_duration)
+                if active_anomaly:
+                    print(f"ANOMALY START {active_anomaly.pond_name} {active_anomaly.label}")
 
-                # 根據感測器類型決定是否發送化學指標與鹽度
-                if s['type'] in ['multi', 'chem']:
-                    payload["ammonia_nitrogen"] = round(base['ammonia_nitrogen'] + random.uniform(-0.002, 0.002), 3)
-                    payload["nitrite"] = round(base['nitrite'] + random.uniform(-0.002, 0.002), 3)
-                
-                if s['type'] in ['multi']:
-                    payload["salinity"] = round(base['salinity'] + random.uniform(-0.1, 0.1), 1)
+            round_payloads = []
+            for pond in ponds:
+                for anomaly, sensor_index, payload in build_round_payloads(pond, active_anomaly):
+                    round_payloads.append((pond.name, sensor_index, anomaly, payload))
 
-                # 發送 POST 請求
-                try:
-                    res = requests.post(url, json=payload, timeout=5)
-                    if res.status_code == 200:
-                        res_data = res.json()
-                        print(f"✅ [{s['pond_name']} - {s['name']}] 上傳成功 -> ID: {res_data.get('reading_id')}, "
-                              f"Temp: {payload['temperature']}°C, pH: {payload['ph']}, DO: {payload['dissolved_oxygen']}")
-                    else:
-                        print(f"❌ [{s['pond_name']} - {s['name']}] 上傳失敗 ({res.status_code}) -> {res.text}")
-                except Exception as ex:
-                    print(f"⚠️ [{s['pond_name']} - {s['name']}] 連線失敗 -> {ex}")
+            post_round_payloads(url, round_payloads)
+
+            if active_anomaly:
+                active_anomaly.remaining_rounds -= 1
+                if active_anomaly.remaining_rounds <= 0:
+                    print(f"ANOMALY END {active_anomaly.pond_name}")
+                    active_anomaly = None
 
             count += 1
-            if limit > 0 and count >= limit:
-                print("-" * 60)
-                print(f"已達到限制發送次數 {limit} 次，模擬程式安全退出。")
+            if limit and count >= limit:
                 break
 
-            time.sleep(interval)
-            print("-" * 60)
-
+            elapsed = time.monotonic() - round_started_at
+            time.sleep(max(0.0, interval - elapsed))
     except KeyboardInterrupt:
-        print("\n👋 模擬程式被使用者手動中斷。")
+        print("\nStopped.")
+
+
+def setup_django() -> None:
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if project_root not in sys.path:
+        sys.path.append(project_root)
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "shuijing.settings")
+
+    import django
+    django.setup()
+
+
+def run_from_django_config(config_id: int, limit: int) -> None:
+    setup_django()
+
+    from water.models import WaterSimulationCron
+    from water.simulator import run_simulation_round
+
+    count = 0
+    print(f"Using WaterSimulationCron config #{config_id}")
+    try:
+        while True:
+            round_started_at = time.monotonic()
+            config = WaterSimulationCron.objects.get(pk=config_id)
+            result = run_simulation_round(config.pk)
+            config.refresh_from_db()
+            print(
+                f"OK created={result.created_count} ponds={result.pond_count} "
+                f"sensors={result.sensor_count} anomaly={result.anomaly_label}"
+            )
+
+            count += 1
+            if limit and count >= limit:
+                break
+
+            elapsed = time.monotonic() - round_started_at
+            time.sleep(max(0.0, config.interval_seconds - elapsed))
+    except KeyboardInterrupt:
+        print("\nStopped.")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Simulate periodic water sensor uploads.")
+    parser.add_argument("--url", default=DEFAULT_URL, help="Upload API URL.")
+    parser.add_argument("--pond", action="append", type=parse_pond_spec, help="Pond sensors as name:token1,token2.")
+    parser.add_argument("--tokens", nargs="+", help="Backward-compatible manual tokens. These become one pond.")
+    parser.add_argument("--interval", type=float, default=DEFAULT_INTERVAL_SECONDS, help="Seconds between upload rounds.")
+    parser.add_argument("--anomaly", type=float, default=DEFAULT_ANOMALY_RATE, help="Anomaly rate from 0.0 to 1.0 per pond round.")
+    parser.add_argument(
+        "--anomaly-mode",
+        choices=["mixed", "pond", "sensor"],
+        default=DEFAULT_ANOMALY_MODE,
+        help="Whether anomalies affect a whole pond, one sensor, or either.",
+    )
+    parser.add_argument(
+        "--anomaly-duration",
+        type=int,
+        default=DEFAULT_ANOMALY_DURATION_ROUNDS,
+        help="How many upload rounds an anomaly should continue once triggered.",
+    )
+    parser.add_argument("--limit", type=int, default=DEFAULT_LIMIT_ROUNDS, help="Number of upload rounds. 0 means forever.")
+    parser.add_argument("--config-id", type=int, help="Run using a WaterSimulationCron database config.")
+    args = parser.parse_args()
+
+    if args.config_id:
+        run_from_django_config(args.config_id, max(0, args.limit))
+        return
+
+    interval = max(1.0, args.interval)
+    anomaly_rate = max(0.0, min(1.0, args.anomaly))
+    anomaly_duration = max(1, args.anomaly_duration)
+    ponds = build_ponds(args)
+
+    run(args.url, ponds, interval, anomaly_rate, args.anomaly_mode, anomaly_duration, max(0, args.limit))
+
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="水井村感測器數據上傳模擬腳本")
-    parser.add_argument("--url", default=DEFAULT_URL, help=f"接收上傳的 API 端點 URL (預設: {DEFAULT_URL})")
-    parser.add_argument("--interval", type=float, default=10.0, help="發送數據的間隔秒數 (預設: 10.0 秒)")
-    parser.add_argument("--anomaly", type=float, default=0.1, help="異常數據出現的機率 (0.0 到 1.0, 預設: 0.1)")
-    parser.add_argument("--limit", type=int, default=0, help="限制發送次數，0 代表無限次 (預設: 0)")
-    parser.add_argument("--tokens", nargs="+", help="手動指定的感測器 secret_token 列表（若指定將跳過資料庫讀取）")
-
-    args = parser.parse_args()
-    
-    # 限制合理範圍
-    anomaly_rate = max(0.0, min(1.0, args.anomaly))
-    interval = max(1.0, args.interval)
-
-    run_simulator(
-        url=args.url,
-        interval=interval,
-        anomaly_rate=anomaly_rate,
-        limit=args.limit,
-        tokens_arg=args.tokens
-    )
+    main()

@@ -17,6 +17,14 @@ class Pond(models.Model):
     name = models.CharField(max_length=50, unique=True)
     description = models.CharField(max_length=200, blank=True)
     species = models.CharField(max_length=50, default="文蛤")
+    creator = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_ponds",
+        verbose_name="建立者",
+    )
     owners = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
         blank=True,
@@ -30,6 +38,8 @@ class Pond(models.Model):
         verbose_name="協作者 (唯讀)",
     )
     map_note = models.CharField("池區地圖備註", max_length=200, blank=True)
+    discord_webhook_url = models.CharField("Discord Webhook URL", max_length=500, blank=True, default="")
+
 
     # 穩定度公式權重設定
     stability_w_do = models.PositiveSmallIntegerField("穩定度-溶氧權重", default=40)
@@ -50,11 +60,11 @@ class PondSensor(models.Model):
     """池區中的感測器與地圖位置。"""
 
     SENSOR_TYPE_CHOICES = [
-        ("multi", "多合一感測器"),
-        ("do", "溶氧感測器"),
-        ("ph", "pH 感測器"),
-        ("chem", "氨氮/亞硝酸鹽"),
-        ("temp", "溫度感測器"),
+        ("multi", "📟 多合一感測器"),
+        ("do", "💨 溶氧感測器"),
+        ("ph", "💧 pH 感測器"),
+        ("chem", "# 氨氮/亞硝酸鹽"),
+        ("temp", "🌡️ 溫度感測器"),
     ]
 
     pond = models.ForeignKey(Pond, on_delete=models.CASCADE, related_name="sensors")
@@ -145,3 +155,113 @@ class WaterThreshold(models.Model):
     def __str__(self):
         sensor_part = f" / {self.sensor.name}" if self.sensor else " / 池區預設"
         return f"{self.user} / {self.pond.name}{sensor_part} / {self.get_metric_display()}"
+
+
+class WaterSimulationCron(models.Model):
+    """Admin-controlled browser cron settings for simulated sensor uploads."""
+
+    ANOMALY_MODE_CHOICES = [
+        ("mixed", "Mixed"),
+        ("pond", "Whole pond"),
+        ("sensor", "Single sensor"),
+    ]
+
+    ANOMALY_SCOPE_CHOICES = [
+        ("", "None"),
+        ("pond", "Whole pond"),
+        ("sensor", "Single sensor"),
+    ]
+
+    name = models.CharField(max_length=80, default="Water simulation")
+    is_enabled = models.BooleanField(default=False)
+    target_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="water_simulation_crons",
+    )
+    ponds = models.ManyToManyField(Pond, blank=True, related_name="simulation_crons")
+    interval_seconds = models.PositiveIntegerField(default=500)
+    anomaly_rate = models.FloatField(default=0.2)
+    anomaly_mode = models.CharField(max_length=20, choices=ANOMALY_MODE_CHOICES, default="mixed")
+    anomaly_duration_rounds = models.PositiveIntegerField(default=3)
+
+    active_anomaly_pond = models.ForeignKey(
+        Pond,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    active_anomaly_scope = models.CharField(max_length=20, choices=ANOMALY_SCOPE_CHOICES, blank=True, default="")
+    active_anomaly_type = models.CharField(max_length=30, blank=True, default="")
+    active_anomaly_remaining_rounds = models.PositiveIntegerField(default=0)
+    active_anomaly_sensor_index = models.PositiveIntegerField(null=True, blank=True)
+
+    last_run_at = models.DateTimeField(null=True, blank=True)
+    last_result = models.TextField(blank=True, default="")
+    discord_webhook_url = models.CharField(
+        "Discord Webhook URL",
+        max_length=500,
+        blank=True,
+        default="",
+    )
+    discord_notify_interval_seconds = models.PositiveIntegerField(
+        "Discord 判讀間隔 (秒)",
+        default=300,
+    )
+    discord_suppression_interval_seconds = models.PositiveIntegerField(
+        "相同項目避免重複通知間隔 (秒)",
+        default=3600,
+    )
+    last_discord_run_at = models.DateTimeField(
+        "Discord 上次執行時間",
+        null=True,
+        blank=True,
+    )
+    discord_is_enabled = models.BooleanField(
+        "啟用 Discord 警報通知",
+        default=False,
+    )
+    discord_last_result = models.TextField(
+        "Discord 上次執行結果",
+        blank=True,
+        default="",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
+class WaterSensorAlert(models.Model):
+    """感測器指標異常警報紀錄，用於避免重複發送 Discord 通知"""
+
+    sensor = models.ForeignKey(
+        PondSensor,
+        on_delete=models.CASCADE,
+        related_name="alerts",
+        verbose_name="感測器",
+    )
+    metric = models.CharField("指標", max_length=40, choices=WaterMetric.choices)
+    is_active = models.BooleanField("是否啟動中", default=True, db_index=True)
+    first_triggered_at = models.DateTimeField("首次觸發時間", auto_now_add=True)
+    last_triggered_at = models.DateTimeField("最近觸發時間", auto_now=True)
+    last_notified_at = models.DateTimeField("上次通知時間", null=True, blank=True)
+    resolved_at = models.DateTimeField("恢復正常時間", null=True, blank=True)
+
+
+    class Meta:
+        verbose_name = "感測器警報"
+        verbose_name_plural = "感測器警報列表"
+        ordering = ["-first_triggered_at"]
+
+    def __str__(self):
+        status = "未解決" if self.is_active else "已恢復"
+        return f"{self.sensor} / {self.get_metric_display()} ({status})"

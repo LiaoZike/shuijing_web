@@ -1,0 +1,663 @@
+{% extends "admin/base_site.html" %}
+
+{% block title %}Water simulation cron{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    .cron-wrap {
+        max-width: 1120px;
+        margin: 24px auto;
+    }
+    .cron-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 340px;
+        gap: 20px;
+        align-items: start;
+    }
+    .cron-card {
+        background: #fff;
+        border: 1px solid #d8e5e1;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(18, 55, 50, 0.06);
+    }
+    .cron-card h1,
+    .cron-card h2 {
+        margin-top: 0;
+    }
+    .cron-field {
+        margin-bottom: 16px;
+    }
+    .cron-field label {
+        display: block;
+        font-weight: 700;
+        margin-bottom: 6px;
+    }
+    .cron-field input[type="text"],
+    .cron-field input[type="number"],
+    .cron-field select {
+        width: 100%;
+        max-width: 520px;
+        box-sizing: border-box;
+    }
+    .pond-picker {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 8px;
+        max-height: 360px;
+        overflow: auto;
+        padding: 10px;
+        border: 1px solid #d8e5e1;
+        border-radius: 8px;
+        background: #f8fbf9;
+    }
+    .pond-option {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+        padding: 8px;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        background: #fff;
+        transition: all 0.2s ease;
+    }
+    .pond-option.pond-owned-by-target {
+        border-color: #10b981;
+        background: #ecfdf5;
+    }
+    .pond-option.pond-not-owned-by-target {
+        opacity: 0.45;
+    }
+    .pond-meta {
+        display: block;
+        color: #60736f;
+        font-size: 12px;
+        margin-top: 2px;
+    }
+    .cron-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 18px;
+    }
+    .cron-button {
+        border: none;
+        border-radius: 6px;
+        padding: 10px 16px;
+        cursor: pointer;
+        font-weight: 700;
+        text-decoration: none;
+    }
+    .cron-button.primary {
+        background: #0f766e;
+        color: #fff;
+    }
+    .cron-button.secondary {
+        background: #e9f3f0;
+        color: #0f766e;
+    }
+    .cron-status {
+        display: grid;
+        gap: 12px;
+    }
+    .status-number {
+        font-size: 34px;
+        font-weight: 800;
+        color: #0f766e;
+    }
+    .status-pill {
+        display: inline-flex;
+        width: fit-content;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: #e9f3f0;
+        color: #0f766e;
+        font-weight: 700;
+    }
+    .cron-log {
+        min-height: 110px;
+        white-space: pre-wrap;
+        padding: 12px;
+        border-radius: 8px;
+        background: #102522;
+        color: #c8f7ef;
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+        font-size: 12px;
+    }
+    .config-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+        font-size: 0.88rem;
+        margin-top: 12px;
+    }
+    .config-table th {
+        background: #f0fdfa;
+        color: #0f766e;
+        padding: 10px;
+        border-bottom: 2px solid #d8e5e1;
+        font-weight: 700;
+    }
+    .config-table td {
+        padding: 10px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .config-table tr.active-row {
+        background: #ecfdf5;
+    }
+    @media (max-width: 900px) {
+        .cron-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    .btn-run-normal {
+        background: #0f766e !important;
+        color: #fff !important;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 4px rgba(15, 118, 110, 0.1);
+    }
+    .btn-run-normal:hover {
+        background: #115e59 !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(15, 118, 110, 0.25);
+    }
+    .btn-run-anomaly {
+        background: #ea580c !important;
+        color: #fff !important;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 4px rgba(234, 88, 12, 0.1);
+    }
+    .btn-run-anomaly:hover {
+        background: #c2410c !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(234, 88, 12, 0.25);
+    }
+    .btn-run-discord {
+        background: #5865F2 !important;
+        color: #fff !important;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 4px rgba(88, 101, 242, 0.1);
+    }
+    .btn-run-discord:hover {
+        background: #4752C4 !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(88, 101, 242, 0.25);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cron-wrap" {% if is_new %}style="max-width: 720px; margin: 24px auto;"{% endif %}>
+    {% if not is_new %}
+    <div class="cron-grid">
+    {% endif %}
+
+        <form method="post" class="cron-card">
+            {% csrf_token %}
+            <h1>{% if is_new %}➕ 新增模擬排程設定{% else %}編輯模擬排程設定: {{ config.name }}{% endif %}</h1>
+            <p>{% if is_new %}建立一個新的水質數據模擬排程設定{% else %}管理感測器數據模擬排程並設定 Discord 警報通知通道。{% endif %}</p>
+
+            <!-- Section 1: 模擬數據設定 -->
+            <div style="margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid #e9f3f0;">
+                <h3 style="font-size: 1.1rem; font-weight: 850; color: #0f766e; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                    <i class="bi bi-database-fill"></i> 模擬數據設定
+                </h3>
+
+                <div class="cron-field">
+                    <label for="name">名稱</label>
+                    <input id="name" type="text" name="name" value="{{ config.name }}" required>
+                </div>
+
+                <div class="cron-field">
+                    <label>
+                        <input type="checkbox" name="is_enabled" {% if config.is_enabled %}checked{% endif %}>
+                        啟用自動模擬
+                    </label>
+                </div>
+
+                <div class="cron-field">
+                    <label for="target_user">目標使用者</label>
+                    <select id="target_user" name="target_user">
+                        <option value="">不指定</option>
+                        {% for item in users %}
+                        <option value="{{ item.pk }}" {% if config.target_user_id == item.pk %}selected{% endif %}>
+                            {{ item.email|default:item.username }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="cron-field">
+                    <label>模擬魚池</label>
+                    <div class="pond-picker">
+                        {% for pond in ponds %}
+                        <label class="pond-option" data-owners="{% for owner in pond.owners.all %}{{ owner.pk }}{% if not forloop.last %},{% endif %}{% endfor %}">
+                            <input type="checkbox" name="ponds" value="{{ pond.pk }}" {% if pond.pk in selected_pond_ids %}checked{% endif %}>
+                            <span>
+                                <strong>{{ pond.name }}</strong>
+                                <span class="pond-meta">
+                                    {% for owner in pond.owners.all %}
+                                        {{ owner.email|default:owner.username }}{% if not forloop.last %}, {% endif %}
+                                    {% empty %}
+                                        no owner
+                                    {% endfor %}
+                                </span>
+                            </span>
+                        </label>
+                        {% empty %}
+                        <p>目前沒有魚池。</p>
+                        {% endfor %}
+                    </div>
+                    <div style="margin-top: 8px; display: flex; gap: 8px;">
+                        <button type="button" class="cron-button secondary" id="btnSelectUserPonds" style="padding: 4px 8px; font-size: 0.75rem; font-weight: 700;">✓ 選取此使用者的魚池</button>
+                        <button type="button" class="cron-button secondary" id="btnClearPonds" style="padding: 4px 8px; font-size: 0.75rem; font-weight: 700;">✗ 清除選取</button>
+                    </div>
+                    <p class="help" style="margin-top: 6px;">若未選魚池但有指定使用者，會使用該使用者擁有的魚池。</p>
+                </div>
+
+                <div class="cron-field">
+                    <label for="interval_seconds">每幾秒跑一輪</label>
+                    <input id="interval_seconds" type="number" name="interval_seconds" min="1" value="{{ config.interval_seconds }}">
+                </div>
+
+                <div class="cron-field">
+                    <label for="anomaly_rate">異常機率 (0-1)</label>
+                    <input id="anomaly_rate" type="number" name="anomaly_rate" min="0" max="1" step="0.01" value="{{ config.anomaly_rate }}">
+                </div>
+
+                <div class="cron-field">
+                    <label for="anomaly_mode">異常模式</label>
+                    <select id="anomaly_mode" name="anomaly_mode">
+                        {% for value, label in config.ANOMALY_MODE_CHOICES %}
+                        <option value="{{ value }}" {% if config.anomaly_mode == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="cron-field">
+                    <label for="anomaly_duration_rounds">異常維持幾輪</label>
+                    <input id="anomaly_duration_rounds" type="number" name="anomaly_duration_rounds" min="1" value="{{ config.anomaly_duration_rounds }}">
+                </div>
+            </div>
+
+            <!-- Section 2: Discord 通知設定 -->
+            <div style="margin-bottom: 28px;">
+                <h3 style="font-size: 1.1rem; font-weight: 850; color: #5865F2; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                    <i class="bi bi-discord"></i> Discord 通知設定 (系統預設通道)
+                </h3>
+
+                <div class="cron-field">
+                    <label>
+                        <input type="checkbox" name="discord_is_enabled" {% if config.discord_is_enabled %}checked{% endif %}>
+                        啟用 Discord 自動警報通知
+                    </label>
+                </div>
+
+                <div class="cron-field">
+                    <label for="discord_webhook_url">Discord Webhook URL</label>
+                    <input id="discord_webhook_url" type="text" name="discord_webhook_url" value="{{ config.discord_webhook_url|default:'' }}" placeholder="https://discord.com/api/webhooks/... (留空則不使用系統預設通道)" style="width: 100%; max-width: 520px;">
+                    <small style="color: #64748b; font-size: 0.8rem; display: block; margin-top: 4px;">模擬排程全池的預設 Webhook 通道。若魚池本身有設定獨立的 Webhook，會優先發送至該魚池的 Webhook。</small>
+                </div>
+
+                <div class="cron-field">
+                    <label for="discord_notify_interval_seconds">Discord 判讀/通知間隔 (秒)</label>
+                    <input id="discord_notify_interval_seconds" type="number" name="discord_notify_interval_seconds" min="10" value="{{ config.discord_notify_interval_seconds|default:300 }}">
+                </div>
+
+                <div class="cron-field">
+                    <label for="discord_suppression_interval_seconds">相同項目避免重複通知間隔 (秒)</label>
+                    <input id="discord_suppression_interval_seconds" type="number" name="discord_suppression_interval_seconds" min="0" value="{{ config.discord_suppression_interval_seconds|default:3600 }}">
+                    <small style="color: #64748b; font-size: 0.8rem; display: block; margin-top: 4px;">在此時間內，同一個感測器的同一個指標如果持續異常，不會重複發送通知。設定 0 秒代表每次異常都發送通知。</small>
+                </div>
+            </div>
+
+            <div class="cron-actions">
+                <button class="cron-button primary" type="submit">{% if is_new %}儲存並建立模擬{% else %}儲存設定{% endif %}</button>
+                <a href="?" class="cron-button secondary">{% if is_new %}返回{% else %}取消{% endif %}</a>
+            </div>
+        </form>
+
+
+    {% if not is_new %}
+        <aside class="cron-status-wrapper" style="display: grid; gap: 20px;">
+            <!-- Panel 1: 數據模擬狀態 -->
+            <div class="cron-card cron-status">
+                <h2 style="color: #0f766e; margin-bottom: 8px; font-size: 1.25rem;">數據模擬狀態</h2>
+                <span class="status-pill" id="enabledText">{% if config.is_enabled %}Enabled{% else %}Disabled{% endif %}</span>
+                <div style="margin-top: 10px;">
+                    <div style="font-size: 0.88rem; color: #64748b;">下次執行倒數</div>
+                    <div class="status-number" id="countdown">--</div>
+                </div>
+                <div>
+                    <strong>上次執行</strong>
+                    <div id="lastRun">{{ config.last_run_at|date:"Y-m-d H:i:s"|default:"尚未執行" }}</div>
+                </div>
+                <div>
+                    <strong>模擬結果</strong>
+                    <div class="cron-log" id="cronLog">{{ config.last_result|default:"Waiting..." }}</div>
+                </div>
+                <div class="cron-actions" style="display: flex; flex-direction: column; gap: 8px; margin-top: 16px;">
+                    <button class="cron-button btn-run-normal" type="button" id="runNow" style="width: 100%; text-align: center; justify-content: center; display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
+                        <i class="bi bi-play-circle-fill"></i> 立即跑一筆資料
+                    </button>
+                    <button class="cron-button btn-run-anomaly" type="button" id="runAnomalyNow" style="width: 100%; text-align: center; justify-content: center; display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
+                        <i class="bi bi-exclamation-octagon-fill"></i> 立即生成異常數據
+                    </button>
+                </div>
+            </div>
+
+            <!-- Panel 2: Discord 判讀狀態 -->
+            <div class="cron-card cron-status">
+                <h2 style="color: #5865F2; margin-bottom: 8px; font-size: 1.25rem;">Discord 判讀狀態</h2>
+                <span class="status-pill" id="discordEnabledText" style="background: #e0f2fe; color: #0369a1;">{% if config.discord_is_enabled %}Enabled{% else %}Disabled{% endif %}</span>
+                <div style="margin-top: 10px;">
+                    <div style="font-size: 0.88rem; color: #64748b;">下次判讀倒數</div>
+                    <div class="status-number" id="discordCountdown">--</div>
+                </div>
+                <div>
+                    <strong>上次判讀時間</strong>
+                    <div id="lastDiscordRun">{{ config.last_discord_run_at|date:"Y-m-d H:i:s"|default:"尚未判讀" }}</div>
+                </div>
+                <div>
+                    <strong>判讀結果</strong>
+                    <div class="cron-log" id="discordCronLog" style="background: #0f172a; color: #e2e8f0;">{{ config.discord_last_result|default:"Waiting..." }}</div>
+                </div>
+                <div class="cron-actions" style="display: flex; flex-direction: column; gap: 8px; margin-top: 16px;">
+                    <button class="cron-button btn-run-discord" type="button" id="runDiscordNow" style="width: 100%; text-align: center; justify-content: center; display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
+                        <i class="bi bi-discord"></i> 立即 Discord 通知判讀
+                    </button>
+                </div>
+            </div>
+        </aside>
+    </div>
+    {% endif %}
+
+    <!-- Configurations List -->
+    <div class="cron-card" style="margin-top: 24px;">
+        <h2>所有模擬排程設定</h2>
+        <p style="color: #60736f; font-size: 0.85rem; margin-top: -6px;">切換、修改或移除其他的資料模擬排程</p>
+        <div style="overflow-x: auto;">
+            <table class="config-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>模擬設定名稱</th>
+                        <th>狀態</th>
+                        <th>目標使用者</th>
+                        <th>魚池</th>
+                        <th>間隔</th>
+                        <th>異常率</th>
+                        <th>Discord 判讀</th>
+                        <th>上次執行狀態與結果</th>
+                        <th style="text-align: center;">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for conf in all_configs %}
+                    <tr {% if conf.pk == config.pk %}class="active-row"{% endif %}>
+                        <td>{{ conf.pk }}</td>
+                        <td>
+                            <a href="?id={{ conf.pk }}" style="font-weight: 700; color: #0f766e; text-decoration: none; border-bottom: 1px dotted #0f766e;">{{ conf.name }}</a>
+                            {% if conf.pk == config.pk %}<span style="font-size: 0.7rem; background: #0f766e; color: white; padding: 2px 6px; border-radius: 4px; margin-left: 6px; font-weight: 800;">編輯中</span>{% endif %}
+                        </td>
+                        <td>
+                            {% if conf.is_enabled %}
+                            <span style="color: #047857; font-weight: 700; background: #d1fae5; padding: 2px 8px; border-radius: 999px; font-size: 0.75rem;">已啟用</span>
+                            {% else %}
+                            <span style="color: #64748b; background: #f1f5f9; padding: 2px 8px; border-radius: 999px; font-size: 0.75rem;">未啟用</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if conf.target_user %}
+                            {{ conf.target_user.email|default:conf.target_user.username }}
+                            {% else %}
+                            <span style="color: #94a3b8; font-style: italic;">未指定 (全部)</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ conf.ponds.count }} 池</td>
+                        <td>{{ conf.interval_seconds }}秒</td>
+                        <td>{{ conf.anomaly_rate }}</td>
+                        <td>
+                            {% if conf.discord_webhook_url %}
+                            <span style="color: #0369a1; background: #e0f2fe; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; display: inline-block; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ conf.discord_webhook_url }}">已設定 Webhook</span>
+                            <div style="font-size: 0.72rem; color: #64748b; margin-top: 2px;">間隔: {{ conf.discord_notify_interval_seconds }}秒</div>
+                            <div style="font-size: 0.72rem; color: #64748b;">上次: {{ conf.last_discord_run_at|date:"m-d H:i"|default:"尚未" }}</div>
+                            {% else %}
+                            <span style="color: #64748b; font-style: italic; font-size: 0.75rem;">無通知</span>
+                            {% endif %}
+                        </td>
+                        <td style="font-size: 0.8rem; max-width: 320px; word-break: break-all;">
+                            {% if conf.last_run_at %}
+                            <div style="font-weight: 700; color: #334155;">{{ conf.last_run_at|date:"Y-m-d H:i:s" }}</div>
+                            <div style="color: #475569; font-family: monospace; font-size: 0.75rem; margin-top: 2px;">{{ conf.last_result }}</div>
+                            {% else %}
+                            <span style="color: #94a3b8; font-style: italic;">無執行紀錄</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center; white-space: nowrap;">
+                            <a href="?id={{ conf.pk }}" class="cron-button secondary" style="padding: 4px 10px; font-size: 0.75rem;">編輯</a>
+                            {% if all_configs|length > 1 %}
+                            <form method="post" style="display: inline-block; margin-left: 4px;" onsubmit="return confirm('確定要刪除此模擬設定嗎？');">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="delete">
+                                <input type="hidden" name="config_id" value="{{ conf.pk }}">
+                                <button type="submit" class="cron-button" style="background: #ef4444; color: white; padding: 4px 10px; font-size: 0.75rem; border: none; border-radius: 6px; cursor: pointer; font-weight: 700;">刪除</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div style="margin-top: 16px; display: flex; gap: 8px;">
+            <a href="?new=1" class="cron-button primary" style="text-decoration: none; display: inline-block;">➕ 新增模擬設定</a>
+            {% if config.pk or is_new %}
+            <a href="?" class="cron-button secondary" style="text-decoration: none; display: inline-block;">返回預設</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const enabled = {{ config.is_enabled|yesno:"true,false" }};
+    const discordEnabled = {{ config.discord_is_enabled|yesno:"true,false" }};
+    const configId = "{{ config.pk|default:'' }}";
+    let nextRunAt = {{ next_run_epoch_ms|default:0 }};
+    let nextDiscordRunAt = {{ next_discord_run_epoch_ms|default:0 }};
+    let serverTimeEpoch = {{ server_time_epoch_ms|default:0 }};
+    let localTimeOffset = serverTimeEpoch - Date.now();
+    let isRunning = false;
+
+    const countdown = document.getElementById('countdown');
+    const discordCountdown = document.getElementById('discordCountdown');
+    const cronLog = document.getElementById('cronLog');
+    const discordCronLog = document.getElementById('discordCronLog');
+    const lastRun = document.getElementById('lastRun');
+    const lastDiscordRun = document.getElementById('lastDiscordRun');
+    
+    const runNow = document.getElementById('runNow');
+    const targetUserSelect = document.getElementById('target_user');
+    const pondOptions = document.querySelectorAll('.pond-option');
+    const btnSelectUserPonds = document.getElementById('btnSelectUserPonds');
+    const btnClearPonds = document.getElementById('btnClearPonds');
+
+    function csrfToken() {
+        const match = document.cookie.match(/(?:^|; )csrftoken=([^;]+)/);
+        return match ? decodeURIComponent(match[1]) : '';
+    }
+
+    function formatSeconds(ms) {
+        const total = Math.max(0, Math.ceil(ms / 1000));
+        const minutes = Math.floor(total / 60);
+        const seconds = total % 60;
+        return `${minutes}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    function tick(actionType) {
+        if (isRunning || !configId) return;
+        isRunning = true;
+        const body = new URLSearchParams();
+        body.set('config_id', configId);
+        
+        if (actionType === 'normal') {
+            body.set('force', '1');
+        } else if (actionType === 'anomaly') {
+            body.set('force_anomaly', '1');
+        } else if (actionType === 'discord') {
+            body.set('force_discord', '1');
+        } else if (actionType === 'sim_tick') {
+            body.set('tick_sim', '1');
+        } else if (actionType === 'discord_tick') {
+            body.set('tick_discord', '1');
+        }
+
+        const isDiscordAction = (actionType === 'discord' || actionType === 'discord_tick');
+        const activeLog = isDiscordAction ? discordCronLog : cronLog;
+
+        fetch('/adminx/cron/run/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken(),
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body,
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.server_time_epoch_ms) {
+                serverTimeEpoch = data.server_time_epoch_ms;
+                localTimeOffset = serverTimeEpoch - Date.now();
+            }
+            if (data.next_run_epoch_ms) nextRunAt = data.next_run_epoch_ms;
+            if (data.next_discord_run_epoch_ms) nextDiscordRunAt = data.next_discord_run_epoch_ms;
+            
+            if (data.message) activeLog.textContent = data.message;
+            if (data.last_run_at) lastRun.textContent = data.last_run_at;
+            if (data.last_discord_run_at) lastDiscordRun.textContent = data.last_discord_run_at;
+        })
+        .catch(error => {
+            activeLog.textContent = error.message || 'Run failed.';
+        })
+        .finally(() => {
+            isRunning = false;
+        });
+    }
+
+    function loop() {
+        if (!configId) {
+            countdown.textContent = "--";
+            discordCountdown.textContent = "--";
+            return;
+        }
+        const serverNow = Date.now() + localTimeOffset;
+        
+        // 1. Simulation Countdown
+        if (enabled) {
+            const simRemaining = nextRunAt - serverNow;
+            countdown.textContent = formatSeconds(simRemaining);
+            if (simRemaining <= 0) {
+                tick('sim_tick');
+            }
+        } else {
+            countdown.textContent = "--";
+        }
+
+        // 2. Discord Countdown
+        if (discordEnabled) {
+            const discordRemaining = nextDiscordRunAt - serverNow;
+            discordCountdown.textContent = formatSeconds(discordRemaining);
+            if (discordRemaining <= 0) {
+                tick('discord_tick');
+            }
+        } else {
+            discordCountdown.textContent = "--";
+        }
+    }
+
+
+    function updatePondSelectionHighlight() {
+        if (!targetUserSelect) return;
+        const selectedUserId = targetUserSelect.value;
+        pondOptions.forEach(opt => {
+            const ownersStr = opt.getAttribute('data-owners') || '';
+            const owners = ownersStr.split(',').filter(x => x);
+            
+            if (!selectedUserId) {
+                opt.style.opacity = '1';
+                opt.classList.remove('pond-owned-by-target');
+                opt.classList.remove('pond-not-owned-by-target');
+            } else if (owners.includes(selectedUserId)) {
+                opt.style.opacity = '1';
+                opt.classList.add('pond-owned-by-target');
+                opt.classList.remove('pond-not-owned-by-target');
+            } else {
+                opt.style.opacity = '0.45';
+                opt.classList.remove('pond-owned-by-target');
+                opt.classList.add('pond-not-owned-by-target');
+            }
+        });
+    }
+
+    if (runNow) {
+        runNow.addEventListener('click', function () {
+            tick('normal');
+        });
+    }
+
+    const runAnomalyNow = document.getElementById('runAnomalyNow');
+    if (runAnomalyNow) {
+        runAnomalyNow.addEventListener('click', function () {
+            tick('anomaly');
+        });
+    }
+
+    const runDiscordNow = document.getElementById('runDiscordNow');
+    if (runDiscordNow) {
+        runDiscordNow.addEventListener('click', function () {
+            tick('discord');
+        });
+    }
+
+
+    if (targetUserSelect) {
+        targetUserSelect.addEventListener('change', updatePondSelectionHighlight);
+        updatePondSelectionHighlight();
+    }
+
+    if (btnSelectUserPonds && targetUserSelect) {
+        btnSelectUserPonds.addEventListener('click', function() {
+            const selectedUserId = targetUserSelect.value;
+            if (!selectedUserId) {
+                alert('請先選擇目標使用者！');
+                return;
+            }
+            pondOptions.forEach(opt => {
+                const ownersStr = opt.getAttribute('data-owners') || '';
+                const owners = ownersStr.split(',').filter(x => x);
+                const checkbox = opt.querySelector('input[type="checkbox"]');
+                if (checkbox) {
+                    checkbox.checked = owners.includes(selectedUserId);
+                }
+            });
+        });
+    }
+
+    if (btnClearPonds) {
+        btnClearPonds.addEventListener('click', function() {
+            pondOptions.forEach(opt => {
+                const checkbox = opt.querySelector('input[type="checkbox"]');
+                if (checkbox) {
+                    checkbox.checked = false;
+                }
+            });
+        });
+    }
+
+    loop();
+    window.setInterval(loop, 1000);
+})();
+</script>
+{% endblock %}

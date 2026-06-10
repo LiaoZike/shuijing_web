@@ -4,15 +4,19 @@ import random
 from datetime import timedelta
 
 from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render, get_object_or_404
 from django.utils import timezone
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from django.db.models import Q
 
-from .models import Pond, PondSensor, WaterThreshold, SensorReading
-from .utils import METRIC_DEFINITIONS, default_thresholds, reading_status, calculate_stability
+from .models import Pond, PondSensor, WaterThreshold, SensorReading, WaterSimulationCron
+from .simulator import run_simulation_round
+from .utils import METRIC_DEFINITIONS, default_thresholds, reading_status, calculate_stability, check_metrics_status
 
 
 def visible_ponds_for(user):
@@ -30,6 +34,252 @@ def can_manage_pond(user, pond):
     if user.is_staff or user.is_superuser:
         return True
     return pond.owners.filter(pk=user.pk).exists()
+
+
+def can_delete_pond(user, pond):
+    if not pond or not user.is_authenticated:
+        return False
+    if user.is_staff or user.is_superuser:
+        return True
+    if pond.creator:
+        return pond.creator == user
+    first_owner = pond.owners.order_by("id").first()
+    return first_owner == user if first_owner else False
+
+
+def get_pond_owner_for_thresholds(pond):
+    if not pond:
+        return None
+    if pond.creator:
+        return pond.creator
+    return pond.owners.order_by("id").first()
+
+
+def simulation_cron_config():
+    config, _ = WaterSimulationCron.objects.get_or_create(
+        pk=1,
+        defaults={"name": "Water simulation"},
+    )
+    return config
+
+
+def cron_next_run_at(config):
+    if not config.last_run_at:
+        return timezone.now()
+    return config.last_run_at + timedelta(seconds=max(1, config.interval_seconds))
+
+
+def cron_next_discord_run_at(config):
+    if not config.last_discord_run_at:
+        return timezone.now()
+    return config.last_discord_run_at + timedelta(seconds=max(1, config.discord_notify_interval_seconds))
+
+
+@staff_member_required
+def admin_cron_page(request):
+    User = get_user_model()
+    all_configs = WaterSimulationCron.objects.all().order_by("id")
+    
+    config_id = request.GET.get("id")
+    is_new = request.GET.get("new") == "1" or config_id == "new"
+    
+    if is_new:
+        config = WaterSimulationCron(name="New simulation")
+    elif config_id:
+        config = get_object_or_404(WaterSimulationCron, pk=config_id)
+    else:
+        config = all_configs.first()
+        if not config:
+            config = WaterSimulationCron.objects.create(name="Water simulation")
+            all_configs = WaterSimulationCron.objects.all().order_by("id")
+            
+    if request.method == "POST":
+        action = request.POST.get("action")
+        if action == "delete":
+            target_id = request.POST.get("config_id")
+            target_config = get_object_or_404(WaterSimulationCron, pk=target_id)
+            target_config.delete()
+            messages.success(request, f"Simulation config '{target_config.name}' deleted.")
+            return redirect("/adminx/cron/")
+            
+        config.name = (request.POST.get("name") or "").strip() or config.name
+        config.is_enabled = request.POST.get("is_enabled") == "on"
+        
+        target_user_id = request.POST.get("target_user") or None
+        config.target_user = User.objects.filter(pk=target_user_id).first() if target_user_id else None
+        
+        try:
+            config.interval_seconds = max(1, int(request.POST.get("interval_seconds") or 500))
+        except ValueError:
+            config.interval_seconds = 500
+        try:
+            config.anomaly_rate = max(0.0, min(1.0, float(request.POST.get("anomaly_rate") or 0.2)))
+        except ValueError:
+            config.anomaly_rate = 0.2
+        try:
+            config.anomaly_duration_rounds = max(1, int(request.POST.get("anomaly_duration_rounds") or 3))
+        except ValueError:
+            config.anomaly_duration_rounds = 3
+            
+        anomaly_mode = request.POST.get("anomaly_mode")
+        valid_modes = {choice[0] for choice in WaterSimulationCron.ANOMALY_MODE_CHOICES}
+        if anomaly_mode in valid_modes:
+            config.anomaly_mode = anomaly_mode
+            
+        config.discord_webhook_url = (request.POST.get("discord_webhook_url") or "").strip()
+        config.discord_is_enabled = request.POST.get("discord_is_enabled") == "on"
+        try:
+            config.discord_notify_interval_seconds = max(10, int(request.POST.get("discord_notify_interval_seconds") or 300))
+        except ValueError:
+            config.discord_notify_interval_seconds = 300
+        try:
+            config.discord_suppression_interval_seconds = max(0, int(request.POST.get("discord_suppression_interval_seconds") or 3600))
+        except ValueError:
+            config.discord_suppression_interval_seconds = 3600
+
+        config.save()
+
+
+        
+        pond_ids = request.POST.getlist("ponds")
+        config.ponds.set(Pond.objects.filter(pk__in=pond_ids))
+        
+        messages.success(request, f"Simulation settings saved for '{config.name}'.")
+        return redirect(f"/adminx/cron/?id={config.pk}")
+        
+    selected_pond_ids = set(config.ponds.values_list("pk", flat=True))
+    next_run_at = cron_next_run_at(config)
+    next_run_epoch_ms = int(next_run_at.timestamp() * 1000)
+    next_discord_run_at = cron_next_discord_run_at(config)
+    next_discord_run_epoch_ms = int(next_discord_run_at.timestamp() * 1000)
+    server_time_epoch_ms = int(timezone.now().timestamp() * 1000)
+    
+    return render(request, "water/admin_cron.html", {
+        "config": config,
+        "is_new": is_new,
+        "all_configs": all_configs,
+        "users": User.objects.filter(is_active=True).order_by("email", "username"),
+        "ponds": Pond.objects.all().prefetch_related("owners").order_by("name"),
+        "selected_pond_ids": selected_pond_ids,
+        "next_run_at": next_run_at,
+        "next_run_epoch_ms": next_run_epoch_ms,
+        "next_discord_run_at": next_discord_run_at,
+        "next_discord_run_epoch_ms": next_discord_run_epoch_ms,
+        "server_time_epoch_ms": server_time_epoch_ms,
+    })
+
+
+@staff_member_required
+@require_POST
+def admin_cron_run(request):
+    config_id = request.POST.get("config_id")
+    if config_id:
+        config = get_object_or_404(WaterSimulationCron, pk=config_id)
+    else:
+        config = simulation_cron_config()
+        
+    force = request.POST.get("force") == "1"
+    force_anomaly = request.POST.get("force_anomaly") == "1"
+    force_discord = request.POST.get("force_discord") == "1"
+    tick_sim = request.POST.get("tick_sim") == "1"
+    tick_discord = request.POST.get("tick_discord") == "1"
+    
+    # 1. Handle Discord alert check
+    if force_discord or tick_discord:
+        if tick_discord:
+            if not config.discord_is_enabled:
+                return JsonResponse({
+                    "status": "disabled",
+                    "message": "Discord cron is disabled.",
+                    "next_discord_run_epoch_ms": int(cron_next_discord_run_at(config).timestamp() * 1000),
+                    "server_time_epoch_ms": int(timezone.now().timestamp() * 1000),
+                })
+            now = timezone.now()
+            next_discord_run = cron_next_discord_run_at(config)
+            if now < next_discord_run:
+                return JsonResponse({
+                    "status": "waiting",
+                    "message": "Not due yet.",
+                    "next_discord_run_epoch_ms": int(next_discord_run.timestamp() * 1000),
+                    "server_time_epoch_ms": int(now.timestamp() * 1000),
+                })
+
+        try:
+            from scratch.discord_notify import check_and_trigger_discord_alerts
+            alert_result = check_and_trigger_discord_alerts(config, force=True)
+            config.refresh_from_db()
+            msg = f"傳送狀態: {alert_result.get('sent_status')}。新警報: {alert_result.get('triggered_count')} 筆，恢復: {alert_result.get('resolved_count')} 筆。"
+            config.discord_last_result = msg
+            config.save(update_fields=["discord_last_result"])
+        except Exception:
+            import logging
+            logging.getLogger("water.views").exception("Discord notification run failed")
+            msg = "Discord 警報通知執行失敗。"
+            config.discord_last_result = msg
+            config.save(update_fields=["discord_last_result"])
+
+        return JsonResponse({
+            "status": "success",
+            "message": config.discord_last_result,
+            "last_discord_run_at": timezone.localtime(config.last_discord_run_at).strftime("%Y-%m-%d %H:%M:%S") if config.last_discord_run_at else "尚未判讀",
+            "next_discord_run_epoch_ms": int(cron_next_discord_run_at(config).timestamp() * 1000),
+            "server_time_epoch_ms": int(timezone.now().timestamp() * 1000),
+        })
+
+    # 2. Handle simulation data generation
+    if tick_sim:
+        if not config.is_enabled:
+            return JsonResponse({
+                "status": "disabled",
+                "message": "Simulation cron is disabled.",
+                "next_run_epoch_ms": int(cron_next_run_at(config).timestamp() * 1000),
+                "server_time_epoch_ms": int(timezone.now().timestamp() * 1000),
+            })
+        now = timezone.now()
+        next_run_at = cron_next_run_at(config)
+        if now < next_run_at:
+            return JsonResponse({
+                "status": "waiting",
+                "message": "Not due yet.",
+                "next_run_epoch_ms": int(next_run_at.timestamp() * 1000),
+                "server_time_epoch_ms": int(now.timestamp() * 1000),
+            })
+
+    if force or force_anomaly or tick_sim:
+        result = run_simulation_round(config.pk, force=True, force_anomaly=force_anomaly)
+        config.refresh_from_db()
+        next_run_at = cron_next_run_at(config)
+        
+        if result.anomaly_label == "already_run":
+            return JsonResponse({
+                "status": "waiting",
+                "message": "Already run by another request.",
+                "next_run_epoch_ms": int(next_run_at.timestamp() * 1000),
+                "server_time_epoch_ms": int(timezone.now().timestamp() * 1000),
+            })
+            
+        return JsonResponse({
+            "status": "success",
+            "message": config.last_result,
+            "created_count": result.created_count,
+            "pond_count": result.pond_count,
+            "sensor_count": result.sensor_count,
+            "anomaly": result.anomaly_label,
+            "last_run_at": timezone.localtime(config.last_run_at).strftime("%Y-%m-%d %H:%M:%S") if config.last_run_at else "",
+            "next_run_epoch_ms": int(next_run_at.timestamp() * 1000),
+            "server_time_epoch_ms": int(timezone.now().timestamp() * 1000),
+        })
+
+    # 3. Fallback
+    next_run_at = cron_next_run_at(config)
+    return JsonResponse({
+        "status": "waiting",
+        "message": "No action specified.",
+        "next_run_epoch_ms": int(next_run_at.timestamp() * 1000),
+        "server_time_epoch_ms": int(timezone.now().timestamp() * 1000),
+    })
+
+
 
 
 def parse_float(value):
@@ -52,13 +302,7 @@ def threshold_map_for(user, pond, sensor=None):
     if not pond:
         return threshold_map
 
-    # If the user is staff/superuser and not in owners, use the pond's primary owner's thresholds
-    target_user = user
-    if user and user.is_authenticated and (user.is_staff or user.is_superuser) and pond:
-        if not pond.owners.filter(pk=user.pk).exists():
-            primary_owner = pond.owners.first()
-            if primary_owner:
-                target_user = primary_owner
+    target_user = get_pond_owner_for_thresholds(pond) or user
 
     if sensor is not None:
         qs = WaterThreshold.objects.filter(user=target_user, pond=pond, sensor=sensor)
@@ -80,11 +324,7 @@ def save_thresholds(request, pond):
         sensor = PondSensor.objects.filter(pk=sensor_id, pond=pond).first()
 
     # Determine target user for storing threshold
-    target_user = request.user
-    if (request.user.is_staff or request.user.is_superuser) and not pond.owners.filter(pk=request.user.pk).exists():
-        primary_owner = pond.owners.first()
-        if primary_owner:
-            target_user = primary_owner
+    target_user = get_pond_owner_for_thresholds(pond) or request.user
 
     has_error = False
 
@@ -225,6 +465,7 @@ def pond_list(request):
                 "sensor": sensor,
                 "reading": sensor_latest,
                 "status": reading_status(sensor_latest, threshold_map),
+                "metric_status": check_metrics_status(sensor_latest, threshold_map) if sensor_latest else {},
             })
 
         pond_cards.append({
@@ -232,6 +473,7 @@ def pond_list(request):
             "reading": latest,
             "status": status,
             "can_manage": can_manage_pond(request.user, pond),
+            "can_delete": can_delete_pond(request.user, pond),
             "sensor_cards": sensor_list,
         })
 
@@ -255,12 +497,7 @@ def pond_detail(request, pond_id):
         return redirect("water:pond_list")
 
     # Determine target user for thresholds
-    target_user = request.user
-    if (request.user.is_staff or request.user.is_superuser) and pond:
-        if not pond.owners.filter(pk=request.user.pk).exists():
-            primary_owner = pond.owners.first()
-            if primary_owner:
-                target_user = primary_owner
+    target_user = get_pond_owner_for_thresholds(pond) or request.user
 
     latest = pond.readings.first()
 
@@ -383,6 +620,7 @@ def pond_detail(request, pond_id):
             "sensor": sensor,
             "reading": sensor_latest,
             "status": reading_status(sensor_latest, sensor_thresholds),
+            "metric_status": check_metrics_status(sensor_latest, sensor_thresholds) if sensor_latest else {},
             "has_custom_threshold": has_custom,
         })
 
@@ -446,6 +684,7 @@ def pond_detail(request, pond_id):
         "metric_definitions": METRIC_DEFINITIONS,
         "sensor_type_choices": PondSensor.SENSOR_TYPE_CHOICES,
         "can_manage": can_manage_pond(request.user, pond),
+        "can_delete": can_delete_pond(request.user, pond),
         "now": timezone.now(),
     }
     return render(request, "water/pond_detail.html", context)
@@ -486,6 +725,7 @@ def add_pond(request):
             species=species,
             description=description,
             map_note=map_note,
+            creator=request.user,
         )
 
         # 添加當前使用者為擁有者
@@ -513,6 +753,9 @@ def manage_pond(request, pond_id):
         pond.species = (request.POST.get("species") or "").strip() or pond.species
         pond.description = (request.POST.get("description") or "").strip()
         pond.map_note = (request.POST.get("map_note") or "").strip()
+        if can_delete_pond(request.user, pond):
+            pond.discord_webhook_url = (request.POST.get("discord_webhook_url") or "").strip()
+
 
         # 驗證名稱唯一性（排除自己）
         if Pond.objects.filter(name=pond.name).exclude(pk=pond.pk).exists():
@@ -531,7 +774,7 @@ def manage_pond(request, pond_id):
         messages.success(request, f"池區 '{pond.name}' 已更新。")
         return redirect("water:pond_detail", pond_id=pond.pk)
 
-    is_owner = request.user in pond.owners.all() or request.user.is_superuser or request.user.is_staff
+    is_owner = can_delete_pond(request.user, pond)
     context = {
         "pond": pond,
         "is_owner": is_owner,
@@ -546,8 +789,8 @@ def delete_pond(request, pond_id):
     """刪除魚池"""
     pond = get_object_or_404(Pond, pk=pond_id)
 
-    # 權限檢查 - 只有管理者和池區所有者可以刪除
-    if not can_manage_pond(request.user, pond):
+    # 權限檢查 - 只有管理者和創立者可以刪除
+    if not can_delete_pond(request.user, pond):
         messages.error(request, "你沒有權限刪除此池區。")
         return redirect("water:pond_list")
 
@@ -573,12 +816,7 @@ def pond_history_api(request, pond_id):
         return JsonResponse({"status": "error", "message": "無權限查看此池區。"}, status=403)
 
     # Determine target user for thresholds
-    target_user = request.user
-    if (request.user.is_staff or request.user.is_superuser) and pond:
-        if not pond.owners.filter(pk=request.user.pk).exists():
-            primary_owner = pond.owners.first()
-            if primary_owner:
-                target_user = primary_owner
+    target_user = get_pond_owner_for_thresholds(pond) or request.user
 
     sensor_id = request.GET.get("sensor_id", "all")
     time_range = request.GET.get("time_range", "7d")
@@ -597,7 +835,11 @@ def pond_history_api(request, pond_id):
             readings = SensorReading.objects.filter(pond=pond)
     else:
         now = timezone.now()
-        if time_range == "24h":
+        if time_range == "1h":
+            start_date = now - timedelta(hours=1)
+        elif time_range == "3h":
+            start_date = now - timedelta(hours=3)
+        elif time_range == "24h":
             start_date = now - timedelta(days=1)
         elif time_range == "30d":
             start_date = now - timedelta(days=30)
@@ -642,12 +884,7 @@ def export_pond_csv(request, pond_id):
         return HttpResponse("無權限查看此池區。", status=403)
 
     # Determine target user for thresholds
-    target_user = request.user
-    if (request.user.is_staff or request.user.is_superuser) and pond:
-        if not pond.owners.filter(pk=request.user.pk).exists():
-            primary_owner = pond.owners.first()
-            if primary_owner:
-                target_user = primary_owner
+    target_user = get_pond_owner_for_thresholds(pond) or request.user
 
     sensor_id = request.GET.get("sensor_id", "all")
     time_range = request.GET.get("time_range", "7d")
@@ -666,7 +903,11 @@ def export_pond_csv(request, pond_id):
             readings = SensorReading.objects.filter(pond=pond)
     else:
         now = timezone.now()
-        if time_range == "24h":
+        if time_range == "1h":
+            start_date = now - timedelta(hours=1)
+        elif time_range == "3h":
+            start_date = now - timedelta(hours=3)
+        elif time_range == "24h":
             start_date = now - timedelta(days=1)
         elif time_range == "30d":
             start_date = now - timedelta(days=30)
@@ -712,8 +953,8 @@ def export_pond_csv(request, pond_id):
 def generate_mock_readings(request, pond_id):
     """為池區產生最近 24 小時的隨機水質讀值以供測試"""
     pond = get_object_or_404(Pond, pk=pond_id)
-    if not can_manage_pond(request.user, pond):
-        return JsonResponse({"status": "error", "message": "無編輯此池區配置的權限。"}, status=403)
+    if not (request.user.is_staff or request.user.is_superuser):
+        return JsonResponse({"status": "error", "message": "無操作權限，僅系統管理員可以產生測試數據。"}, status=403)
 
     sensors = pond.sensors.filter(is_active=True)
     if not sensors.exists():
@@ -812,8 +1053,8 @@ def share_pond(request, pond_id):
     """將魚池共享給其他使用者 (Gmail)"""
     pond = get_object_or_404(Pond, pk=pond_id)
     
-    # 只有管理者/擁有者才可以分享
-    if not can_manage_pond(request.user, pond):
+    # 只有管理者/創立者才可以分享
+    if not can_delete_pond(request.user, pond):
         messages.error(request, "你沒有權限管理此池區的共享設定。")
         return redirect("water:pond_detail", pond_id=pond.pk)
         
@@ -853,8 +1094,8 @@ def unshare_pond(request, pond_id):
     """移除與特定使用者的共享關係"""
     pond = get_object_or_404(Pond, pk=pond_id)
     
-    # 只有管理者/擁有者才可以移除共享
-    if not can_manage_pond(request.user, pond):
+    # 只有管理者/創立者才可以移除共享
+    if not can_delete_pond(request.user, pond):
         messages.error(request, "你沒有權限管理此池區的共享設定。")
         return redirect("water:pond_detail", pond_id=pond.pk)
         

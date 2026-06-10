@@ -49,15 +49,19 @@
                     </div>
                     <span class="card-tone">{{ item.status.label }}</span>
                     
-                    {% if item.can_manage %}
+                    {% if item.can_manage or item.can_delete %}
                     <div class="card-actions">
+                        {% if item.can_manage %}
                         <a href="{% url 'water:manage_pond' item.pond.pk %}" class="card-action-btn" title="編輯魚池"><i class="bi bi-pencil"></i></a>
+                        {% endif %}
+                        {% if item.can_delete %}
                         <button type="button" class="card-action-btn card-action-btn--danger btn-delete-pond-trigger" 
                                 data-bs-toggle="modal" data-bs-target="#deletePondModal"
                                 data-pond-id="{{ item.pond.pk }}" data-pond-name="{{ item.pond.name }}"
-                                title="刪除魚池" style="border: none; background: transparent; cursor: pointer;">
+                                title="刪除魚池" style="cursor: pointer;">
                             <i class="bi bi-trash3"></i>
                         </button>
+                        {% endif %}
                     </div>
                     {% endif %}
                 </div>
@@ -93,8 +97,8 @@
                                             <span><i class="bi bi-thermometer-half"></i> {{ s_item.reading.temperature|floatformat:1 }}°C</span>
                                             <span><i class="bi bi-droplet"></i> pH {{ s_item.reading.ph|floatformat:2 }}</span>
                                             <span><i class="bi bi-wind"></i> DO {{ s_item.reading.dissolved_oxygen|floatformat:1 }}</span>
-                                            {% if s_item.reading.ammonia_nitrogen %}<span>NH₃ {{ s_item.reading.ammonia_nitrogen|floatformat:2 }}</span>{% endif %}
-                                            {% if s_item.reading.nitrite %}<span>NO₂ {{ s_item.reading.nitrite|floatformat:2 }}</span>{% endif %}
+                                            {% if s_item.reading.ammonia_nitrogen %}<span><i class="bi bi-flask"></i> NH₃ {{ s_item.reading.ammonia_nitrogen|floatformat:2 }}</span>{% endif %}
+                                            {% if s_item.reading.nitrite %}<span><i class="bi bi-hash"></i> NO₂ {{ s_item.reading.nitrite|floatformat:2 }}</span>{% endif %}
                                         </div>
                                         {% else %}
                                         <p class="tooltip-empty">尚無感測資料</p>
@@ -117,19 +121,19 @@
                         <div class="sensor-data-header">
                             <span class="sensor-badge sensor-badge--{{ s_item.status.tone }}">{{ forloop.counter }}</span>
                             <span class="sensor-name">{{ s_item.sensor.name }}</span>
-                            <span class="sensor-status-text text-{{ s_item.status.tone }}">{{ s_item.status.label }}</span>
                         </div>
                         <div class="sensor-values">
                             {% if s_item.reading %}
-                            <div class="val-item" title="溫度"><i class="bi bi-thermometer-half"></i> <span>{{ s_item.reading.temperature|floatformat:1 }}°C</span></div>
-                            <div class="val-item" title="酸鹼值"><i class="bi bi-droplet"></i> <span>pH {{ s_item.reading.ph|floatformat:2 }}</span></div>
-                            <div class="val-item" title="溶氧量"><i class="bi bi-wind"></i> <span>DO {{ s_item.reading.dissolved_oxygen|floatformat:1 }}</span></div>
-                            {% if s_item.reading.ammonia_nitrogen is not None %}<div class="val-item" title="氨氮"><span>NH₃ {{ s_item.reading.ammonia_nitrogen|floatformat:2 }}</span></div>{% endif %}
-                            {% if s_item.reading.nitrite is not None %}<div class="val-item" title="亞硝酸鹽"><span>NO₂ {{ s_item.reading.nitrite|floatformat:2 }}</span></div>{% endif %}
+                            <div class="val-item val-item--{{ s_item.metric_status.temperature }}" title="溫度"><i class="bi bi-thermometer-half"></i> <span>{{ s_item.reading.temperature|floatformat:1 }}°C</span></div>
+                            <div class="val-item val-item--{{ s_item.metric_status.ph }}" title="酸鹼值"><i class="bi bi-droplet"></i> <span>pH {{ s_item.reading.ph|floatformat:2 }}</span></div>
+                            <div class="val-item val-item--{{ s_item.metric_status.dissolved_oxygen }}" title="溶氧量"><i class="bi bi-wind"></i> <span>DO {{ s_item.reading.dissolved_oxygen|floatformat:1 }}</span></div>
+                            {% if s_item.reading.ammonia_nitrogen is not None %}<div class="val-item val-item--{{ s_item.metric_status.ammonia_nitrogen }}" title="氨氮"><i class="bi bi-flask"></i> <span>NH₃ {{ s_item.reading.ammonia_nitrogen|floatformat:2 }}</span></div>{% endif %}
+                            {% if s_item.reading.nitrite is not None %}<div class="val-item val-item--{{ s_item.metric_status.nitrite }}" title="亞硝酸鹽"><i class="bi bi-hash"></i> <span>NO₂ {{ s_item.reading.nitrite|floatformat:2 }}</span></div>{% endif %}
                             {% else %}
                             <span class="no-data-text">尚無最新感測數據</span>
                             {% endif %}
                         </div>
+                        <span class="sensor-status-text text-{{ s_item.status.tone }}">{{ s_item.status.label }}</span>
                     </div>
                     {% empty %}
                     <div class="no-sensors-placeholder">尚無感測器</div>
@@ -201,7 +205,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const form = deletePondModal.querySelector('#deletePondForm');
             const nameSpan = deletePondModal.querySelector('#deletePondName');
             
-            if (form) form.action = `/water/pond/${pondId}/delete/`;
+            if (form) form.action = `/water/${pondId}/delete/`;
             if (nameSpan) nameSpan.textContent = pondName;
         });
     }

@@ -78,6 +78,24 @@
                             <small class="form-help">地圖上顯示的位置備註，幫助感測器配置</small>
                         </div>
 
+                        {% if is_owner %}
+                        <div class="form-group" style="margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(19, 67, 62, 0.1);">
+                            <h3 style="font-size: 1.05rem; font-weight: 850; color: #112522; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                                <i class="bi bi-discord" style="color: #5865F2;"></i>
+                                Discord 異常通知設定
+                            </h3>
+                            <label for="pond_discord_webhook" class="form-label">
+                                Discord Webhook URL
+                            </label>
+                            <input type="text" id="pond_discord_webhook" name="discord_webhook_url" 
+                                   value="{{ pond.discord_webhook_url|default:'' }}"
+                                   placeholder="https://discord.com/api/webhooks/..."
+                                   class="form-control">
+                            <small class="form-help">當此池區感測器有異常時，會優先發送通知至此 Discord Webhook (若未設定，則使用系統預設通知管道)。</small>
+                        </div>
+                        {% endif %}
+
+
                         <div class="form-info">
                             <h3>
                                 <i class="bi bi-info-circle"></i> 池區數據摘要
@@ -93,7 +111,7 @@
                                         {% if is_owner %}
                                             <strong style="color: #0f766e;">擁有者</strong>
                                         {% else %}
-                                            <strong style="color: #64748b;">檢視者</strong>
+                                            <strong style="color: #0d9488;">編輯者</strong>
                                         {% endif %}
                                     </span>
                                 </div>
@@ -173,6 +191,7 @@
                         </p>
 
                         <!-- 新增共享表單 -->
+                        {% if is_owner %}
                         <form method="POST" action="{% url 'water:share_pond' pond.pk %}" class="share-invite-form" style="margin-bottom: 28px;">
                             {% csrf_token %}
                             <div class="share-form-row" style="display: flex; flex-direction: column; gap: 12px;">
@@ -194,6 +213,7 @@
                                 </div>
                             </div>
                         </form>
+                        {% endif %}
 
                         <!-- 成員清單 -->
                         <div class="members-list">
@@ -212,6 +232,7 @@
                                     </div>
                                 </div>
                                 <div class="member-actions">
+                                    {% if is_owner %}
                                     <form method="POST" action="{% url 'water:unshare_pond' pond.pk %}" onsubmit="return confirm('確定要移除此成員的權限嗎？');">
                                         {% csrf_token %}
                                         <input type="hidden" name="user_id" value="{{ owner.pk }}">
@@ -219,6 +240,7 @@
                                             <i class="bi bi-trash3"></i> 移除
                                         </button>
                                     </form>
+                                    {% endif %}
                                 </div>
                             </div>
                             {% endfor %}
@@ -234,6 +256,7 @@
                                     </div>
                                 </div>
                                 <div class="member-actions">
+                                    {% if is_owner %}
                                     <form method="POST" action="{% url 'water:unshare_pond' pond.pk %}" onsubmit="return confirm('確定要移除此成員的權限嗎？');">
                                         {% csrf_token %}
                                         <input type="hidden" name="user_id" value="{{ viewer.pk }}">
@@ -241,6 +264,7 @@
                                             <i class="bi bi-trash3"></i> 移除
                                         </button>
                                     </form>
+                                    {% endif %}
                                 </div>
                             </div>
                             {% endfor %}

@@ -52,6 +52,36 @@ def default_thresholds():
     }
 
 
+def check_metrics_status(reading, thresholds=None):
+    if not reading:
+        return {}
+
+    active_thresholds = default_thresholds()
+    if thresholds:
+        for key, limits in thresholds.items():
+            if key in active_thresholds:
+                active_thresholds[key].update(limits)
+
+    status = {}
+    for metric in METRIC_DEFINITIONS:
+        key = metric["key"]
+        value = getattr(reading, key, None)
+        if value is None:
+            status[key] = "muted"
+            continue
+
+        limits = active_thresholds[key]
+        min_value = limits.get("min")
+        max_value = limits.get("max")
+
+        if (min_value is not None and value < min_value) or (max_value is not None and value > max_value):
+            status[key] = "warning"
+        else:
+            status[key] = "good"
+
+    return status
+
+
 def reading_status(reading, thresholds=None):
     if not reading:
         return {
