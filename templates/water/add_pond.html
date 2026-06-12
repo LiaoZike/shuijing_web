@@ -24,7 +24,7 @@
         </header>
 
         <div class="add-pond-layout">
-            <form method="POST" class="pond-form add-pond-form" aria-label="新增魚池表單">
+            <form method="POST" enctype="multipart/form-data" class="pond-form add-pond-form" aria-label="新增魚池表單">
                 {% csrf_token %}
 
                 <div class="form-card add-pond-panel">
@@ -65,6 +65,12 @@
                                    class="form-control">
                             <small class="form-help">協助辨識感測器位置與現場方位。</small>
                         </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="pond_map_image" class="form-label">上傳感測器地圖圖片</label>
+                        <input type="file" id="pond_map_image" name="map_image" accept="image/*" class="form-control">
+                        <small class="form-help">上傳池區感測器分佈地圖。上傳後地圖外框（比例 1.85:1）維持固定，地圖圖片將拉伸填滿，不會改變外框尺寸。</small>
                     </div>
 
                     <div class="form-group">

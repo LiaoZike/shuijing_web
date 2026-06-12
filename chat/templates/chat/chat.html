@@ -11,11 +11,439 @@
         url('/static/image/background.jpg') center/cover fixed;
 }
 
-.chat-page-shell {
-    width: min(980px, 100%);
+.chat-page-container {
+    width: min(1200px, 100%);
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 24px;
     height: min(740px, calc(100vh - 168px));
     min-height: 560px;
-    margin: 0 auto;
+}
+
+.chat-page-sidebar {
+    display: flex;
+    flex-direction: column;
+    background: rgba(255, 250, 240, 0.9);
+    backdrop-filter: blur(18px);
+    border: 1px solid rgba(139, 105, 20, 0.22);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 28px 80px rgba(25, 18, 8, 0.18);
+}
+
+.sidebar-header {
+    background: linear-gradient(135deg, #2e1f0f, #31583d);
+    color: #fdfbf7;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sidebar-subtitle {
+    margin-top: 4px;
+    font-size: 0.76rem;
+    color: rgba(253, 251, 247, 0.75);
+}
+
+.sidebar-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 12px 16px;
+    background: rgba(139, 105, 20, 0.04);
+    border-bottom: 1px solid rgba(139, 105, 20, 0.1);
+}
+
+.stat-card {
+    background: #ffffff;
+    border: 1px solid rgba(139, 105, 20, 0.12);
+    border-radius: 6px;
+    padding: 8px 10px;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+.stat-card .stat-num {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: #0f766e;
+}
+
+.stat-card.danger .stat-num {
+    color: #dc2626;
+    animation: pulse-danger 2s infinite alternate;
+}
+
+.stat-card .stat-lbl {
+    font-size: 0.7rem;
+    color: #7b6a52;
+    margin-top: 2px;
+    font-weight: 700;
+}
+
+.sidebar-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.sidebar-pond-item {
+    background: #ffffff;
+    border: 1px solid rgba(139, 105, 20, 0.12);
+    border-radius: 6px;
+    padding: 12px;
+    cursor: pointer;
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.sidebar-pond-item:hover {
+    transform: translateY(-2px);
+    border-color: #0f766e;
+    box-shadow: 0 4px 12px rgba(15, 118, 110, 0.1);
+}
+
+.pond-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.pond-item-name {
+    font-weight: 800;
+    color: #2e1f0f;
+    font-size: 0.95rem;
+}
+
+.pond-item-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.sidebar-pond-item.status-normal {
+    border-left: 4px solid #059669;
+}
+.sidebar-pond-item.status-normal .pond-item-badge {
+    background: rgba(5, 150, 105, 0.1);
+    color: #059669;
+}
+
+.sidebar-pond-item.status-watch {
+    border-left: 4px solid #d97706;
+}
+.sidebar-pond-item.status-watch .pond-item-badge {
+    background: rgba(217, 119, 6, 0.1);
+    color: #d97706;
+}
+
+.sidebar-pond-item.status-low_oxygen,
+.sidebar-pond-item.status-danger {
+    border-left: 4px solid #dc2626;
+    animation: border-danger-glow 1.5s infinite;
+}
+.sidebar-pond-item.status-low_oxygen .pond-item-badge,
+.sidebar-pond-item.status-danger .pond-item-badge {
+    background: rgba(220, 38, 38, 0.1);
+    color: #dc2626;
+    animation: badge-danger-glow 1.5s infinite;
+}
+
+.sidebar-pond-item.status-no_recent_data {
+    border-left: 4px solid #9ca3af;
+}
+.sidebar-pond-item.status-no_recent_data .pond-item-badge {
+    background: rgba(156, 163, 175, 0.1);
+    color: #4b5563;
+}
+
+.pond-item-meta {
+    font-size: 0.75rem;
+    color: #7b6a52;
+    margin-top: 4px;
+}
+
+.pond-item-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    margin-top: 8px;
+    background: rgba(139, 105, 20, 0.03);
+    padding: 6px;
+    border-radius: 4px;
+}
+
+.pond-metric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.metric-lbl {
+    font-size: 0.65rem;
+    color: #8c7e6c;
+}
+
+.metric-val {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #2e1f0f;
+    margin-top: 1px;
+}
+
+.sidebar-empty {
+    text-align: center;
+    color: #8c7e6c;
+    padding: 40px 20px;
+    font-size: 0.85rem;
+}
+
+@keyframes pulse-danger {
+    from { opacity: 0.7; }
+    to { opacity: 1; transform: scale(1.05); }
+}
+
+@keyframes border-danger-glow {
+    0%, 100% { border-left-color: #dc2626; }
+    50% { border-left-color: #fca5a5; }
+}
+
+@keyframes badge-danger-glow {
+    0%, 100% { background-color: rgba(220, 38, 38, 0.1); }
+    50% { background-color: rgba(220, 38, 38, 0.25); }
+}
+
+/* ?? Sidebar Search & Filter Bar */
+.sidebar-filter-bar {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(139, 105, 20, 0.12);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: rgba(139, 105, 20, 0.02);
+}
+
+.sidebar-search-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.sidebar-search-wrap i {
+    position: absolute;
+    left: 12px;
+    color: #8c7e6c;
+    font-size: 0.85rem;
+}
+
+.sidebar-search-wrap input {
+    width: 100%;
+    padding: 8px 12px 8px 32px;
+    border: 1px solid rgba(139, 105, 20, 0.16);
+    border-radius: 6px;
+    background: #ffffff;
+    font-size: 0.8rem;
+    color: #2e1f0f;
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+
+.sidebar-search-wrap input:focus {
+    border-color: #0f766e;
+    box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.08);
+}
+
+.sidebar-filter-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+}
+
+.filter-tab {
+    background: #ffffff;
+    border: 1px solid rgba(139, 105, 20, 0.16);
+    border-radius: 4px;
+    padding: 6px 0;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #7b6a52;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s ease;
+}
+
+.filter-tab:hover {
+    background: rgba(139, 105, 20, 0.05);
+    color: #2e1f0f;
+}
+
+.filter-tab.active {
+    background: #0f766e;
+    border-color: #0f766e;
+    color: #ffffff;
+}
+
+/* ?? Sidebar Quick Action Buttons */
+.pond-item-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 10px;
+    border-top: 1px dashed rgba(139, 105, 20, 0.1);
+    padding-top: 10px;
+}
+
+.pond-action-btn {
+    background: #ffffff;
+    border: 1px solid rgba(139, 105, 20, 0.16);
+    border-radius: 4px;
+    padding: 6px 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #0f766e;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    transition: all 0.15s ease;
+}
+
+.pond-action-btn:hover {
+    background: #0f766e;
+    border-color: #0f766e;
+    color: #ffffff;
+}
+
+/* ? Sidebar Multi-Sensor list */
+.pond-item-sensors-list {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.pond-sensor-row {
+    background: rgba(139, 105, 20, 0.02);
+    border: 1px solid rgba(139, 105, 20, 0.08);
+    border-radius: 4px;
+    padding: 8px;
+}
+
+.sensor-row-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    border-bottom: 1px dashed rgba(139, 105, 20, 0.08);
+    padding-bottom: 4px;
+}
+
+.sensor-row-name {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #0f766e;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.sensor-row-name i {
+    font-size: 0.8rem;
+}
+
+.sensor-row-time {
+    font-size: 0.68rem;
+    color: #8c7e6c;
+}
+
+.pond-sensor-empty {
+    font-size: 0.7rem;
+    color: #8c7e6c;
+    text-align: center;
+    padding: 6px;
+}
+
+/* ??儭?Voice Microphone Buttons */
+.chat-page-form button.chat-mic-btn {
+    background: #475569;
+    color: #f8fafc;
+}
+
+.chat-page-form button.chat-mic-btn.is-recording {
+    background: #dc2626 !important;
+    animation: mascot-mic-pulse 1.2s infinite;
+}
+
+.chat-page-form button.chat-mic-btn.is-loading {
+    background: #64748b !important;
+    opacity: 0.7;
+    cursor: wait;
+}
+
+.chat-cancel-mic-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    background: #dc2626;
+    color: #ffffff;
+    border: none;
+    cursor: pointer;
+    display: inline-grid;
+    place-items: center;
+    transition: background-color 0.15s ease;
+}
+
+.chat-cancel-mic-btn:hover {
+    background: #b91c1c;
+}
+
+/* ??Voice ASR previews */
+.voice-asr-preview {
+    background: rgba(15, 118, 110, 0.1);
+    border: 1px solid rgba(15, 118, 110, 0.2);
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    font-size: 0.8rem;
+    color: #0f766e;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    animation: asr-preview-fade-in 0.25s ease-out;
+}
+
+.voice-asr-preview.is-fading {
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+@keyframes asr-preview-fade-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.chat-page-shell {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 560px;
     display: grid;
     grid-template-rows: auto 1fr auto auto;
     overflow: hidden;
@@ -226,12 +654,23 @@
 }
 
 .chat-page-form {
-    display: grid;
-    grid-template-columns: 1fr 48px 48px;
+    display: flex;
     gap: 10px;
     padding: 16px;
     border-top: 1px solid rgba(139, 105, 20, 0.14);
     background: #ffffff;
+}
+
+.chat-page-form input {
+    flex: 1;
+    min-width: 0;
+    height: 48px;
+    border: 1px solid rgba(139, 105, 20, 0.22);
+    border-radius: 8px;
+    padding: 0 14px;
+    color: #2e1f0f;
+    font: inherit;
+    outline: none;
 }
 
 .chat-page-form input {
@@ -286,6 +725,22 @@
     }
 }
 
+@media (max-width: 992px) {
+    .chat-page-container {
+        grid-template-columns: 1fr;
+        height: auto;
+        min-height: auto;
+        gap: 16px;
+        padding: 0 4px;
+    }
+    .chat-page-sidebar {
+        display: none;
+    }
+    .chat-page-shell {
+        height: calc(100vh - 122px);
+    }
+}
+
 @media (max-width: 768px) {
     .chat-page {
         padding: 92px 10px 34px;
@@ -308,12 +763,140 @@
 
 {% block content %}
 <section class="chat-page">
-    <div class="chat-page-shell"
-         data-page-chat
-         data-lenis-prevent
-         data-chat-api="{% url 'chat-api' %}"
-         data-clear-api="{% url 'chat-clear' %}">
-        <header class="chat-page-header">
+    <div class="chat-page-container">
+        <!-- 魚池水質監控側欄 -->
+        <aside class="chat-page-sidebar">
+            <div class="sidebar-header">
+                <h2 class="sidebar-title"><i class="bi bi-water"></i> 魚池水質監控面板</h2>
+                <div class="sidebar-subtitle">即時感測器數據與水質分析</div>
+            </div>
+            
+            <div class="sidebar-stats">
+                <div class="stat-card">
+                    <div class="stat-num">{{ pond_data.pond_count|default:0 }}</div>
+                    <div class="stat-lbl">監測魚池</div>
+                </div>
+                <div class="stat-card danger">
+                    <div class="stat-num" id="statDangerCount">0</div>
+                    <div class="stat-lbl">警報 / 異常</div>
+                </div>
+            </div>
+
+            <!-- 魚池與感測器篩選 -->
+            <div class="sidebar-filter-bar">
+                <div class="sidebar-search-wrap">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="pondSearchInput" placeholder="搜尋魚池名稱..." autocomplete="off">
+                </div>
+                <div class="sidebar-filter-tabs">
+                    <button type="button" class="filter-tab active" data-filter="all">全部</button>
+                    <button type="button" class="filter-tab" data-filter="warn">警報</button>
+                    <button type="button" class="filter-tab" data-filter="stable">穩定</button>
+                </div>
+            </div>
+
+            <div class="sidebar-list">
+                {% for pond in pond_data.ponds %}
+                <div class="sidebar-pond-item status-{{ pond.status }}" data-pond-name="{{ pond.pond }}" role="button" tabindex="0" title="點擊以與 AI 助理討論此池區水質">
+                    <div class="pond-item-header">
+                        <span class="pond-item-name">{{ pond.pond }}</span>
+                        <span class="pond-item-badge">
+                            {% if pond.status == "normal" %}穩定
+                            {% elif pond.status == "watch" %}需留意
+                            {% elif pond.status == "low_oxygen" %}缺氧/危險
+                            {% else %}未知{% endif %}
+                        </span>
+                    </div>
+                    <div class="pond-item-meta">主要養殖: {{ pond.species|default:"未註明" }}</div>
+                    
+                    <!-- 感測器列表 -->
+                    <div class="pond-item-sensors-list">
+                        {% for sensor in pond.sensors %}
+                        <div class="pond-sensor-row">
+                            <div class="sensor-row-header">
+                                <span class="sensor-row-name">
+                                    <i class="bi bi-cpu"></i> {{ sensor.sensor_name }} 
+                                    <span style="font-size: 0.65rem; color: #8c7e6c; font-weight: normal;">({{ sensor.sensor_type }})</span>
+                                </span>
+                                <span class="sensor-row-time">{{ sensor.measured_at|slice:"11:16"|default:"--" }}</span>
+                            </div>
+                            <div class="pond-item-metrics">
+                                <div class="pond-metric">
+                                    <span class="metric-lbl">水溫</span>
+                                    <span class="metric-val">{{ sensor.temperature_c|default:"--" }}°C</span>
+                                </div>
+                                <div class="pond-metric">
+                                    <span class="metric-lbl">pH</span>
+                                    <span class="metric-val">{{ sensor.ph|default:"--" }}</span>
+                                </div>
+                                <div class="pond-metric">
+                                    <span class="metric-lbl">溶氧</span>
+                                    <span class="metric-val {% if sensor.dissolved_oxygen_mg_l < 4.5 %}text-danger font-weight-bold{% endif %}">
+                                        {{ sensor.dissolved_oxygen_mg_l|default:"--" }}
+                                    </span>
+                                </div>
+                                <div class="pond-metric">
+                                    <span class="metric-lbl">鹽度</span>
+                                    <span class="metric-val">{{ sensor.salinity_ppt|default:"--" }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="pond-sensor-empty">池區內尚無啟用感測器</div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- 水車列表 -->
+                    <style>
+                        @keyframes spin-fan {
+                            from { transform: rotate(0deg); }
+                            to { transform: rotate(360deg); }
+                        }
+                        .spin-animation {
+                            animation: spin-fan 2s linear infinite;
+                            display: inline-block;
+                        }
+                    </style>
+                    <div class="pond-item-aerators-list" style="margin-top: 10px; border-top: 1px dashed rgba(0,0,0,0.06); padding-top: 8px;">
+                        {% for ae in pond.aerators %}
+                        <div class="pond-aerator-row" style="display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px; padding: 2px 4px;">
+                            <span class="aerator-row-name" style="color: var(--text-1); font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                                <i class="bi bi-fan {% if ae.is_operating %}spin-animation{% endif %}" style="color: #0d9488;"></i> {{ ae.aerator_name }}
+                            </span>
+                            <span class="aerator-row-status" 
+                                  style="padding: 1px 6px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; {% if ae.is_operating %}background: rgba(16,185,129,0.1); color: #10b981;{% else %}background: rgba(107,114,128,0.1); color: #6b7280;{% endif %}">
+                                {% if ae.is_operating %}運作中{% else %}已停止{% endif %}
+                            </span>
+                        </div>
+                        {% empty %}
+                        <div class="pond-aerator-empty" style="font-size: 0.75rem; color: var(--text-3); font-style: italic; padding: 2px 4px;">池區內尚無啟用水車</div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- 快捷操作按鈕 -->
+                    <div class="pond-item-actions">
+                        <button type="button" class="pond-action-btn action-chart" title="檢視歷史水質趨勢圖表">
+                            <i class="bi bi-bar-chart-line-fill"></i> 趨勢圖表
+                        </button>
+                        <button type="button" class="pond-action-btn action-health" title="對該池進行完整功能健檢">
+                            <i class="bi bi-shield-check"></i> 功能健檢
+                        </button>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="sidebar-empty">查無符合條件的魚池</div>
+                {% endfor %}
+            </div>
+        </aside>
+
+        <!-- 聊天主視窗 -->
+        <div class="chat-page-shell"
+             data-page-chat
+             data-lenis-prevent
+             data-chat-api="{% url 'chat-api' %}"
+             data-clear-api="{% url 'chat-clear' %}"
+             data-voice-api="{% url 'water:voice_transcribe' %}">
+            <header class="chat-page-header">
             <div class="chat-page-brand">
                 <div class="chat-page-avatar" aria-hidden="true"></div>
                 <div>
@@ -322,11 +905,24 @@
                 </div>
             </div>
             <div class="chat-page-actions">
-                <a href="{% url 'home' %}" class="chat-page-icon" aria-label="回首頁">
+                <button type="button" class="chat-page-icon" data-chat-clear aria-label="清除聊天" title="清除對話" style="border: none; outline: none; cursor: pointer;">
+                    <i class="bi bi-trash3-fill"></i>
+                </button>
+                <a href="{% url 'home' %}" class="chat-page-icon" aria-label="回首頁" title="回首頁">
                     <i class="bi bi-house-door-fill"></i>
                 </a>
             </div>
         </header>
+
+        <!-- 聊天等待提示 -->
+        <div class="mascot-waiting-banner-wrapper">
+            <div class="mascot-waiting-banner" id="mascotWaitingBanner" hidden>
+                <div class="mascot-waiting-banner-inner">
+                    <div class="mascot-waiting-banner-turtle" aria-hidden="true"></div>
+                    <div class="mascot-waiting-banner-text">水井龜正在幫您分析水質資料...</div>
+                </div>
+            </div>
+        </div>
 
         <div class="chat-page-log" data-chat-log data-lenis-prevent>
             <div class="chat-page-empty" data-chat-empty>
@@ -338,23 +934,25 @@
         </div>
 
         <div class="chat-page-prompts">
-            <button type="button" data-chat-prompt="請整理全部水池近 7 天的水質狀態，列出每個水池的最新讀值、平均溶氧，並提醒需要注意的池。">水池統整</button>
-            <button type="button" data-chat-prompt>近期有什麼活動？</button>
-            <button type="button" data-chat-prompt>最新公告有哪些？</button>
-            <button type="button" data-chat-prompt>介紹 USR 成果</button>
-            <button type="button" data-chat-prompt>有哪些 AIoT 專案？</button>
+            <button type="button" data-chat-prompt="請整理我所有魚池的水質狀態與最新讀值，並分析有沒有異常？">水池統整</button>
+            <button type="button" data-chat-prompt="請幫我對{{ first_pond_name }}進行完整的功能健檢，包含計算穩定度與逐一感測器讀值檢查。">魚池完整健檢</button>
+            <button type="button" data-chat-prompt="請檢查目前有哪些魚池或感測器處於異常警報狀態？">最新警報檢查</button>
+            <button type="button" data-chat-prompt="請用折線圖畫出{{ first_pond_name }}的最新水質歷史趨勢圖">水質趨勢圖表</button>
+            <button type="button" data-chat-prompt="近期有什麼活動？">最新活動</button>
+            <button type="button" data-chat-prompt="最新公告有哪些？">網站公告</button>
         </div>
 
         <form class="chat-page-form" data-chat-form>
             <input type="text" data-chat-input placeholder="輸入想問的問題..." autocomplete="off" autofocus>
+            <button type="button" class="chat-page-icon-btn chat-mic-btn" id="chatMicBtn" aria-label="語音輸入" title="語音輸入（台語/國語）">
+                <i class="bi bi-mic-fill"></i>
+            </button>
             <button type="submit" data-chat-send aria-label="送出訊息">
                 <i class="bi bi-send-fill"></i>
             </button>
-            <button type="button" data-chat-clear aria-label="清除聊天">
-                <i class="bi bi-trash3"></i>
-            </button>
         </form>
     </div>
+</div>
 </section>
 {% endblock %}
 
@@ -373,10 +971,232 @@
     const chatApi = shell.dataset.chatApi;
     const clearApi = shell.dataset.clearApi;
 
+    const waitingBanner = shell.querySelector("#mascotWaitingBanner");
+    const waitingText = shell.querySelector(".mascot-waiting-banner-text");
+
+    // 語音輸入變數
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let isRecording = false;
+    let isCancelled = false;
+    let recordTimeout = null;
+    let recordCountdownInterval = null;
+    let transcribingInterval = null;
+    let activeStream = null;
+
+    const micBtn = document.getElementById("chatMicBtn");
+    const voiceApi = shell.dataset.voiceApi;
+
+    // Dynamically insert ASR Cancel Button
+    const cancelMicBtn = document.createElement("button");
+    cancelMicBtn.type = "button";
+    cancelMicBtn.id = "chatCancelMicBtn";
+    cancelMicBtn.className = "chat-cancel-mic-btn";
+    cancelMicBtn.setAttribute("aria-label", "取消錄音");
+    cancelMicBtn.setAttribute("title", "取消錄音");
+    cancelMicBtn.innerHTML = '<i class="bi bi-x-lg"></i>';
+    cancelMicBtn.hidden = true;
+    if (micBtn && micBtn.parentElement) {
+        micBtn.parentElement.insertBefore(cancelMicBtn, micBtn);
+    }
+
+    // 側欄互動與統計計算
+    const sidebar = document.querySelector(".chat-page-sidebar");
+    if (sidebar) {
+        // Calculate danger/watch stats
+        const dangerPonds = sidebar.querySelectorAll(".sidebar-pond-item.status-low_oxygen, .sidebar-pond-item.status-watch");
+        const dangerCountEl = document.getElementById("statDangerCount");
+        if (dangerCountEl) {
+            dangerCountEl.textContent = dangerPonds.length;
+        }
+
+        // Sidebar Search and Filters
+        const searchInput = document.getElementById("pondSearchInput");
+        const filterTabs = document.querySelectorAll(".filter-tab");
+        const pondItems = sidebar.querySelectorAll(".sidebar-pond-item");
+
+        function filterPonds() {
+            const query = (searchInput ? searchInput.value : "").trim().toLowerCase();
+            const activeTab = document.querySelector(".filter-tab.active");
+            const filterType = activeTab ? activeTab.getAttribute("data-filter") : "all";
+
+            pondItems.forEach(item => {
+                const name = (item.getAttribute("data-pond-name") || "").toLowerCase();
+                const matchesSearch = name.includes(query);
+                
+                let matchesFilter = true;
+                if (filterType === "warn") {
+                    matchesFilter = item.classList.contains("status-low_oxygen") || item.classList.contains("status-watch") || item.classList.contains("status-danger");
+                } else if (filterType === "stable") {
+                    matchesFilter = item.classList.contains("status-normal");
+                }
+
+                if (matchesSearch && matchesFilter) {
+                    item.style.display = "block";
+                } else {
+                    item.style.display = "none";
+                }
+            });
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener("input", filterPonds);
+        }
+
+        filterTabs.forEach(tab => {
+            tab.addEventListener("click", (e) => {
+                e.preventDefault();
+                filterTabs.forEach(t => t.classList.remove("active"));
+                tab.classList.add("active");
+                filterPonds();
+            });
+        });
+
+        // Sidebar card click to query chatbot
+        pondItems.forEach(item => {
+            item.addEventListener("click", (e) => {
+                const pondName = item.getAttribute("data-pond-name");
+                if (pondName && input && form) {
+                    input.value = `請幫我對${pondName} 的最新水質狀態進行功能健檢，包含計算穩定度與各個感測器讀值，並提醒有何異常？`;
+                    form.dispatchEvent(new Event("submit"));
+                }
+            });
+
+            // Action buttons inside card (prevent bubbling)
+            item.querySelectorAll(".pond-action-btn").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    e.stopPropagation(); // Stop bubbling to card
+                    const pondName = item.getAttribute("data-pond-name");
+                    if (!pondName || !input || !form) return;
+                    
+                    if (btn.classList.contains("action-chart")) {
+                        input.value = `請用折線圖畫出${pondName} 的最新水質歷史趨勢圖`;
+                    } else if (btn.classList.contains("action-health")) {
+                        input.value = `請對 ${pondName} 進行完整的功能健檢，包含計算穩定度與逐一感測器讀值檢查。`;
+                    }
+                    form.dispatchEvent(new Event("submit"));
+                });
+            });
+        });
+    }
+
+    // Chart.js 相關圖表初始化
+    function initChart(canvas, data) {
+        if (typeof Chart === "undefined") {
+            console.error("Chart.js is not loaded.");
+            return;
+        }
+        const ctx = canvas.getContext("2d");
+        
+        const gradient = ctx.createLinearGradient(0, 0, 0, 150);
+        gradient.addColorStop(0, 'rgba(15, 118, 110, 0.4)'); // primary teal
+        gradient.addColorStop(1, 'rgba(15, 118, 110, 0.0)');
+        
+        const config = {
+            type: data.type || 'line',
+            data: {
+                labels: data.labels,
+                datasets: data.datasets.map(ds => ({
+                    label: ds.label,
+                    data: ds.values,
+                    borderColor: '#0f766e',
+                    backgroundColor: data.type === 'bar' ? '#0f766e' : gradient,
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.35,
+                    pointBackgroundColor: '#0f766e',
+                    pointRadius: 3,
+                    pointHoverRadius: 5
+                }))
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        labels: {
+                            boxWidth: 12,
+                            font: { size: 11, family: "'Outfit', system-ui, sans-serif" },
+                            color: '#4e3f30'
+                        }
+                    },
+                    tooltip: {
+                        padding: 8,
+                        bodyFont: { size: 12 },
+                        titleFont: { size: 12, weight: 'bold' }
+                    }
+                },
+                scales: {
+                    y: {
+                        grid: { color: 'rgba(139, 105, 20, 0.08)' },
+                        ticks: {
+                            font: { size: 10 },
+                            color: '#7b6a52'
+                        }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: {
+                            font: { size: 10 },
+                            color: '#7b6a52'
+                        }
+                    }
+                }
+            }
+        };
+        new Chart(ctx, config);
+    }
+
+    function initializeChartsInMessage(element) {
+        element.querySelectorAll(".chat-chart-card").forEach(card => {
+            if (card.classList.contains("is-initialized")) return;
+            const configStr = card.getAttribute("data-chart-config");
+            if (configStr) {
+                try {
+                    const config = JSON.parse(decodeURIComponent(configStr));
+                    const canvas = card.querySelector(".chat-chart-canvas");
+                    initChart(canvas, config);
+                    card.classList.add("is-initialized");
+                } catch (e) {
+                    console.error("Failed to render chart:", e);
+                }
+            }
+        });
+    }
+
+    function showWaiting(text, isGrey = false) {
+        if (!waitingBanner) return;
+        if (waitingText) {
+            waitingText.textContent = text;
+        }
+        if (isGrey) {
+            waitingBanner.classList.add("is-grey");
+        } else {
+            waitingBanner.classList.remove("is-grey");
+        }
+        waitingBanner.hidden = false;
+        waitingBanner.offsetHeight; // Force reflow
+        waitingBanner.classList.add("is-active");
+    }
+
+    // Mascot waiting hide
+    function hideWaiting() {
+        if (!waitingBanner) return;
+        waitingBanner.classList.remove("is-active");
+        setTimeout(function () {
+            if (!waitingBanner.classList.contains("is-active")) {
+                waitingBanner.hidden = true;
+                waitingBanner.classList.remove("is-grey");
+            }
+        }, 300);
+    }
+
     function scrollLog() {
         log.scrollTop = log.scrollHeight;
     }
 
+    // 清空歷史招呼框
     function removeEmpty() {
         const empty = log.querySelector("[data-chat-empty]");
         if (empty) empty.remove();
@@ -397,6 +1217,7 @@
 
         item.append(who, body);
         log.appendChild(item);
+        initializeChartsInMessage(item);
         scrollLog();
         return item;
     }
@@ -404,19 +1225,75 @@
     function formatMessage(text) {
         if (!text) return "";
 
+        // 0. 先抽取並解析 [CHART]...[/CHART] 區塊，避免被 HTML 轉義破壞
+        let chartPlaceholderCount = 0;
+        const charts = [];
+        let processedText = text.replace(/\[CHART\]([\s\S]*?)\[\/CHART\]/g, (match, content) => {
+            const id = `__CHART_PLACEHOLDER_${chartPlaceholderCount}__`;
+            chartPlaceholderCount++;
+            
+            const lines = content.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+            let type = "bar";
+            let title = "";
+            let labels = [];
+            let datasets = [];
+            
+            lines.forEach(line => {
+                const colonIdx = line.indexOf(":");
+                if (colonIdx === -1) return;
+                const key = line.substring(0, colonIdx).trim().toLowerCase();
+                const val = line.substring(colonIdx + 1).trim();
+                
+                if (key === "type") {
+                    type = val.toLowerCase();
+                } else if (key === "title") {
+                    title = val;
+                } else if (key === "x-axis") {
+                    labels = val.split(",").map(s => s.trim());
+                } else if (key === "dataset") {
+                    const parts = val.split("|").reduce((acc, part) => {
+                        const subColonIdx = part.indexOf(":");
+                        if (subColonIdx !== -1) {
+                            const subKey = part.substring(0, subColonIdx).trim().toLowerCase();
+                            const subVal = part.substring(subColonIdx + 1).trim();
+                            acc[subKey] = subVal;
+                        } else {
+                            acc["name"] = part.trim();
+                        }
+                        return acc;
+                    }, {});
+                    
+                    const label = parts.name || parts.dataset || "數據";
+                    const valuesStr = parts.values || "";
+                    const values = valuesStr.split(",").map(v => parseFloat(v.trim()) || 0);
+                    datasets.push({ label, values });
+                }
+            });
+            
+            const chartConfig = { type, title, labels, datasets };
+            const html = `
+                <div class="chat-chart-card" data-chart-config="${encodeURIComponent(JSON.stringify(chartConfig))}">
+                    <div class="chat-chart-title"><i class="bi bi-bar-chart-line-fill"></i> ${title || '數據圖表'}</div>
+                    <div class="chat-chart-body">
+                        <canvas class="chat-chart-canvas"></canvas>
+                    </div>
+                </div>
+            `;
+            charts.push({ id, html });
+            return id;
+        });
+
         // 1. 先抽取並解析 [DASHBOARD]...[/DASHBOARD] 區塊，避免被 HTML 轉義破壞
         let dashboardPlaceholderCount = 0;
         const dashboards = [];
-        let processedText = text.replace(/\[DASHBOARD\]([\s\S]*?)\[\/DASHBOARD\]/g, (match, content) => {
+        processedText = processedText.replace(/\[DASHBOARD\]([\s\S]*?)\[\/DASHBOARD\]/g, (match, content) => {
             const id = `__DASHBOARD_PLACEHOLDER_${dashboardPlaceholderCount}__`;
             dashboardPlaceholderCount++;
             
-            // 解析 content 中的每一行
             const lines = content.split("\n").map(l => l.trim()).filter(l => l.length > 0);
             let html = '<div class="chat-dashboard-container">';
             
             lines.forEach(line => {
-                // 解析格式: Pond: 名稱 | Status: 狀態 | Species: 魚種 | Temp: 溫度 | pH: pH | DO: 溶氧 | Sal: 鹽度
                 const parts = line.split("|").reduce((acc, part) => {
                     const colonIdx = part.indexOf(":");
                     if (colonIdx !== -1) {
@@ -451,7 +1328,6 @@
                     statusLabel = "無資料";
                 }
                 
-                // 溶氧進度條比例與顏色
                 let doPct = Math.min(100, (doVal / 10) * 100);
                 let doBarColor = "var(--good, #059669)";
                 if (doVal < 4) {
@@ -512,18 +1388,23 @@
         const lines = escaped.split("\n");
         let inTable = false;
         let tableHtml = "";
+        let inList = false;
         const processedLines = [];
 
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
             if (line.startsWith("|") && line.endsWith("|")) {
+                if (inList) {
+                    inList = false;
+                    processedLines.push("</ul>");
+                }
                 if (!inTable) {
                     inTable = true;
                     tableHtml = '<div class="table-responsive"><table class="chat-table">';
                 }
                 
                 const cells = line.split("|").slice(1, -1).map(c => c.trim());
-                if (cells.every(c => /^:-*|-*:-*|-*:$/.test(c) || c === "")) {
+                if (cells.every(c => /^:?-+:?$/.test(c) || c === "")) {
                     continue;
                 }
                 
@@ -540,21 +1421,63 @@
                     processedLines.push(tableHtml);
                     tableHtml = "";
                 }
-                processedLines.push(parseInlineMarkdown(line));
+                
+                if (line.startsWith("- ") || line.startsWith("* ")) {
+                    const content = parseInlineMarkdown(line.substring(2).trim());
+                    if (!inList) {
+                        inList = true;
+                        processedLines.push('<ul class="chat-list"><li>' + content + '</li>');
+                    } else {
+                        processedLines.push('<li>' + content + '</li>');
+                    }
+                } else {
+                    if (inList) {
+                        inList = false;
+                        processedLines.push("</ul>");
+                    }
+                    
+                    if (line.startsWith("### ")) {
+                        processedLines.push('<h3>' + parseInlineMarkdown(line.substring(4).trim()) + '</h3>');
+                    } else if (line.startsWith("## ")) {
+                        processedLines.push('<h2>' + parseInlineMarkdown(line.substring(3).trim()) + '</h2>');
+                    } else if (line.startsWith("# ")) {
+                        processedLines.push('<h1>' + parseInlineMarkdown(line.substring(2).trim()) + '</h1>');
+                    } else {
+                        processedLines.push(parseInlineMarkdown(line));
+                    }
+                }
             }
         }
         if (inTable) {
             tableHtml += "</table></div>";
             processedLines.push(tableHtml);
         }
+        if (inList) {
+            processedLines.push("</ul>");
+        }
 
         let finalHtml = processedLines.join("<br>");
+
+        finalHtml = finalHtml.replace(/<\/h1><br>/g, "</h1>");
+        finalHtml = finalHtml.replace(/<\/h2><br>/g, "</h2>");
+        finalHtml = finalHtml.replace(/<\/h3><br>/g, "</h3>");
+        finalHtml = finalHtml.replace(/<\/ul><br>/g, "</ul>");
+        finalHtml = finalHtml.replace(/<li>([\s\S]*?)<\/li><br>/g, "<li>$1</li>");
+        finalHtml = finalHtml.replace(/<\/div><br>/g, "</div>");
+        finalHtml = finalHtml.replace(/<\/table><br>/g, "</table>");
 
         // 3. 還原 DASHBOARD 區塊 HTML
         dashboards.forEach(db => {
             const escapedId = db.id.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
             finalHtml = finalHtml.replace(escapedId, db.html);
             finalHtml = finalHtml.replace(db.id, db.html);
+        });
+
+        // 4. 還原 CHART 區塊 HTML
+        charts.forEach(c => {
+            const escapedId = c.id.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            finalHtml = finalHtml.replace(escapedId, c.html);
+            finalHtml = finalHtml.replace(c.id, c.html);
         });
 
         return finalHtml;
@@ -597,6 +1520,7 @@
                     msgItem.append(who, body);
                     log.appendChild(msgItem);
                 });
+                initializeChartsInMessage(log);
                 scrollLog();
             }
         } catch (e) {
@@ -616,7 +1540,7 @@
         removeEmpty();
         const item = document.createElement("div");
         item.className = "chat-page-message bot typing";
-        item.innerHTML = '<div class="chat-page-message-label">水井龜</div><div class="chat-page-message-body"><span></span><span></span><span></span></div>';
+        item.innerHTML = '<div class="chat-page-message-label">水井龜</div><div class="chat-page-message-body"><div class="mascot-typing-avatar"></div><span></span><span></span><span></span></div>';
         log.appendChild(item);
         scrollLog();
         return item;
@@ -632,6 +1556,20 @@
         sendBtn.disabled = true;
         const typing = addTyping();
 
+        let waitMsg = "水井龜正在幫您分析水質資料...";
+        if (message.includes("活動")) {
+            waitMsg = "水井龜正在為您查詢最新活動資訊...";
+        } else if (message.includes("公告")) {
+            waitMsg = "水井龜正在抓取最新網站公告...";
+        } else if (message.includes("警報")) {
+            waitMsg = "水井龜正在檢測目前是否有感測器警報...";
+        } else if (message.includes("功能健檢") || message.includes("穩定")) {
+            waitMsg = "水井龜正在為您評估魚池穩定度指標...";
+        } else if (message.includes("歷史") || message.includes("趨勢")) {
+            waitMsg = "水井龜正在繪製精美的水質歷史趨勢圖...";
+        }
+        showWaiting(waitMsg);
+
         try {
             const response = await fetch(chatApi, {
                 method: "POST",
@@ -640,6 +1578,7 @@
             });
             const data = await response.json();
             typing.remove();
+            hideWaiting();
             if (response.ok) {
                 const botReply = data.reply || "我目前沒有找到合適的回覆。";
                 addMessage("水井龜", botReply, "bot");
@@ -651,6 +1590,7 @@
             }
         } catch (error) {
             typing.remove();
+            hideWaiting();
             const connErrMsg = `連線失敗：${error.message}`;
             addMessage("系統", connErrMsg, "error");
             saveMessage("系統", connErrMsg, "error");
@@ -682,6 +1622,273 @@
             sendMessage(chip.dataset.chatPrompt || chip.textContent || "");
         });
     });
+
+    // 語音錄音相關功能
+    async function startRecording() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            activeStream = stream;
+            audioChunks = [];
+            isCancelled = false;
+
+            let mimeType = "audio/webm";
+            if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
+                mimeType = "audio/webm;codecs=opus";
+            } else if (MediaRecorder.isTypeSupported("audio/ogg;codecs=opus")) {
+                mimeType = "audio/ogg;codecs=opus";
+            } else if (MediaRecorder.isTypeSupported("audio/wav")) {
+                mimeType = "audio/wav";
+            }
+
+            mediaRecorder = new MediaRecorder(stream, { mimeType });
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data && event.data.size > 0) {
+                    audioChunks.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = async () => {
+                stream.getTracks().forEach(track => track.stop());
+                activeStream = null;
+
+                if (isCancelled) {
+                    resetMicUI();
+                    return;
+                }
+
+                setMicState("transcribing");
+
+                const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || "audio/webm" });
+                await sendAudioToASR(audioBlob);
+            };
+
+            mediaRecorder.start();
+            isRecording = true;
+            setMicState("recording");
+
+            let remaining = 20;
+            if (input) {
+                input.placeholder = `🎙️ 聆聽中... 還可以說 ${remaining} 秒`;
+            }
+            recordCountdownInterval = setInterval(() => {
+                remaining -= 1;
+                if (remaining <= 0) {
+                    if (recordCountdownInterval) {
+                        clearInterval(recordCountdownInterval);
+                        recordCountdownInterval = null;
+                    }
+                } else if (input) {
+                    input.placeholder = `🎙️ 聆聽中... 還可以說 ${remaining} 秒`;
+                }
+            }, 1000);
+
+            recordTimeout = setTimeout(() => {
+                if (isRecording) stopRecording();
+            }, 20000);
+
+        } catch (err) {
+            console.error("Error accessing microphone:", err);
+            addMessage("系統", "無法存取麥克風，請確認瀏覽器權限或確認麥克風是否已啟用。", "error");
+            resetMicUI();
+        }
+    }
+
+    function stopRecording() {
+        if (mediaRecorder && mediaRecorder.state !== "inactive") {
+            mediaRecorder.stop();
+        }
+        isRecording = false;
+        if (recordTimeout) {
+            clearTimeout(recordTimeout);
+            recordTimeout = null;
+        }
+        if (recordCountdownInterval) {
+            clearInterval(recordCountdownInterval);
+            recordCountdownInterval = null;
+        }
+    }
+
+    function cancelRecording() {
+        isCancelled = true;
+        if (mediaRecorder && mediaRecorder.state !== "inactive") {
+            mediaRecorder.stop();
+        }
+        if (activeStream) {
+            activeStream.getTracks().forEach(track => track.stop());
+            activeStream = null;
+        }
+        isRecording = false;
+        if (recordTimeout) {
+            clearTimeout(recordTimeout);
+            recordTimeout = null;
+        }
+        if (recordCountdownInterval) {
+            clearInterval(recordCountdownInterval);
+            recordCountdownInterval = null;
+        }
+    }
+
+    async function sendAudioToASR(blob) {
+        if (!voiceApi) {
+            addMessage("系統", "語音辨識 API 尚未配置，請聯繫管理員。", "error");
+            resetMicUI();
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("audio", blob, "voice.webm");
+        const csrfToken = getCookie("csrftoken");
+
+        try {
+            const response = await fetch(voiceApi, {
+                method: "POST",
+                headers: { "X-CSRFToken": csrfToken },
+                body: formData
+            });
+
+            const data = await response.json();
+            if (response.ok && data.text) {
+                const recognizedText = data.text.trim();
+                if (recognizedText) {
+                    showVoicePreviewAndSend(recognizedText);
+                } else {
+                    addMessage("系統", "語音辨識結果為空，請重試。", "error");
+                }
+            } else {
+                const errorMsg = data.error || "語音辨識失敗，請重試或以打字輸入。";
+                addMessage("系統", errorMsg, "error");
+            }
+        } catch (err) {
+            console.error("Error calling voice ASR API:", err);
+            addMessage("系統", "無法連線至語音辨識服務，請檢查網路或確認後台 ASR 設定。", "error");
+        } finally {
+            resetMicUI();
+        }
+    }
+
+    function showVoicePreviewAndSend(text) {
+        const existingPreview = shell.querySelector(".voice-asr-preview");
+        if (existingPreview) existingPreview.remove();
+
+        const preview = document.createElement("div");
+        preview.className = "voice-asr-preview";
+        preview.innerHTML = `<i class="bi bi-mic-fill"></i> <span>${text}</span>`;
+        form.parentElement.insertBefore(preview, form);
+
+        setTimeout(() => {
+            preview.classList.add("is-fading");
+            setTimeout(() => preview.remove(), 400);
+        }, 800);
+
+        sendMessage(text);
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== "") {
+            const cookies = document.cookie.split(";");
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + "=")) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function setMicState(state) {
+        if (!micBtn) return;
+        if (state === "recording") {
+            micBtn.classList.add("is-recording");
+            micBtn.classList.remove("is-loading");
+            micBtn.title = "結束並送出辨識";
+            cancelMicBtn.hidden = false;
+            if (input) {
+                input.placeholder = "🎙️ 聆聽中... 還可以說 20 秒";
+                input.disabled = true;
+            }
+            if (sendBtn) sendBtn.disabled = true;
+            if (clearBtn) clearBtn.disabled = true;
+        } else if (state === "transcribing") {
+            micBtn.classList.remove("is-recording");
+            micBtn.classList.add("is-loading");
+            micBtn.disabled = true;
+            micBtn.title = "語音辨識中";
+            cancelMicBtn.hidden = true;
+            
+            const icon = micBtn.querySelector("i");
+            if (icon) {
+                icon.className = "bi bi-arrow-clockwise mascot-spin";
+            }
+
+            showWaiting("🎙️ 水井龜正在幫您辨識語音，請稍候...", true);
+            
+            let dots = 0;
+            if (input) {
+                input.placeholder = "⚡ 正在辨識中";
+            }
+            transcribingInterval = setInterval(() => {
+                dots = (dots + 1) % 4;
+                if (input) {
+                    input.placeholder = "⚡ 正在辨識中" + ".".repeat(dots);
+                }
+            }, 400);
+        }
+    }
+
+    function resetMicUI() {
+        if (!micBtn) return;
+        micBtn.classList.remove("is-recording");
+        micBtn.classList.remove("is-loading");
+        micBtn.disabled = false;
+        micBtn.title = "語音輸入（台語/國語）";
+        cancelMicBtn.hidden = true;
+        if (input) {
+            input.placeholder = "輸入想問的問題...";
+            input.disabled = false;
+        }
+        if (sendBtn) sendBtn.disabled = false;
+        if (clearBtn) clearBtn.disabled = false;
+        isRecording = false;
+        isCancelled = false;
+        if (recordCountdownInterval) {
+            clearInterval(recordCountdownInterval);
+            recordCountdownInterval = null;
+        }
+        if (transcribingInterval) {
+            clearInterval(transcribingInterval);
+            transcribingInterval = null;
+        }
+        hideWaiting();
+        
+        const icon = micBtn.querySelector("i");
+        if (icon) {
+            icon.className = "bi bi-mic-fill";
+        }
+    }
+
+    cancelMicBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        cancelRecording();
+    });
+
+    if (micBtn) {
+        if (!navigator.mediaDevices || !window.MediaRecorder) {
+            micBtn.style.display = "none";
+        } else {
+            micBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                if (!isRecording) {
+                    startRecording();
+                } else {
+                    stopRecording();
+                }
+            });
+        }
+    }
 
     // 載入本地歷史紀錄
     loadHistory();

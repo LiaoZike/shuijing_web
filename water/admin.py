@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Pond, PondSensor, SensorReading, WaterSimulationCron, WaterThreshold, WaterSensorAlert
+from .models import Pond, PondSensor, PondAerator, SensorReading, WaterSimulationCron, WaterThreshold, WaterSensorAlert
 
 
 @admin.register(Pond)
@@ -21,6 +21,12 @@ class PondSensorAdmin(admin.ModelAdmin):
     def display_owners(self, obj):
         return ", ".join([user.email or user.username for user in obj.pond.owners.all()])
     display_owners.short_description = "所屬池區擁有者 (User)"
+
+
+@admin.register(PondAerator)
+class PondAeratorAdmin(admin.ModelAdmin):
+    list_display = ("name", "pond", "x_position", "y_position", "is_active", "rules")
+    list_filter = ("pond", "is_active")
 
 
 @admin.register(SensorReading)

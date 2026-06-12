@@ -1,0 +1,36 @@
+Created At: 2026-06-12T10:13:33Z
+Completed At: 2026-06-12T10:13:34Z
+
+				The command failed with exit code: 1
+				Output:
+				=== Line 53 (RUN_COMMAND) ===
+Content length: 8153
+=== Line 55 (RUN_COMMAND) ===
+Content length: 526
+=== Line 87 (RUN_COMMAND) ===
+Content length: 8144
+=== Line 89 (RUN_COMMAND) ===
+Content length: 175
+=== Line 117 (RUN_COMMAND) ===
+Content length: 8016
+=== Line 119 (RUN_COMMAND) ===
+Content length: 175
+=== Line 143 (RUN_COMMAND) ===
+Content length: 7378
+=== Line 145 (RUN_COMMAND) ===
+Content length: 156
+=== Line 151 (RUN_COMMAND) ===
+Content length: 1573
+=== Line 153 (RUN_COMMAND) ===
+Content length: 139
+=== Line 157 (RUN_COMMAND) ===
+Content length: 567
+=== Line 159 (RUN_COMMAND) ===
+Content length: 545
+Found mascot_chat.js in command output!
+Traceback (most recent call last):
+  File "D:\workspace\shuijing_web\scratch\recover_file.py", line 14, in <module>
+    print(content[:1000])
+    ~~~~~^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'cp950' codec can't encode character '\ufffd' in position 137: illegal multibyte sequence
+

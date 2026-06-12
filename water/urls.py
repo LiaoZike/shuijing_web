@@ -11,6 +11,9 @@ urlpatterns = [
     
     # API上傳 (硬體專用)
     path("api/upload/", views.upload_sensor_reading, name="upload_sensor_reading"),
+
+    # 語音辨識 API
+    path("api/voice/", views.voice_transcribe, name="voice_transcribe"),
     
     # 池區管理與互動
     path("add/", views.add_pond, name="add_pond"),

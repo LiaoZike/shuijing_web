@@ -389,6 +389,22 @@
         startDrag(e.touches[0].clientX, e.touches[0].clientY);
     }
 
+    function onAeratorDragStart(e) {
+        if (!isEditMode) return;
+        e.preventDefault();
+        draggedElement = e.currentTarget.closest('.aerator-wrapper');
+        dragType = 'aerator';
+        startDrag(e.clientX, e.clientY);
+    }
+
+    function onAeratorTouchStart(e) {
+        if (!isEditMode) return;
+        e.preventDefault();
+        draggedElement = e.currentTarget.closest('.aerator-wrapper');
+        dragType = 'aerator';
+        startDrag(e.touches[0].clientX, e.touches[0].clientY);
+    }
+
     function startDrag(clientX, clientY) {
         if (!draggedElement) return;
 
@@ -398,8 +414,8 @@
         dragOffset.x = clientX - rect.left - rect.width / 2;
         dragOffset.y = clientY - rect.top - rect.height / 2;
 
-        if (dragType === 'sensor') {
-            const pin = draggedElement.querySelector('.sensor-pin');
+        if (dragType === 'sensor' || dragType === 'aerator') {
+            const pin = draggedElement.querySelector(dragType === 'sensor' ? '.sensor-pin' : '.aerator-pin');
             if (pin) pin.classList.add('dragging');
             draggedElement.classList.add('dragging-wrapper');
             document.addEventListener('mousemove', onDragMove);
@@ -434,6 +450,10 @@
             draggedElement.classList.toggle('tooltip-down', pctY < 35);
             const sensorId = draggedElement.dataset.sensorId;
             updatePosInputs(sensorId, Math.round(pctX), Math.round(pctY));
+        } else if (dragType === 'aerator') {
+            draggedElement.classList.toggle('tooltip-down', pctY < 35);
+            const aeratorId = draggedElement.dataset.aeratorId;
+            updateAeratorPosInputs(aeratorId, Math.round(pctX), Math.round(pctY));
         }
     }
 
@@ -442,10 +462,17 @@
 
     function onDragEnd() {
         if (draggedElement) {
-            const pin = draggedElement.querySelector('.sensor-pin');
-            if (pin) pin.classList.remove('dragging');
-            draggedElement.classList.remove('dragging-wrapper');
-            saveSensorAjax(draggedElement.dataset.sensorId);
+            if (dragType === 'sensor') {
+                const pin = draggedElement.querySelector('.sensor-pin');
+                if (pin) pin.classList.remove('dragging');
+                draggedElement.classList.remove('dragging-wrapper');
+                saveSensorAjax(draggedElement.dataset.sensorId);
+            } else if (dragType === 'aerator') {
+                const pin = draggedElement.querySelector('.aerator-pin');
+                if (pin) pin.classList.remove('dragging');
+                draggedElement.classList.remove('dragging-wrapper');
+                saveAeratorAjax(draggedElement.dataset.aeratorId);
+            }
         }
         draggedElement = null;
         document.removeEventListener('mousemove', onDragMove);
@@ -598,60 +625,86 @@
 
             // 只有點到空白區域才新增
             const target = e.target;
-            if (target.closest('.map-gate') || target.closest('.sensor-wrapper')) return;
+            if (target.closest('.map-gate') || target.closest('.sensor-wrapper') || target.closest('.aerator-wrapper') || target.closest('.map-edit-bar')) return;
             if (!target.classList.contains('map-water') &&
                 !target.classList.contains('map-grid') &&
-                target !== pondMap &&
-                !target.closest('.map-edit-bar')) return;
+                target !== pondMap) return;
 
             const rect = pondMap.getBoundingClientRect();
             const pctX = Math.max(2, Math.min(98, ((e.clientX - rect.left) / rect.width) * 100));
             const pctY = Math.max(2, Math.min(98, ((e.clientY - rect.top) / rect.height) * 100));
 
-            const name = prompt('為新感測器命名：');
-            if (!name || !name.trim()) return;
+            const activeTool = document.querySelector('input[name="map_tool"]:checked')?.value || 'sensor';
 
-            showAjaxStatus('syncing', '正在新增感測器...');
+            if (activeTool === 'sensor') {
+                const name = prompt('為新感測器命名：');
+                if (!name || !name.trim()) return;
 
-            ajaxAction({
-                action: 'add_sensor',
-                sensor_name: name.trim(),
-                sensor_type: 'multi',
-                x_position: Math.round(pctX),
-                y_position: Math.round(pctY),
-            })
-            .then(data => {
-                showAjaxStatus('success', '感測器已成功建立');
-                
-                // 動態在前端插入感測器 Pin 與工作區行
-                appendSensorToMap(data.sensor);
-                appendSensorToWorkbench(data.sensor);
-                updateSensorIndexes();
+                showAjaxStatus('syncing', '正在新增感測器...');
 
-                // 新增至對象下拉選單與圖表篩選
-                if (thresholdTargetSelect && data.sensor) {
-                    const option = document.createElement('option');
-                    option.value = data.sensor.id;
-                    option.textContent = `📟 感測器 ${document.querySelectorAll('#pinsContainer .sensor-wrapper').length}: ${data.sensor.name} (套用預設)`;
-                    thresholdTargetSelect.appendChild(option);
+                ajaxAction({
+                    action: 'add_sensor',
+                    sensor_name: name.trim(),
+                    sensor_type: 'multi',
+                    x_position: Math.round(pctX),
+                    y_position: Math.round(pctY),
+                })
+                .then(data => {
+                    showAjaxStatus('success', '感測器已成功建立');
                     
-                    // 初始化局部 thresholdsData 字典
-                    thresholdsData[String(data.sensor.id)] = {
-                        name: data.sensor.name,
-                        is_custom: false,
-                        values: JSON.parse(JSON.stringify(thresholdsData['default'].values))
-                    };
-                }
-                if (historySensorSelect && data.sensor) {
-                    const option = document.createElement('option');
-                    option.value = data.sensor.id;
-                    option.textContent = data.sensor.name;
-                    historySensorSelect.appendChild(option);
-                }
-            })
-            .catch(err => {
-                showAjaxStatus('error', err.message);
-            });
+                    // 動態在前端插入感測器 Pin 與工作區行
+                    appendSensorToMap(data.sensor);
+                    appendSensorToWorkbench(data.sensor);
+                    updateSensorIndexes();
+
+                    // 新增至對象下拉選單與圖表篩選
+                    if (thresholdTargetSelect && data.sensor) {
+                        const option = document.createElement('option');
+                        option.value = data.sensor.id;
+                        option.textContent = `📟 感測器 ${document.querySelectorAll('#pinsContainer .sensor-wrapper').length}: ${data.sensor.name} (套用預設)`;
+                        thresholdTargetSelect.appendChild(option);
+                        
+                        // 初始化局部 thresholdsData 字典
+                        thresholdsData[String(data.sensor.id)] = {
+                            name: data.sensor.name,
+                            is_custom: false,
+                            values: JSON.parse(JSON.stringify(thresholdsData['default'].values))
+                        };
+                    }
+                    if (historySensorSelect && data.sensor) {
+                        const option = document.createElement('option');
+                        option.value = data.sensor.id;
+                        option.textContent = data.sensor.name;
+                        historySensorSelect.appendChild(option);
+                    }
+                })
+                .catch(err => {
+                    showAjaxStatus('error', err.message);
+                });
+            } else if (activeTool === 'aerator') {
+                const name = prompt('為新水車命名：');
+                if (!name || !name.trim()) return;
+
+                showAjaxStatus('syncing', '正在新增水車...');
+
+                ajaxAction({
+                    action: 'add_aerator',
+                    aerator_name: name.trim(),
+                    x_position: Math.round(pctX),
+                    y_position: Math.round(pctY),
+                })
+                .then(data => {
+                    showAjaxStatus('success', '水車已成功建立');
+                    
+                    // 動態在前端插入水車 Pin 與工作區行
+                    appendAeratorToMap(data.aerator);
+                    appendAeratorToWorkbench(data.aerator);
+                    updateAeratorIndexes();
+                })
+                .catch(err => {
+                    showAjaxStatus('error', err.message);
+                });
+            }
         });
     }
 
@@ -1230,7 +1283,14 @@
         if (!historySensorSelect || !historyMetricSelect || !historyTimeSelect) return;
 
         const sensorId = historySensorSelect.value;
-        const metricKey = historyMetricSelect.value;
+        const isAerator = sensorId.startsWith('aerator_');
+        if (isAerator) {
+            historyMetricSelect.disabled = true;
+        } else {
+            historyMetricSelect.disabled = false;
+        }
+
+        const metricKey = isAerator ? 'aerator_state' : historyMetricSelect.value;
         const timeRange = historyTimeSelect.value;
 
         let start_date = '';
@@ -1333,7 +1393,8 @@
                 temperature: { label: '溫度 (°C)', color: '#ef4444' },
                 ammonia_nitrogen: { label: '氨氮 (mg/L)', color: '#f59e0b' },
                 nitrite: { label: '亞硝酸鹽 (mg/L)', color: '#8b5cf6' },
-                stability_index: { label: '穩定度 (%)', color: '#0f766e' }
+                stability_index: { label: '穩定度 (%)', color: '#0f766e' },
+                aerator_state: { label: '水車運作狀態 (0=關, 1=開)', color: '#0d9488' }
             };
 
             const opt = metricOpts[metricKey] || { label: '數值', color: '#0f766e' };
@@ -1343,6 +1404,35 @@
             historyChart.data.datasets[0].borderColor = opt.color;
             historyChart.data.datasets[0].pointBackgroundColor = opt.color;
             historyChart.data.datasets[0].backgroundColor = opt.color + '0A'; // opacity 0.04
+
+            if (metricKey === 'aerator_state') {
+                historyChart.options.scales.y.min = -0.2;
+                historyChart.options.scales.y.max = 1.2;
+                historyChart.options.scales.y.ticks.stepSize = 1;
+                historyChart.options.scales.y.ticks.callback = function(value) {
+                    if (value === 0) return '已停止 (關)';
+                    if (value === 1) return '運作中 (開)';
+                    return '';
+                };
+                historyChart.options.plugins.tooltip.callbacks = {
+                    label: function(context) {
+                        const val = context.parsed.y;
+                        return `狀態: ${val === 1 ? '運作中 (開)' : '已停止 (關)'}`;
+                    }
+                };
+            } else {
+                delete historyChart.options.scales.y.min;
+                delete historyChart.options.scales.y.max;
+                delete historyChart.options.scales.y.ticks.stepSize;
+                historyChart.options.scales.y.ticks.callback = function(value) {
+                    return value;
+                };
+                historyChart.options.plugins.tooltip.callbacks = {
+                    label: function(context) {
+                        return `${context.dataset.label || '數值'}: ${context.parsed.y}`;
+                    }
+                };
+            }
 
             const sensorId = historySensorSelect ? historySensorSelect.value : 'all';
             const limits = getHistoryThresholds(sensorId, metricKey);
@@ -1356,19 +1446,31 @@
         }
 
         // 填充表格 (保持最新數據在最上方，即原本 data 的順序)
-        const tableLabels = ['檢測時間', '感測器', '溫度', 'pH值', '溶氧', '氨氮', '亞硝酸鹽', '鹽度'];
+        const tableLabels = ['檢測時間', '感測器/水車', '溫度', 'pH值', '溶氧', '氨氮', '亞硝酸鹽', '鹽度'];
         data.forEach(row => {
             const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${row.measured_at}</td>
-                <td><span class="threshold-status-badge">${row.sensor_name}</span></td>
-                <td>${row.temperature !== null && row.temperature !== undefined ? row.temperature.toFixed(1) + ' °C' : '–'}</td>
-                <td>${row.ph !== null && row.ph !== undefined ? row.ph.toFixed(2) : '–'}</td>
-                <td>${row.dissolved_oxygen !== null && row.dissolved_oxygen !== undefined ? row.dissolved_oxygen.toFixed(1) + ' mg/L' : '–'}</td>
-                <td>${row.ammonia_nitrogen !== null && row.ammonia_nitrogen !== undefined ? row.ammonia_nitrogen.toFixed(3) + ' mg/L' : '–'}</td>
-                <td>${row.nitrite !== null && row.nitrite !== undefined ? row.nitrite.toFixed(3) + ' mg/L' : '–'}</td>
-                <td>${row.salinity !== null && row.salinity !== undefined ? row.salinity.toFixed(1) + ' ppt' : '–'}</td>
-            `;
+            if (metricKey === 'aerator_state') {
+                const stateStr = row.aerator_state === 1 ? '運作中' : '已停止';
+                const badgeClass = row.aerator_state === 1 ? 'success' : 'secondary';
+                tr.innerHTML = `
+                    <td>${row.measured_at}</td>
+                    <td><span class="threshold-status-badge" style="background: rgba(13,148,136,0.1); color: #0f766e; border: 1px solid rgba(13,148,136,0.15);">${row.sensor_name}</span></td>
+                    <td colspan="6" style="text-align: center; font-weight: bold; color: var(--text-1);">
+                        運作狀態：<span class="badge badge-${badgeClass}" style="padding: 4px 10px; border-radius: 4px; ${row.aerator_state === 1 ? 'background: rgba(16,185,129,0.1); color: #10b981;' : 'background: rgba(107,114,128,0.1); color: #6b7280;'}">${stateStr}</span>
+                    </td>
+                `;
+            } else {
+                tr.innerHTML = `
+                    <td>${row.measured_at}</td>
+                    <td><span class="threshold-status-badge">${row.sensor_name}</span></td>
+                    <td>${row.temperature !== null && row.temperature !== undefined ? row.temperature.toFixed(1) + ' °C' : '–'}</td>
+                    <td>${row.ph !== null && row.ph !== undefined ? row.ph.toFixed(2) : '–'}</td>
+                    <td>${row.dissolved_oxygen !== null && row.dissolved_oxygen !== undefined ? row.dissolved_oxygen.toFixed(1) + ' mg/L' : '–'}</td>
+                    <td>${row.ammonia_nitrogen !== null && row.ammonia_nitrogen !== undefined ? row.ammonia_nitrogen.toFixed(3) + ' mg/L' : '–'}</td>
+                    <td>${row.nitrite !== null && row.nitrite !== undefined ? row.nitrite.toFixed(3) + ' mg/L' : '–'}</td>
+                    <td>${row.salinity !== null && row.salinity !== undefined ? row.salinity.toFixed(1) + ' ppt' : '–'}</td>
+                `;
+            }
             tr.querySelectorAll('td').forEach((cell, index) => {
                 cell.dataset.label = tableLabels[index] || '';
             });
@@ -1536,12 +1638,434 @@
                     });
                 }
 
+                // Update each aerator operating state and tooltip
+                if (data.aerator_cards) {
+                    data.aerator_cards.forEach(aeData => {
+                        const wrapperElement = document.querySelector(`.aerator-wrapper[data-aerator-id="${aeData.aerator_id}"]`);
+                        if (wrapperElement) {
+                            const pinBtn = wrapperElement.querySelector('.aerator-pin');
+                            if (pinBtn) {
+                                pinBtn.className = `aerator-pin ${aeData.is_operating ? 'operating' : ''} ${aeData.is_active ? '' : 'aerator-pin--off'}`;
+                            }
+                            const tooltipStatus = wrapperElement.querySelector('.tooltip-status');
+                            if (tooltipStatus) {
+                                tooltipStatus.textContent = `狀態: ${aeData.is_operating ? '運作中' : '已停止'}`;
+                            }
+                        }
+                    });
+                }
+
                 // Smoothly refresh history chart and table
                 fetchHistoryData();
             }
         })
         .catch(err => console.error('Error auto-refreshing pond data:', err));
     }
+
+    // ========== 水車 (Aerator) CRUD 與自動化規則編輯 ==========
+
+    function updateAeratorPosInputs(aeratorId, x, y) {
+        document.querySelectorAll(`.input-pos[data-aerator-id="${aeratorId}"]`).forEach(input => {
+            if (input.dataset.axis === 'x') input.value = x;
+            if (input.dataset.axis === 'y') input.value = y;
+        });
+    }
+
+    function saveAeratorAjax(aeratorId) {
+        const row = document.querySelector(`.wb-row[data-aerator-id="${aeratorId}"]`);
+        if (!row) return;
+
+        const nameInput = row.querySelector('.input-name');
+        const activeCheckbox = row.querySelector('.input-active');
+        const xInput = row.querySelector(`.input-pos[data-axis="x"]`);
+        const yInput = row.querySelector(`.input-pos[data-axis="y"]`);
+
+        const name = nameInput ? nameInput.value.trim() : '';
+        const active = activeCheckbox ? activeCheckbox.checked : true;
+        const x = xInput ? parseInt(xInput.value) || 50 : 50;
+        const y = yInput ? parseInt(yInput.value) || 50 : 50;
+
+        // Compile rules JSON array
+        const rules = [];
+        row.querySelectorAll('.rule-row').forEach(ruleRow => {
+            const sensorSelect = ruleRow.querySelector('.rule-sensor');
+            const metricSelect = ruleRow.querySelector('.rule-metric');
+            const operatorSelect = ruleRow.querySelector('.rule-operator');
+            const valueInput = ruleRow.querySelector('.rule-value');
+
+            if (sensorSelect && metricSelect && operatorSelect && valueInput) {
+                rules.push({
+                    sensor_id: parseInt(sensorSelect.value),
+                    metric: metricSelect.value,
+                    operator: operatorSelect.value,
+                    value: parseFloat(valueInput.value) || 0.0
+                });
+            }
+        });
+
+        showAjaxStatus('syncing', '正在同步水車變更...');
+
+        ajaxAction({
+            action: 'update_aerator',
+            aerator_id: aeratorId,
+            aerator_name: name,
+            x_position: x,
+            y_position: y,
+            is_active: active ? 'on' : 'off',
+            rules: JSON.stringify(rules)
+        })
+        .then(data => {
+            showAjaxStatus('success', '水車配置已儲存');
+            
+            // Update map pin coordinates and state
+            const wrapper = document.querySelector(`.aerator-wrapper[data-aerator-id="${aeratorId}"]`);
+            if (wrapper) {
+                wrapper.dataset.x = x;
+                wrapper.dataset.y = y;
+                wrapper.style.left = x + '%';
+                wrapper.style.top = y + '%';
+                wrapper.classList.toggle('tooltip-down', y < 35);
+
+                const pin = wrapper.querySelector('.aerator-pin');
+                if (pin) {
+                    pin.className = `aerator-pin ${data.aerator.is_operating ? 'operating' : ''} ${data.aerator.is_active ? '' : 'aerator-pin--off'}`;
+                }
+
+                const label = wrapper.querySelector('.aerator-label');
+                if (label) label.textContent = name;
+
+                const tooltipName = wrapper.querySelector('.tooltip-aerator-name');
+                if (tooltipName) tooltipName.textContent = name;
+
+                const tooltipStatus = wrapper.querySelector('.tooltip-status');
+                if (tooltipStatus) {
+                    tooltipStatus.textContent = `狀態: ${data.aerator.is_operating ? '運作中' : '已停止'}`;
+                }
+
+                // Rebuild enriched rules list in tooltip
+                const tooltipRulesContainer = wrapper.querySelector('.tooltip-rules');
+                if (tooltipRulesContainer) {
+                    tooltipRulesContainer.innerHTML = '';
+                    if (data.aerator.enriched_rules && data.aerator.enriched_rules.length > 0) {
+                        let rulesHtml = `<div style="font-weight: bold; margin-bottom: 2px;">運作規則 (AND 聯集):</div>`;
+                        data.aerator.enriched_rules.forEach(r => {
+                            let opSign = r.operator;
+                            if (r.operator === 'lt') opSign = '&lt;';
+                            else if (r.operator === 'le') opSign = '&le;';
+                            else if (r.operator === 'gt') opSign = '&gt;';
+                            else if (r.operator === 'ge') opSign = '&ge;';
+                            else if (r.operator === 'eq') opSign = '=';
+                            rulesHtml += `<div style="color: rgba(255,255,255,0.85); white-space: nowrap;">- ${r.sensor_name} ${r.metric_label} ${opSign} ${r.value}</div>`;
+                        });
+                        tooltipRulesContainer.innerHTML = rulesHtml;
+                    } else {
+                        tooltipRulesContainer.innerHTML = `<div style="color: rgba(255,255,255,0.6);">預設無條件運作</div>`;
+                    }
+                }
+            }
+        })
+        .catch(err => {
+            showAjaxStatus('error', err.message);
+        });
+    }
+
+    function appendAeratorToMap(ae) {
+        if (!pinsContainer) return;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'aerator-wrapper';
+        if (ae.y_position < 35) {
+            wrapper.classList.add('tooltip-down');
+        }
+        wrapper.dataset.aeratorId = ae.id;
+        wrapper.dataset.x = ae.x_position;
+        wrapper.dataset.y = ae.y_position;
+        wrapper.style.left = ae.x_position + '%';
+        wrapper.style.top = ae.y_position + '%';
+
+        wrapper.innerHTML = `
+            <button type="button"
+                    class="aerator-pin ${ae.is_operating ? 'operating' : ''} ${ae.is_active ? '' : 'aerator-pin--off'}"
+                    aria-label="水車: ${ae.name}">
+                <i class="bi bi-fan"></i>
+                <span class="aerator-label">${ae.name}</span>
+            </button>
+            <div class="aerator-tooltip">
+                <div class="tooltip-header">
+                    <strong class="tooltip-aerator-name">${ae.name}</strong>
+                    <span class="tooltip-type">水車</span>
+                </div>
+                <div class="tooltip-body">
+                    <div class="tooltip-status">
+                        狀態: ${ae.is_operating ? '運作中' : '已停止'}
+                    </div>
+                    <div class="tooltip-rules" style="font-size: 0.8rem; margin-top: 6px; border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 4px;">
+                        <div style="color: rgba(255,255,255,0.6);">預設無條件運作</div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        pinsContainer.appendChild(wrapper);
+
+        const emptyState = document.getElementById('mapEmptyState');
+        if (emptyState) emptyState.style.display = 'none';
+
+        setupDragging();
+    }
+
+    function appendAeratorToWorkbench(ae) {
+        const list = document.getElementById('aeratorWorkbenchList');
+        if (!list) return;
+
+        const row = document.createElement('div');
+        row.className = 'wb-row';
+        row.dataset.aeratorId = ae.id;
+        row.style.borderBottom = '1px solid var(--border)';
+        row.style.paddingBottom = '16px';
+        row.style.marginBottom = '12px';
+        row.style.alignItems = 'flex-start';
+        row.style.flexDirection = 'column';
+        row.style.gap = '8px';
+
+        const index = document.querySelectorAll('#aeratorWorkbenchList .wb-row').length + 1;
+
+        row.innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 12px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="wb-idx" style="background: rgba(13,148,136,0.12); color: #0d9488; font-weight: 700; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 0.8rem;">${index}</span>
+                    <input type="text" class="input-name input-ae-field" value="${ae.name}"
+                           data-aerator-id="${ae.id}" placeholder="水車名稱" required style="max-width: 140px; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.9rem;">
+                    
+                    <label class="checkbox-container" style="margin: 0; font-size: 0.85rem; display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                        <input type="checkbox" class="input-active input-ae-field" data-aerator-id="${ae.id}"
+                               ${ae.is_active ? 'checked' : ''} style="cursor: pointer;">
+                        <span class="checkbox-label">啟用</span>
+                    </label>
+                </div>
+                <div class="wb-edit" style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
+                    <div class="wb-pos" style="display: flex; align-items: center; gap: 4px; font-size: 0.85rem; color: var(--text-2);">
+                        <label style="margin: 0;">X</label>
+                        <input type="number" class="input-pos input-ae-field" value="${ae.x_position}"
+                               data-aerator-id="${ae.id}" data-axis="x"
+                               min="0" max="100" style="width: 55px; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--border); text-align: center;">
+                        <label style="margin: 0; margin-left: 4px;">Y</label>
+                        <input type="number" class="input-pos input-ae-field" value="${ae.y_position}"
+                               data-aerator-id="${ae.id}" data-axis="y"
+                               min="0" max="100" style="width: 55px; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--border); text-align: center;">
+                    </div>
+                    <button type="button" class="btn-delete-aerator" data-aerator-id="${ae.id}" title="刪除水車" style="background: none; border: 1px solid rgba(220,38,38,0.25); border-radius: 6px; color: #ef4444; width: 32px; height: 32px; display: grid; place-items: center; cursor: pointer; transition: background 150ms; padding: 0;">
+                        <i class="bi bi-trash3"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="aerator-rules-gui" data-aerator-id="${ae.id}" style="background: rgba(13,148,136,0.04); border: 1px solid rgba(13,148,136,0.08); border-radius: 6px; padding: 12px; width: 100%; box-sizing: border-box; margin-top: 6px;">
+                <div style="font-weight: 700; font-size: 0.85rem; color: #0f766e; display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                    <span>⚙️ 運作觸發條件 (所有條件皆符合時才開啟，否則關閉)</span>
+                    <button type="button" class="btn-add-rule" data-aerator-id="${ae.id}" style="background: #0f766e; color: #fff; border: none; padding: 3px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: background 150ms;">
+                        <i class="bi bi-plus-lg"></i> 新增條件
+                    </button>
+                </div>
+                
+                <div class="rules-container" data-aerator-id="${ae.id}" style="display: flex; flex-direction: column; gap: 6px;">
+                    <div class="no-rules-hint" style="font-size: 0.8rem; color: var(--text-2); font-style: italic;">
+                        目前無運作規則，水車在啟用時將預設持續運作。
+                    </div>
+                </div>
+            </div>
+        `;
+
+        list.appendChild(row);
+
+        const emptyState = document.getElementById('aeratorWorkbenchEmptyState');
+        if (emptyState) emptyState.style.display = 'none';
+    }
+
+    function updateAeratorIndexes() {
+        const wrappers = document.querySelectorAll('#pinsContainer .aerator-wrapper');
+        const rows = document.querySelectorAll('#aeratorWorkbenchList .wb-row');
+
+        rows.forEach((row, idx) => {
+            const idxEl = row.querySelector('.wb-idx');
+            if (idxEl) idxEl.textContent = idx + 1;
+        });
+
+        const mapEmpty = document.getElementById('mapEmptyState');
+        const aeratorWbEmpty = document.getElementById('aeratorWorkbenchEmptyState');
+
+        const hasSensors = document.querySelectorAll('#pinsContainer .sensor-wrapper').length > 0;
+        const hasAerators = wrappers.length > 0;
+
+        if (mapEmpty) {
+            mapEmpty.style.display = (hasSensors || hasAerators) ? 'none' : 'flex';
+        }
+        if (aeratorWbEmpty) {
+            aeratorWbEmpty.style.display = hasAerators ? 'none' : 'block';
+        }
+    }
+
+    function getSensorOptionsHtml() {
+        let optionsHtml = '';
+        document.querySelectorAll('#workbenchList .wb-row[data-sensor-id]').forEach(row => {
+            const id = row.dataset.sensorId;
+            const nameInput = row.querySelector('.input-name');
+            const name = nameInput ? nameInput.value.trim() : '感測器';
+            optionsHtml += `<option value="${id}">${name}</option>`;
+        });
+        return optionsHtml;
+    }
+
+    // 新增運作規則點擊
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('.btn-add-rule');
+        if (!btn) return;
+
+        const aeratorId = btn.dataset.aeratorId;
+        if (!aeratorId) return;
+
+        const row = document.querySelector(`.wb-row[data-aerator-id="${aeratorId}"]`);
+        if (!row) return;
+
+        const rulesContainer = row.querySelector('.rules-container');
+        if (!rulesContainer) return;
+
+        // 移除「目前無運作規則」的提示
+        const hint = rulesContainer.querySelector('.no-rules-hint');
+        if (hint) hint.remove();
+
+        // 動態獲取現有感測器選單
+        const sensorOptions = getSensorOptionsHtml();
+        if (!sensorOptions) {
+            alert('請先建立至少一個感測器，才能設定自動化運作規則！');
+            return;
+        }
+
+        const ruleRow = document.createElement('div');
+        ruleRow.className = 'rule-row';
+        ruleRow.style.display = 'flex';
+        ruleRow.style.alignItems = 'center';
+        ruleRow.style.gap = '6px';
+        ruleRow.style.flexWrap = 'wrap';
+        ruleRow.style.background = '#fff';
+        ruleRow.style.padding = '6px 8px';
+        ruleRow.style.border = '1px solid rgba(13,148,136,0.1)';
+        ruleRow.style.borderRadius = '6px';
+
+        ruleRow.innerHTML = `
+            <select class="rule-sensor input-ae-rule-field" data-aerator-id="${aeratorId}" style="padding: 4px 6px; border-radius: 4px; font-size: 0.8rem; border: 1px solid var(--border); outline: none;">
+                ${sensorOptions}
+            </select>
+            <select class="rule-metric input-ae-rule-field" data-aerator-id="${aeratorId}" style="padding: 4px 6px; border-radius: 4px; font-size: 0.8rem; border: 1px solid var(--border); outline: none;">
+                <option value="dissolved_oxygen" selected>溶氧量 (DO)</option>
+                <option value="ph">pH 值</option>
+                <option value="temperature">水溫</option>
+                <option value="ammonia_nitrogen">氨氮 (NH₃)</option>
+                <option value="nitrite">亞硝酸鹽 (NO₂)</option>
+            </select>
+            <select class="rule-operator input-ae-rule-field" data-aerator-id="${aeratorId}" style="padding: 4px 6px; border-radius: 4px; font-size: 0.8rem; border: 1px solid var(--border); width: 50px; outline: none; text-align: center;">
+                <option value="lt" selected>&lt;</option>
+                <option value="le">&le;</option>
+                <option value="gt">&gt;</option>
+                <option value="ge">&ge;</option>
+                <option value="eq">=</option>
+            </select>
+            <input type="number" class="rule-value input-ae-rule-field" data-aerator-id="${aeratorId}" value="4.5" step="0.1" style="width: 70px; padding: 4px 6px; border-radius: 4px; font-size: 0.8rem; border: 1px solid var(--border); outline: none;" placeholder="閥值">
+            <button type="button" class="btn-remove-rule" style="background: none; border: none; color: #dc2626; cursor: pointer; font-size: 1.1rem; padding: 0 4px; display: grid; place-items: center; opacity: 0.8; transition: opacity 150ms;">
+                <i class="bi bi-x-circle-fill"></i>
+            </button>
+        `;
+
+        rulesContainer.appendChild(ruleRow);
+        saveAeratorAjax(aeratorId);
+    });
+
+    // 刪除運作規則點擊
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('.btn-remove-rule');
+        if (!btn) return;
+
+        const ruleRow = btn.closest('.rule-row');
+        if (!ruleRow) return;
+
+        const container = ruleRow.closest('.rules-container');
+        const aeratorId = container ? container.dataset.aeratorId : null;
+
+        ruleRow.remove();
+
+        if (container && container.querySelectorAll('.rule-row').length === 0) {
+            container.innerHTML = `
+                <div class="no-rules-hint" style="font-size: 0.8rem; color: var(--text-2); font-style: italic;">
+                    目前無運作規則，水車在啟用時將預設持續運作。
+                </div>
+            `;
+        }
+
+        if (aeratorId) {
+            saveAeratorAjax(aeratorId);
+        }
+    });
+
+    // 欄位即時編輯與雙向連動 (水車)
+    document.addEventListener('change', function (e) {
+        const field = e.target.closest('.input-ae-field, .input-ae-rule-field');
+        if (!field) return;
+
+        const aeratorId = field.dataset.aeratorId;
+        if (!aeratorId) return;
+
+        if (field.classList.contains('input-pos')) {
+            const row = document.querySelector(`.wb-row[data-aerator-id="${aeratorId}"]`);
+            if (row) {
+                const xInput = row.querySelector('.input-pos[data-axis="x"]');
+                const yInput = row.querySelector('.input-pos[data-axis="y"]');
+                const x = Math.max(0, Math.min(100, parseInt(xInput.value) || 50));
+                const y = Math.max(0, Math.min(100, parseInt(yInput.value) || 50));
+
+                xInput.value = x;
+                yInput.value = y;
+
+                const wrapper = document.querySelector(`.aerator-wrapper[data-aerator-id="${aeratorId}"]`);
+                if (wrapper) {
+                    wrapper.style.left = x + '%';
+                    wrapper.style.top = y + '%';
+                    wrapper.classList.toggle('tooltip-down', y < 35);
+                }
+            }
+        }
+
+        saveAeratorAjax(aeratorId);
+    });
+
+    // 刪除水車 (AJAX)
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('.btn-delete-aerator');
+        if (!btn) return;
+
+        const aeratorId = btn.dataset.aeratorId;
+        if (!confirm('確認刪除此水車？')) return;
+
+        showAjaxStatus('syncing', '正在刪除水車...');
+
+        ajaxAction({
+            action: 'delete_aerator',
+            aerator_id: aeratorId,
+        })
+        .then(data => {
+            showAjaxStatus('success', '水車已成功刪除');
+
+            const wrapper = document.querySelector(`.aerator-wrapper[data-aerator-id="${aeratorId}"]`);
+            if (wrapper) wrapper.remove();
+
+            const row = document.querySelector(`.wb-row[data-aerator-id="${aeratorId}"]`);
+            if (row) row.remove();
+
+            updateAeratorIndexes();
+        })
+        .catch(err => {
+            showAjaxStatus('error', err.message);
+        });
+    });
 
     // 30 秒自動重新整理撈取最新數據 (透過 AJAX 避免整頁跳動)
     setInterval(refreshPondData, 30000);

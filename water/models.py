@@ -37,7 +37,13 @@ class Pond(models.Model):
         related_name="viewer_ponds",
         verbose_name="協作者 (唯讀)",
     )
+    is_public_viewer = models.BooleanField(
+        "開放所有人唯讀查看",
+        default=False,
+        help_text="啟用後，所有已登入使用者都能查看此池區與歷史數據，但不能編輯設定。",
+    )
     map_note = models.CharField("池區地圖備註", max_length=200, blank=True)
+    map_image = models.ImageField("感測器分佈地圖圖片", upload_to="pond_maps/", blank=True, null=True)
     discord_webhook_url = models.CharField("Discord Webhook URL", max_length=500, blank=True, default="")
 
 
@@ -101,6 +107,120 @@ class PondSensor(models.Model):
 
     def __str__(self):
         return f"{self.pond.name} / {self.name}"
+
+
+class PondAerator(models.Model):
+    """池區中的水車與運作規則。"""
+    pond = models.ForeignKey(Pond, on_delete=models.CASCADE, related_name="aerators")
+    name = models.CharField("水車名稱", max_length=50)
+    x_position = models.PositiveSmallIntegerField(
+        "X 座標",
+        default=50,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        help_text="地圖上的水平位置，0 到 100。",
+    )
+    y_position = models.PositiveSmallIntegerField(
+        "Y 座標",
+        default=50,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        help_text="地圖上的垂直位置，0 到 100。",
+    )
+    is_active = models.BooleanField("是否啟用", default=True)
+    # rules: [{"sensor_id": 1, "metric": "dissolved_oxygen", "operator": "lt", "value": 4.5}]
+    rules = models.JSONField("運作規則", default=list, blank=True)
+
+    def is_operating(self):
+        """判斷水車是否正在運作"""
+        if not self.is_active:
+            return False
+        if not self.rules:
+            # 如果沒有設定任何規則，預設運作（或手動開啟為 True）
+            return True
+            
+        for rule in self.rules:
+            sensor_id = rule.get("sensor_id")
+            metric = rule.get("metric")
+            operator = rule.get("operator")
+            try:
+                target_value = float(rule.get("value", 0))
+            except (ValueError, TypeError):
+                continue
+                
+            try:
+                sensor = self.pond.sensors.get(pk=sensor_id)
+            except (PondSensor.DoesNotExist, ValueError, TypeError):
+                return False
+                
+            latest_reading = sensor.readings.first()
+            if not latest_reading:
+                return False
+                
+            current_value = getattr(latest_reading, metric, None)
+            if current_value is None:
+                return False
+                
+            try:
+                current_value = float(current_value)
+            except (ValueError, TypeError):
+                return False
+                
+            if operator == "lt":
+                if not (current_value < target_value):
+                    return False
+            elif operator == "le":
+                if not (current_value <= target_value):
+                    return False
+            elif operator == "gt":
+                if not (current_value > target_value):
+                    return False
+            elif operator == "ge":
+                if not (current_value >= target_value):
+                    return False
+            elif operator == "eq":
+                if not (current_value == target_value):
+                    return False
+            else:
+                return False
+                
+        return True
+
+    def get_enriched_rules(self):
+        """傳回包含感測器名稱與指標中文名稱的規則清單"""
+        enriched = []
+        metric_labels = {
+            "temperature": "水溫",
+            "ph": "pH 值",
+            "dissolved_oxygen": "溶氧量",
+            "ammonia_nitrogen": "氨氮",
+            "nitrite": "亞硝酸鹽",
+            "salinity": "鹽度",
+        }
+        for rule in self.rules:
+            sensor_id = rule.get("sensor_id")
+            metric = rule.get("metric")
+            operator = rule.get("operator")
+            value = rule.get("value")
+            
+            sensor_name = "未知感測器"
+            try:
+                sensor = self.pond.sensors.get(pk=sensor_id)
+                sensor_name = sensor.name
+            except Exception:
+                pass
+                
+            enriched.append({
+                "sensor_id": sensor_id,
+                "sensor_name": sensor_name,
+                "metric": metric,
+                "metric_label": metric_labels.get(metric, metric),
+                "operator": operator,
+                "value": value,
+            })
+        return enriched
+
+    def __str__(self):
+        return f"{self.pond.name} / {self.name}"
+
 
 
 class SensorReading(models.Model):
@@ -228,6 +348,21 @@ class WaterSimulationCron(models.Model):
         "Discord 上次執行結果",
         blank=True,
         default="",
+    )
+
+    asr_url = models.CharField(
+        "語音辨識 API URL（主要）",
+        max_length=500,
+        blank=True,
+        default="",
+        help_text="Colab/ngrok 等語音辨識服務的主要 URL，例如 https://xxxx.ngrok-free.app",
+    )
+    asr_backup_url = models.CharField(
+        "語音辨識 API URL（備用）",
+        max_length=500,
+        blank=True,
+        default="",
+        help_text="主要 URL 無法連線時的備用 URL",
     )
 
     created_at = models.DateTimeField(auto_now_add=True)

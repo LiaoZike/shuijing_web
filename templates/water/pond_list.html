@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}我的魚池｜水井村{% endblock %}
+{% block title %}{% if user.is_authenticated %}我的魚池{% else %}公開魚池{% endif %}｜水井村{% endblock %}
 
 {% block link_css %}
     <link rel="stylesheet" href="{% static 'css/water/pond_list.css' %}">
@@ -13,7 +13,7 @@
         <header class="page-header">
             <div class="header-left">
                 <p class="page-kicker">WATER QUALITY MONITORING</p>
-                <h1>我的魚池</h1>
+                <h1>{% if user.is_authenticated %}我的魚池{% else %}公開魚池{% endif %}</h1>
             </div>
             <div class="header-right">
                 <div class="stat-group">
@@ -28,10 +28,17 @@
                         <span class="stat-label">需留意</span>
                     </div>
                 </div>
-                <a href="{% url 'water:add_pond' %}" class="btn-add-pond">
-                    <i class="bi bi-plus-lg"></i>
-                    <span>新增魚池</span>
-                </a>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'water:add_pond' %}" class="btn-add-pond">
+                        <i class="bi bi-plus-lg"></i>
+                        <span>新增魚池</span>
+                    </a>
+                {% else %}
+                    <a href="{% url 'login_portal' %}" class="btn-add-pond">
+                        <i class="bi bi-box-arrow-in-right"></i>
+                        <span>登入加入魚池</span>
+                    </a>
+                {% endif %}
             </div>
         </header>
 
@@ -46,6 +53,11 @@
                             <h3 class="card-name">{{ item.pond.name }}</h3>
                         </a>
                         <p class="card-species"><i class="bi bi-fish"></i> {{ item.pond.species }}</p>
+                        {% if item.pond.is_public_viewer %}
+                        <span style="display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; padding: 2px 8px; border-radius: 999px; background: rgba(15,118,110,0.1); color: #0f766e; font-size: 0.72rem; font-weight: 800;">
+                            <i class="bi bi-globe2"></i> 公開唯讀
+                        </span>
+                        {% endif %}
                     </div>
                     <span class="card-tone">{{ item.status.label }}</span>
                     
@@ -71,8 +83,12 @@
                     <a href="{% url 'water:pond_detail' item.pond.pk %}" class="card-map-link">
                         <div class="mini-pond-map">
                             <div class="map-bg-wrapper">
-                                <div class="map-water"></div>
-                                <div class="map-grid"></div>
+                                {% if item.pond.map_image %}
+                                    <img src="{{ item.pond.map_image.url }}" alt="地圖背景" style="width: 100%; height: 100%; object-fit: fill; position: absolute; inset: 0; display: block;">
+                                {% else %}
+                                    <div class="map-water"></div>
+                                    <div class="map-grid"></div>
+                                {% endif %}
                             </div>
                             <div class="map-gate map-gate--in" style="left: {{ item.pond.inlet_x }}%; top: {{ item.pond.inlet_y }}%;">進水</div>
                             <div class="map-gate map-gate--out" style="left: {{ item.pond.outlet_x }}%; top: {{ item.pond.outlet_y }}%;">排水</div>
@@ -110,6 +126,44 @@
                                 </div>
                             </div>
                             {% endfor %}
+
+                            {% for ae_item in item.aerator_cards %}
+                            <div class="aerator-wrapper {% if ae_item.aerator.y_position < 35 %}tooltip-down{% endif %}"
+                                 style="left: {{ ae_item.aerator.x_position }}%; top: {{ ae_item.aerator.y_position }}%;">
+                                <div class="aerator-pin {% if ae_item.is_operating %}operating{% endif %} {% if not ae_item.aerator.is_active %}aerator-pin--off{% endif %}"
+                                     aria-label="水車: {{ ae_item.aerator.name }}">
+                                    <i class="bi bi-fan"></i>
+                                </div>
+                                <div class="aerator-tooltip">
+                                    <div class="tooltip-header">
+                                        <strong class="tooltip-aerator-name">{{ ae_item.aerator.name }}</strong>
+                                        <span class="tooltip-type">水車</span>
+                                    </div>
+                                    <div class="tooltip-body">
+                                        <div class="tooltip-status">
+                                            狀態: {% if ae_item.is_operating %}運作中{% else %}已停止{% endif %}
+                                        </div>
+                                        <div class="tooltip-rules" style="font-size: 0.8rem; margin-top: 6px; border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 4px;">
+                                            {% if ae_item.aerator.rules %}
+                                                <div style="font-weight: bold; margin-bottom: 2px;">運作規則 (AND 聯集):</div>
+                                                {% for r in ae_item.aerator.get_enriched_rules %}
+                                                    <div style="color: rgba(255,255,255,0.85); white-space: nowrap;">- {{ r.sensor_name }} {{ r.metric_label }} 
+                                                        {% if r.operator == 'lt' %}&lt;
+                                                        {% elif r.operator == 'le' %}&le;
+                                                        {% elif r.operator == 'gt' %}&gt;
+                                                        {% elif r.operator == 'ge' %}&ge;
+                                                        {% elif r.operator == 'eq' %}=
+                                                        {% endif %} {{ r.value }}
+                                                    </div>
+                                                {% endfor %}
+                                            {% else %}
+                                                <div style="color: rgba(255,255,255,0.6);">預設無條件運作</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
                         </div>
                     </a>
                 </div>
@@ -140,6 +194,21 @@
                     {% endfor %}
                 </div>
 
+                <!-- Card Aerators Data Panel -->
+                {% if item.aerator_cards %}
+                <div class="card-aerators-summary" style="padding: 12px 16px; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 8px; font-size: 0.85rem; background: rgba(13,148,136,0.02); align-items: center;">
+                    <span style="font-weight: 700; color: #0f766e; display: flex; align-items: center; gap: 4px;"><i class="bi bi-fan"></i> 水車狀態：</span>
+                    {% for ae_item in item.aerator_cards %}
+                    <span class="aerator-tag" style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; border: 1px solid {% if ae_item.is_operating %}rgba(16,185,129,0.25){% else %}var(--border){% endif %}; background: {% if ae_item.is_operating %}rgba(16,185,129,0.06){% else %}#f9fafb{% endif %}; color: {% if ae_item.is_operating %}#10b981{% else %}var(--text-3){% endif %}; font-weight: 500;">
+                        {{ ae_item.aerator.name }}
+                        <span style="font-size: 0.72rem; font-weight: 700;">
+                            ({% if ae_item.is_operating %}運作中{% else %}已停止{% endif %})
+                        </span>
+                    </span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
                 <!-- Card Footer -->
                 <div class="card-footer">
                     {% if item.reading %}
@@ -159,12 +228,21 @@
             <div class="empty-icon">
                 <i class="bi bi-water"></i>
             </div>
-            <h2>還沒有綁定魚池</h2>
-            <p>開始監控水質，請先新增一個魚池</p>
-            <a href="{% url 'water:add_pond' %}" class="btn-add-pond-empty">
-                <i class="bi bi-plus-circle"></i>
-                <span>新增我的第一個魚池</span>
-            </a>
+            {% if user.is_authenticated %}
+                <h2>還沒有綁定魚池</h2>
+                <p>開始監控水質，請先新增一個魚池</p>
+                <a href="{% url 'water:add_pond' %}" class="btn-add-pond-empty">
+                    <i class="bi bi-plus-circle"></i>
+                    <span>新增我的第一個魚池</span>
+                </a>
+            {% else %}
+                <h2>目前沒有公開魚池</h2>
+                <p>登入後可以加入或建立自己的魚池。</p>
+                <a href="{% url 'login_portal' %}" class="btn-add-pond-empty">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    <span>登入加入魚池</span>
+                </a>
+            {% endif %}
         </section>
         {% endif %}
     </div>
@@ -210,10 +288,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // 30 秒自動重新整理頁面以撈取最新數據 (僅在無 Modal 顯示時觸發)
+    // 30 秒自動重新整理頁面以撈取最新數據（Modal 或水井龜聊天開啟時暫停）
     setInterval(function() {
         const modalOpen = document.querySelector('.modal.show');
-        if (!modalOpen) {
+        const mascotChatOpen = document.getElementById('mascotChatPanel')?.classList.contains('is-open');
+        if (!modalOpen && !mascotChatOpen) {
             let url = new URL(window.location.href);
             url.searchParams.set('refresh', 'true');
             window.location.href = url.toString();

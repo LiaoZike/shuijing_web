@@ -312,6 +312,25 @@
                 </div>
             </div>
 
+            <!-- Section 3: 語音辨識 (ASR) 設定 -->
+            <div style="margin-bottom: 28px;">
+                <h3 style="font-size: 1.1rem; font-weight: 850; color: #0f766e; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                    <i class="bi bi-mic-fill"></i> 語音辨識 (ASR) 設定
+                </h3>
+
+                <div class="cron-field">
+                    <label for="asr_url">語音辨識 API URL（主要）</label>
+                    <input id="asr_url" type="text" name="asr_url" value="{{ config.asr_url|default:'' }}" placeholder="https://xxxx.ngrok-free.app/ 或者 http://localhost:8000/" style="width: 100%; max-width: 520px;">
+                    <small style="color: #64748b; font-size: 0.8rem; display: block; margin-top: 4px;">Colab/ngrok 等語音辨識服務的主要 URL，例如 https://xxxx.ngrok-free.app</small>
+                </div>
+
+                <div class="cron-field">
+                    <label for="asr_backup_url">語音辨識 API URL（備用）</label>
+                    <input id="asr_backup_url" type="text" name="asr_backup_url" value="{{ config.asr_backup_url|default:'' }}" placeholder="https://yyyy.ngrok-free.app/" style="width: 100%; max-width: 520px;">
+                    <small style="color: #64748b; font-size: 0.8rem; display: block; margin-top: 4px;">主要 URL 無法連線時的備用 URL</small>
+                </div>
+            </div>
+
             <div class="cron-actions">
                 <button class="cron-button primary" type="submit">{% if is_new %}儲存並建立模擬{% else %}儲存設定{% endif %}</button>
                 <a href="?" class="cron-button secondary">{% if is_new %}返回{% else %}取消{% endif %}</a>

@@ -1,0 +1,14 @@
+Created At: 2026-06-12T10:12:38Z
+Completed At: 2026-06-12T10:12:40Z
+
+				The command failed with exit code: 1
+				Output:
+				dir : �䤣� 'D:\workspace\shuijing_web\staticfiles\js\core\mascot_chat.js' �|�A�]�s�b�C
+� �u�:1 �r�:1
++ dir staticfiles\js\core\mascot_chat.js
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (D:\workspace\sh...\mascot_chat.js:String) [Get-ChildItem], ItemNotFound 
+   Exception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetChildItemCommand
+ 
+

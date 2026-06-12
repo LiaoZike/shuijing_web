@@ -17,6 +17,17 @@ def user_display_name(request):
     else:
         display_name = None
 
+    first_pond_name = "我的魚池"
+    if request.user.is_authenticated:
+        from water.views import visible_ponds_for
+        try:
+            first_pond = visible_ponds_for(request.user).first()
+            if first_pond:
+                first_pond_name = first_pond.name
+        except Exception:
+            pass
+
     return {
-        'user_display_name': display_name
+        'user_display_name': display_name,
+        'first_pond_name': first_pond_name
     }

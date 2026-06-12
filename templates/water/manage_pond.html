@@ -27,7 +27,7 @@
             
             {# ================= 左欄：基本資訊表單 ================= #}
             <div class="manage-pond-column-left">
-                <form id="editPondForm" method="POST" class="pond-form" style="max-width: none; margin-bottom: 0;">
+                <form id="editPondForm" method="POST" enctype="multipart/form-data" class="pond-form" style="max-width: none; margin-bottom: 0;">
                     {% csrf_token %}
                     <div class="form-card">
                         <h2 style="font-size: 1.25rem; font-weight: 850; color: #112522; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
@@ -76,6 +76,22 @@
                                    maxlength="200"
                                    class="form-control">
                             <small class="form-help">地圖上顯示的位置備註，幫助感測器配置</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="pond_map_image" class="form-label">
+                                上傳感測器地圖圖片
+                            </label>
+                            <input type="file" id="pond_map_image" name="map_image" accept="image/*" class="form-control">
+                            <small class="form-help">上傳池區感測器分佈地圖。上傳後地圖外框（比例 1.85:1）維持固定，地圖圖片將拉伸填滿，不會改變外框尺寸。</small>
+                            {% if pond.map_image %}
+                            <div style="margin-top: 10px; display: flex; align-items: center; gap: 10px;">
+                                <span style="font-size: 0.8rem; color: #0f766e; font-weight: 700;"><i class="bi bi-image"></i> 已有地圖圖片</span>
+                                <label style="font-size: 0.8rem; color: #ef4444; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; margin-bottom: 0;">
+                                    <input type="checkbox" name="clear_map_image" value="1"> 刪除圖片
+                                </label>
+                            </div>
+                            {% endif %}
                         </div>
 
                         {% if is_owner %}
@@ -190,6 +206,27 @@
                             與其他協作者共享此池區。編輯者可以修改感測器與池區設定，檢視者則僅能查看數值與歷史紀錄。
                         </p>
 
+                        {% if is_owner %}
+                        <div style="margin-bottom: 22px; padding: 16px 18px; border: 1px solid rgba(15,118,110,0.16); border-radius: 10px; background: rgba(15,118,110,0.04);">
+                            <label for="is_public_viewer" style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; margin: 0;">
+                                <input type="checkbox" id="is_public_viewer" name="is_public_viewer" form="editPondForm" {% if pond.is_public_viewer %}checked{% endif %} style="margin-top: 4px; width: 18px; height: 18px; accent-color: #0f766e;">
+                                <span>
+                                    <strong style="display: flex; align-items: center; gap: 6px; color: #112522; font-size: 0.95rem;">
+                                        <i class="bi bi-globe2" style="color: #0f766e;"></i>
+                                        開放所有人唯讀查看
+                                    </strong>
+                                    <small style="display: block; margin-top: 4px; color: #627974; line-height: 1.5;">
+                                        啟用後，所有已登入使用者都能在池區列表與詳情頁查看此池區、感測器讀值與歷史紀錄，但不能編輯設定。
+                                    </small>
+                                </span>
+                            </label>
+                        </div>
+                        {% elif pond.is_public_viewer %}
+                        <div style="margin-bottom: 22px; padding: 12px 14px; border: 1px solid rgba(15,118,110,0.16); border-radius: 10px; background: rgba(15,118,110,0.04); color: #0f766e; font-weight: 700; font-size: 0.86rem;">
+                            <i class="bi bi-globe2"></i> 此池區目前已開放所有人唯讀查看。
+                        </div>
+                        {% endif %}
+
                         <!-- 新增共享表單 -->
                         {% if is_owner %}
                         <form method="POST" action="{% url 'water:share_pond' pond.pk %}" class="share-invite-form" style="margin-bottom: 28px;">
@@ -220,6 +257,18 @@
                             <h3 style="font-size: 1.05rem; font-weight: 800; color: #112522; margin-bottom: 16px; border-bottom: 1px solid rgba(19, 67, 62, 0.1); padding-bottom: 8px;">
                                 目前有權限的成員
                             </h3>
+
+                            {% if pond.is_public_viewer %}
+                            <div class="member-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(19, 67, 62, 0.05);">
+                                <div class="member-info" style="display: flex; align-items: center; gap: 10px;">
+                                    <span class="member-avatar" style="color: #0f766e; font-size: 1.25rem;"><i class="bi bi-globe2"></i></span>
+                                    <div>
+                                        <div class="member-email" style="font-weight: 700; font-size: 0.9rem; color: #112522;">所有已登入使用者</div>
+                                        <span class="member-role badge-viewer" style="background: rgba(15,118,110,0.1); color: #0f766e; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; font-weight: 700;">公開檢視者 (唯讀)</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
                             
                             <!-- 管理者 / 擁有者 -->
                             {% for owner in owners %}

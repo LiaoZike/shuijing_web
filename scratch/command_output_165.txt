@@ -1,0 +1,14 @@
+Created At: 2026-06-12T10:12:48Z
+Completed At: 2026-06-12T10:12:50Z
+
+				The command failed with exit code: 1
+				Output:
+				wc : �L�k� 'wc' �J�O�_� Cmdlet�B�ơB�O�ɩΥi�{�W�١C�ˬd�W�٫�r�O�_�T�A�p�G�]�t�|�ܡA�нT�{�|
+�O�_�T�A�M�A�դ@�C
+� �u�:1 �r�:47
++ git show HEAD:static/js/core/mascot_chat.js | wc -l
++                                               ~~
+    + CategoryInfo          : ObjectNotFound: (wc:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+

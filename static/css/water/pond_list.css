@@ -927,3 +927,130 @@
     color: var(--muted);
     font-style: italic;
 }
+
+/* ========== 水車 (Aerator) Mini Map 樣式 ========== */
+.mini-pond-map .aerator-wrapper {
+    position: absolute;
+    width: 42px;
+    height: 42px;
+    transform: translate(-50%, -50%);
+    z-index: 20;
+}
+
+.mini-pond-map .aerator-wrapper:hover {
+    z-index: 90;
+}
+
+.mini-pond-map .aerator-pin {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 50%;
+    background: #0d9488; /* teal */
+    color: white;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 0 3px rgba(255,255,255,0.78), 0 3px 8px rgba(17, 37, 34, 0.2);
+    z-index: 20;
+    padding: 0;
+    transition: all 150ms;
+}
+
+.mini-pond-map .aerator-wrapper:hover .aerator-pin {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 3px rgba(255,255,255,0.9), 0 4px 12px rgba(17, 37, 34, 0.35);
+}
+
+.mini-pond-map .aerator-pin--off {
+    background: #64748b; /* slate/gray */
+    opacity: 0.65;
+}
+
+.mini-pond-map .aerator-pin i {
+    display: block;
+}
+
+.mini-pond-map .aerator-pin.operating i {
+    animation: spin-aerator-mini 2s linear infinite;
+}
+
+@keyframes spin-aerator-mini {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.mini-pond-map .aerator-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-10px);
+    background: rgba(17, 37, 34, 0.95);
+    backdrop-filter: blur(12px);
+    color: #e0f2fe;
+    border-radius: 10px;
+    min-width: 180px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.25), 0 0 0 1px rgba(15,118,110,0.3);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms, transform 180ms;
+    z-index: 100;
+    overflow: hidden;
+    padding: 8px 10px;
+}
+
+.mini-pond-map .aerator-wrapper:hover .aerator-tooltip {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(-18px);
+}
+
+.mini-pond-map .aerator-tooltip::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+    width: 10px;
+    height: 10px;
+    background: rgba(17, 37, 34, 0.95);
+    z-index: -1;
+}
+
+.mini-pond-map .aerator-wrapper.tooltip-down .aerator-tooltip {
+    bottom: auto;
+    top: 100%;
+    transform: translateX(-50%) translateY(10px);
+}
+
+.mini-pond-map .aerator-wrapper.tooltip-down:hover .aerator-tooltip {
+    transform: translateX(-50%) translateY(18px);
+}
+
+.mini-pond-map .aerator-wrapper.tooltip-down .aerator-tooltip::after {
+    bottom: auto;
+    top: -5px;
+}
+
+.mini-pond-map .aerator-tooltip .tooltip-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px;
+    border-bottom: 1px solid rgba(224,242,254,0.1);
+}
+
+.mini-pond-map .aerator-tooltip .tooltip-header strong { font-size: 0.8rem; color: #fff; flex: 1; }
+.mini-pond-map .aerator-tooltip .tooltip-type { font-size: 0.58rem; color: rgba(224,242,254,0.4); }
+.mini-pond-map .aerator-tooltip .tooltip-body { padding: 6px; }
+.mini-pond-map .aerator-tooltip .tooltip-status { font-size: 0.72rem; color: rgba(224, 242, 254, 0.9); }
+.mini-pond-map .aerator-tooltip .tooltip-rules {
+    font-size: 0.68rem;
+    margin-top: 4px;
+    border-top: 1px dashed rgba(255,255,255,0.15);
+    padding-top: 4px;
+}

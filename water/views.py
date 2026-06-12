@@ -14,7 +14,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.db.models import Q
 
-from .models import Pond, PondSensor, WaterThreshold, SensorReading, WaterSimulationCron
+from .models import Pond, PondSensor, WaterThreshold, SensorReading, WaterSimulationCron, PondAerator
 from .simulator import run_simulation_round
 from .utils import METRIC_DEFINITIONS, default_thresholds, reading_status, calculate_stability, check_metrics_status
 
@@ -438,6 +438,119 @@ def regenerate_token(request, pond):
     return {"status": "success", "message": f"感測器 {sensor.name} 的上傳金鑰已更新。", "sensor": sensor}
 
 
+@login_required(login_url="login_portal")
+def voice_transcribe(request):
+    if request.method != "POST":
+        return JsonResponse({"status": "error", "error": "Only POST method is allowed."}, status=405)
+    
+    audio_file = request.FILES.get("audio")
+    if not audio_file:
+        return JsonResponse({"status": "error", "error": "未提供音訊檔案。"}, status=400)
+    
+    audio_data = audio_file.read()
+    
+    cron_config = WaterSimulationCron.objects.first()
+    urls = []
+    if cron_config:
+        if cron_config.asr_url:
+            urls.append(cron_config.asr_url)
+        if cron_config.asr_backup_url:
+            urls.append(cron_config.asr_backup_url)
+            
+    if not urls:
+        urls.append("http://127.0.0.1:8002/transcribe")
+        
+    last_error = "無可用或配置的語音辨識服務。"
+    
+    import requests
+    for base_url in urls:
+        base_url = base_url.strip()
+        if not base_url:
+            continue
+            
+        endpoint = base_url
+        if not endpoint.endswith("/transcribe"):
+            if endpoint.endswith("/"):
+                endpoint += "transcribe"
+            else:
+                endpoint += "/transcribe"
+                
+        try:
+            res = requests.post(
+                endpoint,
+                data=audio_data,
+                headers={"Content-Type": audio_file.content_type or "audio/webm"},
+                timeout=15
+            )
+            if res.status_code == 200:
+                return JsonResponse(res.json())
+            else:
+                last_error = f"ASR 服務回應錯誤碼: {res.status_code}"
+        except Exception as e:
+            last_error = f"連線 ASR 服務失敗: {str(e)}"
+            
+    return JsonResponse({"status": "error", "error": last_error}, status=503)
+
+
+def add_aerator(request, pond):
+    if not can_manage_pond(request.user, pond):
+        return {"status": "error", "message": "你尚未被授權編輯此池區的水車配置。"}
+
+    name = (request.POST.get("aerator_name") or "").strip()
+    if not name:
+        return {"status": "error", "message": "請輸入水車名稱。"}
+
+    aerator = PondAerator.objects.create(
+        pond=pond,
+        name=name,
+        x_position=parse_position(request.POST.get("x_position"), 50),
+        y_position=parse_position(request.POST.get("y_position"), 50),
+    )
+    return {"status": "success", "message": "水車已加入池區地圖。", "aerator": aerator}
+
+
+def update_aerator(request, pond):
+    if not can_manage_pond(request.user, pond):
+        return {"status": "error", "message": "你尚未被授權編輯此池區的水車配置。"}
+
+    aerator = PondAerator.objects.filter(pk=request.POST.get("aerator_id"), pond=pond).first()
+    if not aerator:
+        return {"status": "error", "message": "找不到指定的水車。"}
+
+    name = (request.POST.get("aerator_name") or "").strip()
+    aerator.name = name or aerator.name
+    aerator.x_position = parse_position(request.POST.get("x_position"), aerator.x_position)
+    aerator.y_position = parse_position(request.POST.get("y_position"), aerator.y_position)
+    
+    is_active_val = request.POST.get("is_active")
+    if is_active_val is not None:
+        aerator.is_active = is_active_val in ("on", "true", "1")
+
+    rules_json = request.POST.get("rules")
+    if rules_json is not None:
+        try:
+            rules = json.loads(rules_json)
+            aerator.rules = rules
+        except json.JSONDecodeError:
+            pass
+
+    aerator.save()
+    return {"status": "success", "message": "水車設定與規則已更新。", "aerator": aerator}
+
+
+def delete_aerator(request, pond):
+    if not can_manage_pond(request.user, pond):
+        return {"status": "error", "message": "你尚未被授權編輯此池區的水車配置。"}
+
+    aerator = PondAerator.objects.filter(pk=request.POST.get("aerator_id"), pond=pond).first()
+    if not aerator:
+        return {"status": "error", "message": "找不到指定的水車。"}
+
+    aerator_id = aerator.pk
+    aerator_name = aerator.name
+    aerator.delete()
+    return {"status": "success", "message": f"水車 {aerator_name} 已刪除。", "aerator_id": aerator_id}
+
 
 @login_required(login_url="login_portal")
 def pond_list(request):
@@ -468,6 +581,13 @@ def pond_list(request):
                 "metric_status": check_metrics_status(sensor_latest, threshold_map) if sensor_latest else {},
             })
 
+        aerator_list = []
+        for aerator in pond.aerators.all():
+            aerator_list.append({
+                "aerator": aerator,
+                "is_operating": aerator.is_operating(),
+            })
+
         pond_cards.append({
             "pond": pond,
             "reading": latest,
@@ -475,6 +595,7 @@ def pond_list(request):
             "can_manage": can_manage_pond(request.user, pond),
             "can_delete": can_delete_pond(request.user, pond),
             "sensor_cards": sensor_list,
+            "aerator_cards": aerator_list,
         })
 
     context = {
@@ -501,6 +622,48 @@ def pond_detail(request, pond_id):
 
     latest = pond.readings.first()
 
+    # Handle AJAX GET request for telemetry auto-refresh
+    is_ajax_get = request.method == "GET" and (
+        request.headers.get("x-requested-with") == "XMLHttpRequest" or request.GET.get("ajax") == "true"
+    )
+    if is_ajax_get:
+        sensor_list = []
+        for sensor in pond.sensors.all():
+            sensor_latest = sensor.readings.first() or latest
+            has_custom = WaterThreshold.objects.filter(user=target_user, pond=pond, sensor=sensor).exists()
+            sensor_thresholds = threshold_map_for(target_user, pond, sensor=sensor if has_custom else None)
+            s_status = reading_status(sensor_latest, sensor_thresholds)
+            
+            sensor_list.append({
+                "sensor_id": sensor.pk,
+                "tone": s_status["tone"],
+                "label": s_status["label"],
+                "message": s_status.get("message", ""),
+                "metric_status": check_metrics_status(sensor_latest, sensor_thresholds) if sensor_latest else {},
+                "reading": {
+                    "temperature": float(sensor_latest.temperature) if sensor_latest and sensor_latest.temperature is not None else None,
+                    "ph": float(sensor_latest.ph) if sensor_latest and sensor_latest.ph is not None else None,
+                    "dissolved_oxygen": float(sensor_latest.dissolved_oxygen) if sensor_latest and sensor_latest.dissolved_oxygen is not None else None,
+                    "ammonia_nitrogen": float(sensor_latest.ammonia_nitrogen) if sensor_latest and sensor_latest.ammonia_nitrogen is not None else None,
+                    "nitrite": float(sensor_latest.nitrite) if sensor_latest and sensor_latest.nitrite is not None else None,
+                } if sensor_latest else None
+            })
+
+        aerator_list = []
+        for aerator in pond.aerators.all():
+            aerator_list.append({
+                "aerator_id": aerator.pk,
+                "is_active": aerator.is_active,
+                "is_operating": aerator.is_operating(),
+            })
+
+        return JsonResponse({
+            "status": "success",
+            "latest_measured_at": timezone.localtime(latest.measured_at).strftime("%Y/%m/%d %H:%M") if latest else "",
+            "sensor_cards": sensor_list,
+            "aerator_cards": aerator_list,
+        })
+
     if request.method == "POST":
         action = request.POST.get("action")
         is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest" or request.POST.get("ajax") == "true"
@@ -516,6 +679,12 @@ def pond_detail(request, pond_id):
             result = delete_sensor(request, pond)
         elif action == "regenerate_token":
             result = regenerate_token(request, pond)
+        elif action == "add_aerator":
+            result = add_aerator(request, pond)
+        elif action == "update_aerator":
+            result = update_aerator(request, pond)
+        elif action == "delete_aerator":
+            result = delete_aerator(request, pond)
 
         if is_ajax:
             if action == "update_gates":
@@ -572,11 +741,28 @@ def pond_detail(request, pond_id):
                                 "nitrite": float(sensor_latest.nitrite) if sensor_latest and sensor_latest.nitrite is not None else None,
                             } if sensor_latest else None
                         }
+
+                    aerator_data = {}
+                    if "aerator" in result:
+                        ae = result["aerator"]
+                        aerator_data = {
+                            "id": ae.pk,
+                            "name": ae.name,
+                            "x_position": ae.x_position,
+                            "y_position": ae.y_position,
+                            "is_active": ae.is_active,
+                            "rules": ae.rules,
+                            "enriched_rules": ae.get_enriched_rules(),
+                            "is_operating": ae.is_operating(),
+                        }
+
                     return JsonResponse({
                         "status": "success",
                         "message": result["message"],
                         "sensor": sensor_data,
-                        "sensor_id": result.get("sensor_id")
+                        "sensor_id": result.get("sensor_id"),
+                        "aerator": aerator_data,
+                        "aerator_id": result.get("aerator_id")
                     })
                 else:
                     return JsonResponse({"status": "error", "message": result["message"]}, status=400)
@@ -671,12 +857,21 @@ def pond_detail(request, pond_id):
         
     thresholds_json_str = json.dumps(thresholds_json)
 
+    # 獲取水車列表及運作狀態
+    aerator_cards = []
+    for aerator in pond.aerators.all():
+        aerator_cards.append({
+            "aerator": aerator,
+            "is_operating": aerator.is_operating(),
+        })
+
     context = {
         "pond": pond,
         "latest": latest,
         "status": status,
         "metrics": metrics,
         "sensor_cards": sensor_cards,
+        "aerator_cards": aerator_cards,
         "thresholds": pond_defaults,
         "stability_score": latest_stability,
         "threshold_items": threshold_items,
@@ -726,6 +921,7 @@ def add_pond(request):
             description=description,
             map_note=map_note,
             creator=request.user,
+            map_image=request.FILES.get("map_image"),
         )
 
         # 添加當前使用者為擁有者
@@ -755,6 +951,18 @@ def manage_pond(request, pond_id):
         pond.map_note = (request.POST.get("map_note") or "").strip()
         if can_delete_pond(request.user, pond):
             pond.discord_webhook_url = (request.POST.get("discord_webhook_url") or "").strip()
+
+        # 處理地圖圖片上傳與刪除
+        if request.POST.get("clear_map_image") == "1":
+            if pond.map_image:
+                pond.map_image.delete(save=False)
+            pond.map_image = None
+        else:
+            map_image = request.FILES.get("map_image")
+            if map_image:
+                if pond.map_image:
+                    pond.map_image.delete(save=False)
+                pond.map_image = map_image
 
 
         # 驗證名稱唯一性（排除自己）
@@ -848,7 +1056,92 @@ def pond_history_api(request, pond_id):
         readings = SensorReading.objects.filter(pond=pond, measured_at__gte=start_date)
 
     if sensor_id != "all":
-        readings = readings.filter(sensor_id=sensor_id)
+        if str(sensor_id).startswith("aerator_"):
+            aerator_id = str(sensor_id).split("_")[1]
+            try:
+                aerator = pond.aerators.get(pk=aerator_id)
+            except Exception:
+                return JsonResponse({"status": "error", "message": "找不到指定的水車。"}, status=400)
+            
+            reading_qs = readings.select_related("sensor").order_by("measured_at")
+            latest_values = {}
+            data = []
+            for r in reading_qs:
+                if r.sensor_id:
+                    latest_values[r.sensor_id] = {
+                        "temperature": r.temperature,
+                        "ph": r.ph,
+                        "dissolved_oxygen": r.dissolved_oxygen,
+                        "ammonia_nitrogen": r.ammonia_nitrogen,
+                        "nitrite": r.nitrite,
+                        "salinity": r.salinity,
+                    }
+                
+                is_operating = True
+                if not aerator.is_active:
+                    is_operating = False
+                elif aerator.rules:
+                    for rule in aerator.rules:
+                        s_id = rule.get("sensor_id")
+                        metric = rule.get("metric")
+                        op = rule.get("operator")
+                        try:
+                            t_val = float(rule.get("value", 0))
+                        except (ValueError, TypeError):
+                            continue
+                        
+                        sensor_vals = latest_values.get(s_id)
+                        if not sensor_vals:
+                            is_operating = False
+                            break
+                        
+                        curr_val = sensor_vals.get(metric)
+                        if curr_val is None:
+                            is_operating = False
+                            break
+                            
+                        try:
+                            curr_val = float(curr_val)
+                        except (ValueError, TypeError):
+                            is_operating = False
+                            break
+                            
+                        if op == "lt" and not (curr_val < t_val):
+                            is_operating = False
+                            break
+                        elif op == "le" and not (curr_val <= t_val):
+                            is_operating = False
+                            break
+                        elif op == "gt" and not (curr_val > t_val):
+                            is_operating = False
+                            break
+                        elif op == "ge" and not (curr_val >= t_val):
+                            is_operating = False
+                            break
+                        elif op == "eq" and not (curr_val == t_val):
+                            is_operating = False
+                            break
+                        elif op not in ("lt", "le", "gt", "ge", "eq"):
+                            is_operating = False
+                            break
+                
+                data.append({
+                    "measured_at": timezone.localtime(r.measured_at).strftime("%Y-%m-%d %H:%M:%S"),
+                    "sensor_name": aerator.name,
+                    "aerator_state": 1 if is_operating else 0,
+                    "temperature": None,
+                    "ph": None,
+                    "dissolved_oxygen": None,
+                    "ammonia_nitrogen": None,
+                    "nitrite": None,
+                    "salinity": None,
+                    "stability_index": None,
+                })
+            
+            data.reverse()
+            return JsonResponse({"status": "success", "data": data})
+        else:
+            readings = readings.filter(sensor_id=sensor_id)
 
     readings = readings.select_related("sensor").order_by("-measured_at")
     pond_defaults = threshold_map_for(target_user, pond, sensor=None)

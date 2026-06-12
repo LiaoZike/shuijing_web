@@ -374,6 +374,7 @@
      id="mascotChatPanel"
      data-chat-api="{% url 'chat-api' %}"
      data-clear-api="{% url 'chat-clear' %}"
+     data-voice-api="{% url 'water:voice_transcribe' %}"
      data-lenis-prevent
      hidden>
     <div class="mascot-chat-header">
@@ -381,10 +382,13 @@
             <div class="mascot-chat-avatar" aria-hidden="true"></div>
             <div>
                 <div class="mascot-chat-title">水井龜導覽</div>
-                <div class="mascot-chat-status">活動、公告、USR 資訊查詢</div>
+                <div class="mascot-chat-status">活動、公告、魚池狀態、水質數據查詢</div>
             </div>
         </div>
         <div class="mascot-chat-actions">
+            <button type="button" class="mascot-chat-icon-btn" data-chat-clear aria-label="清除對話紀錄" title="清除對話紀錄">
+                <i class="bi bi-trash3-fill"></i>
+            </button>
             <a href="{% url 'chat-page' %}" target="_blank" rel="noopener noreferrer" class="mascot-chat-icon-btn" aria-label="開啟完整聊天頁">
                 <i class="bi bi-box-arrow-up-right"></i>
             </a>
@@ -393,25 +397,39 @@
             </button>
         </div>
     </div>
+    <!-- 🟢 互動式像素烏龜等待載入公告欄 -->
+    <div class="mascot-waiting-banner-wrapper">
+        <div class="mascot-waiting-banner" id="mascotWaitingBanner" hidden>
+            <div class="mascot-waiting-banner-inner">
+                <div class="mascot-waiting-banner-turtle" aria-hidden="true"></div>
+                <div class="mascot-waiting-banner-text">水井龜正在潛水中撈取水質數據...</div>
+            </div>
+        </div>
+    </div>
     <div class="mascot-chat-log" data-chat-log data-lenis-prevent>
         <div class="mascot-chat-empty" data-chat-empty>
             <div class="mascot-chat-empty-title">需要水井村資訊嗎？</div>
-            <div>可以問我活動、公告、USR 成果或 AIoT 專案。</div>
+            <div>可以問我活動、公告、魚池狀態、水質數據或 AIoT 專案。</div>
         </div>
     </div>
     <div class="mascot-chat-prompts">
-        <button type="button" data-chat-prompt="請整理全部水池近 7 天的水質狀態，列出每個水池的最新讀值、平均溶氧，並提醒需要注意的池。">水池統整</button>
-        <button type="button" data-chat-prompt>近期有什麼活動？</button>
-        <button type="button" data-chat-prompt>最新公告有哪些？</button>
-        <button type="button" data-chat-prompt>介紹 USR 成果</button>
+        <button type="button" data-chat-prompt="請整理我所有魚池的水質狀態與最新讀值，並分析有沒有異常？">水池統整</button>
+        <button type="button" data-chat-prompt="請幫我對{{ first_pond_name }}進行完整的功能健檢，包含計算穩定度與逐一感測器讀值檢查。">魚池完整健檢</button>
+        <button type="button" data-chat-prompt="請檢查目前有哪些魚池或感測器處於異常警報狀態？">最新警報檢查</button>
+        <button type="button" data-chat-prompt="請用折線圖畫出{{ first_pond_name }}的最新水質歷史趨勢圖">水質趨勢圖表</button>
+        <button type="button" data-chat-prompt="近期有什麼活動？">最新活動</button>
+        <button type="button" data-chat-prompt="最新公告有哪些？">網站公告</button>
     </div>
     <form class="mascot-chat-form" data-chat-form>
         <input type="text" data-chat-input placeholder="輸入想問的問題..." autocomplete="off">
+        <button type="button" class="mascot-cancel-mic-btn" id="mascotCancelMicBtn" aria-label="取消錄音" title="取消錄音" hidden>
+            <i class="bi bi-x-lg"></i>
+        </button>
+        <button type="button" class="mascot-chat-icon-btn mascot-mic-btn" id="mascotMicBtn" aria-label="語音輸入" title="語音輸入（台語/國語）">
+            <i class="bi bi-mic-fill"></i>
+        </button>
         <button type="submit" data-chat-send aria-label="送出訊息">
             <i class="bi bi-send-fill"></i>
-        </button>
-        <button type="button" data-chat-clear aria-label="清除聊天">
-            <i class="bi bi-trash3"></i>
         </button>
     </form>
 </div>

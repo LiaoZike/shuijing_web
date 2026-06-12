@@ -9,7 +9,9 @@ from . import llm
 
 
 def chat_page(request):
-    return render(request, "chat/chat.html")
+    from .tools import get_pond_summary
+    pond_data = get_pond_summary(days=7, user=request.user)
+    return render(request, "chat/chat.html", {"pond_data": pond_data})
 
 
 @csrf_exempt

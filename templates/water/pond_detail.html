@@ -179,8 +179,12 @@
 
                     <div class="pond-map" id="pondMap">
                         <div class="map-bg-wrapper" style="position: absolute; inset: 0; border-radius: 6px; overflow: hidden; pointer-events: none; z-index: 0;">
-                            <div class="map-water"></div>
-                            <div class="map-grid"></div>
+                            {% if pond.map_image %}
+                                <img src="{{ pond.map_image.url }}" alt="地圖背景" style="width: 100%; height: 100%; object-fit: fill; position: absolute; inset: 0; display: block;">
+                            {% else %}
+                                <div class="map-water"></div>
+                                <div class="map-grid"></div>
+                            {% endif %}
                         </div>
                         <div class="map-gate map-gate--in" data-gate-type="in" style="left: {{ pond.inlet_x }}%; top: {{ pond.inlet_y }}%;">進水</div>
                         <div class="map-gate map-gate--out" data-gate-type="out" style="left: {{ pond.outlet_x }}%; top: {{ pond.outlet_y }}%;">排水</div>
@@ -222,18 +226,74 @@
                                 </div>
                             </div>
                             {% endfor %}
+                            
+                            {% for item in aerator_cards %}
+                            <div class="aerator-wrapper {% if item.aerator.y_position < 35 %}tooltip-down{% endif %}" data-aerator-id="{{ item.aerator.pk }}"
+                                 data-x="{{ item.aerator.x_position }}"
+                                 data-y="{{ item.aerator.y_position }}"
+                                 style="left: {{ item.aerator.x_position }}%; top: {{ item.aerator.y_position }}%;">
+                                <button type="button"
+                                        class="aerator-pin {% if item.is_operating %}operating{% endif %} {% if not item.aerator.is_active %}aerator-pin--off{% endif %}"
+                                        aria-label="水車: {{ item.aerator.name }}">
+                                    <i class="bi bi-fan"></i>
+                                    <span class="aerator-label">{{ item.aerator.name }}</span>
+                                </button>
+                                <div class="aerator-tooltip">
+                                    <div class="tooltip-header">
+                                        <strong class="tooltip-aerator-name">{{ item.aerator.name }}</strong>
+                                        <span class="tooltip-type">水車</span>
+                                    </div>
+                                    <div class="tooltip-body">
+                                        <div class="tooltip-status">
+                                            狀態: {% if item.is_operating %}運作中{% else %}已停止{% endif %}
+                                        </div>
+                                        <div class="tooltip-rules" style="font-size: 0.8rem; margin-top: 6px; border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 4px;">
+                                            {% if item.aerator.rules %}
+                                                <div style="font-weight: bold; margin-bottom: 2px;">運作規則 (AND 聯集):</div>
+                                                {% for r in item.aerator.get_enriched_rules %}
+                                                    <div style="color: rgba(255,255,255,0.85); white-space: nowrap;">- {{ r.sensor_name }} {{ r.metric_label }} 
+                                                        {% if r.operator == 'lt' %}&lt;
+                                                        {% elif r.operator == 'le' %}&le;
+                                                        {% elif r.operator == 'gt' %}&gt;
+                                                        {% elif r.operator == 'ge' %}&ge;
+                                                        {% elif r.operator == 'eq' %}=
+                                                        {% endif %} {{ r.value }}
+                                                    </div>
+                                                {% endfor %}
+                                            {% else %}
+                                                <div style="color: rgba(255,255,255,0.6);">預設無條件運作</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
                         </div>
 
-                        <div class="map-empty" id="mapEmptyState" {% if sensor_cards %}style="display: none;"{% endif %}>
+                        <div class="map-empty" id="mapEmptyState" {% if sensor_cards or aerator_cards %}style="display: none;"{% endif %}>
                             <i class="bi bi-broadcast-pin"></i>
-                            <p>尚未放置感測器</p>
+                            <p>尚未放置感測器或水車</p>
                             {% if can_manage %}<p class="hint">點擊「管理感測器」開始配置</p>{% endif %}
                         </div>
 
-                        {# 編輯模式浮動提示 #}
+                        {# 編輯模式浮動提示與工具選擇 #}
                         <div class="map-edit-bar" id="mapEditBar">
-                            <i class="bi bi-info-circle"></i>
-                            <span>點擊地圖空白處新增 · 拖拽元件移動位置</span>
+                            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 12px; flex-wrap: wrap;">
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <i class="bi bi-info-circle"></i>
+                                    <span>拖曳元件移動位置 · 點擊地圖空白處放置元件：</span>
+                                </div>
+                                <div style="display: flex; gap: 8px;">
+                                    <label class="radio-tool-label" style="cursor: pointer; display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.12); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; margin: 0; color: #fff;">
+                                        <input type="radio" name="map_tool" value="sensor" checked style="accent-color: #0d9488; cursor: pointer;">
+                                        <span>放置感測器</span>
+                                    </label>
+                                    <label class="radio-tool-label" style="cursor: pointer; display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.12); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; margin: 0; color: #fff;">
+                                        <input type="radio" name="map_tool" value="aerator" style="accent-color: #0d9488; cursor: pointer;">
+                                        <span>放置水車</span>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -324,6 +384,106 @@
                     
                     <div class="workbench-empty" id="workbenchEmptyState" {% if sensor_cards %}style="display: none;"{% endif %}>
                         尚無感測器，在上方地圖中點擊空白處新增。
+                    </div>
+
+                    <!-- 🌀 水車與運作規則管理區塊 -->
+                    <div class="workbench-divider" style="margin: 24px 0; border-top: 1px dashed var(--border);"></div>
+                    <div class="workbench-header" style="margin-bottom: 12px;">
+                        <h2 class="section-title">水車與自動運作規則</h2>
+                    </div>
+                    
+                    <div class="workbench-list" id="aeratorWorkbenchList">
+                        {% for item in aerator_cards %}
+                        <div class="wb-row" data-aerator-id="{{ item.aerator.pk }}" style="border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 12px; align-items: flex-start; flex-direction: column; gap: 8px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 12px; flex-wrap: wrap;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span class="wb-idx" style="background: rgba(13,148,136,0.12); color: #0d9488; font-weight: 700; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 0.8rem;">{{ forloop.counter }}</span>
+                                    <input type="text" class="input-name input-ae-field" value="{{ item.aerator.name }}"
+                                           data-aerator-id="{{ item.aerator.pk }}" placeholder="水車名稱" required style="max-width: 140px; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.9rem;">
+                                    
+                                    <label class="checkbox-container" style="margin: 0; font-size: 0.85rem; display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                                        <input type="checkbox" class="input-active input-ae-field" data-aerator-id="{{ item.aerator.pk }}"
+                                               {% if item.aerator.is_active %}checked{% endif %} style="cursor: pointer;">
+                                        <span class="checkbox-label">啟用</span>
+                                    </label>
+                                </div>
+                                <div class="wb-edit" style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
+                                    <div class="wb-pos" style="display: flex; align-items: center; gap: 4px; font-size: 0.85rem; color: var(--text-2);">
+                                        <label style="margin: 0;">X</label>
+                                        <input type="number" class="input-pos input-ae-field" value="{{ item.aerator.x_position }}"
+                                               data-aerator-id="{{ item.aerator.pk }}" data-axis="x"
+                                               min="0" max="100" style="width: 55px; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--border); text-align: center;">
+                                        <label style="margin: 0; margin-left: 4px;">Y</label>
+                                        <input type="number" class="input-pos input-ae-field" value="{{ item.aerator.y_position }}"
+                                               data-aerator-id="{{ item.aerator.pk }}" data-axis="y"
+                                               min="0" max="100" style="width: 55px; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--border); text-align: center;">
+                                    </div>
+                                    <button type="button" class="btn-delete-aerator" data-aerator-id="{{ item.aerator.pk }}" title="刪除水車" style="background: none; border: 1px solid rgba(220,38,38,0.25); border-radius: 6px; color: #ef4444; width: 32px; height: 32px; display: grid; place-items: center; cursor: pointer; transition: background 150ms; padding: 0;">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- 運作規則編輯 GUI -->
+                            <div class="aerator-rules-gui" data-aerator-id="{{ item.aerator.pk }}" style="background: rgba(13,148,136,0.04); border: 1px solid rgba(13,148,136,0.08); border-radius: 6px; padding: 12px; width: 100%; box-sizing: border-box; margin-top: 6px;">
+                                <div style="font-weight: 700; font-size: 0.85rem; color: #0f766e; display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                    <span>⚙️ 運作觸發條件 (所有條件皆符合時才開啟，否則關閉)</span>
+                                    <button type="button" class="btn-add-rule" data-aerator-id="{{ item.aerator.pk }}" style="background: #0f766e; color: #fff; border: none; padding: 3px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: background 150ms;">
+                                        <i class="bi bi-plus-lg"></i> 新增條件
+                                    </button>
+                                </div>
+                                
+                                <div class="rules-container" data-aerator-id="{{ item.aerator.pk }}" style="display: flex; flex-direction: column; gap: 6px;">
+                                    {% for rule in item.aerator.rules %}
+                                    <div class="rule-row" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; background: #fff; padding: 6px 8px; border: 1px solid rgba(13,148,136,0.1); border-radius: 6px;">
+                                        <!-- 感測器選擇 -->
+                                        <select class="rule-sensor input-ae-rule-field" data-aerator-id="{{ item.aerator.pk }}" style="padding: 4px 6px; border-radius: 4px; font-size: 0.8rem; border: 1px solid var(--border); outline: none;">
+                                            {% for s_card in sensor_cards %}
+                                            <option value="{{ s_card.sensor.pk }}" {% if rule.sensor_id|stringformat:"s" == s_card.sensor.pk|stringformat:"s" %}selected{% endif %}>
+                                                {{ s_card.sensor.name }}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                        
+                                        <!-- 指標選擇 -->
+                                        <select class="rule-metric input-ae-rule-field" data-aerator-id="{{ item.aerator.pk }}" style="padding: 4px 6px; border-radius: 4px; font-size: 0.8rem; border: 1px solid var(--border); outline: none;">
+                                            <option value="dissolved_oxygen" {% if rule.metric == "dissolved_oxygen" %}selected{% endif %}>溶氧量 (DO)</option>
+                                            <option value="ph" {% if rule.metric == "ph" %}selected{% endif %}>pH 值</option>
+                                            <option value="temperature" {% if rule.metric == "temperature" %}selected{% endif %}>水溫</option>
+                                            <option value="ammonia_nitrogen" {% if rule.metric == "ammonia_nitrogen" %}selected{% endif %}>氨氮 (NH₃)</option>
+                                            <option value="nitrite" {% if rule.metric == "nitrite" %}selected{% endif %}>亞硝酸鹽 (NO₂)</option>
+                                        </select>
+                                        
+                                        <!-- 比較運算子 -->
+                                        <select class="rule-operator input-ae-rule-field" data-aerator-id="{{ item.aerator.pk }}" style="padding: 4px 6px; border-radius: 4px; font-size: 0.8rem; border: 1px solid var(--border); width: 50px; outline: none; text-align: center;">
+                                            <option value="lt" {% if rule.operator == "lt" %}selected{% endif %}>&lt;</option>
+                                            <option value="le" {% if rule.operator == "le" %}selected{% endif %}>&le;</option>
+                                            <option value="gt" {% if rule.operator == "gt" %}selected{% endif %}>&gt;</option>
+                                            <option value="ge" {% if rule.operator == "ge" %}selected{% endif %}>&ge;</option>
+                                            <option value="eq" {% if rule.operator == "eq" %}selected{% endif %}>=</option>
+                                        </select>
+                                        
+                                        <!-- 閥值數值 -->
+                                        <input type="number" class="rule-value input-ae-rule-field" data-aerator-id="{{ item.aerator.pk }}" value="{{ rule.value }}" step="0.1" style="width: 70px; padding: 4px 6px; border-radius: 4px; font-size: 0.8rem; border: 1px solid var(--border); outline: none;" placeholder="閥值">
+                                        
+                                        <!-- 刪除條件按鈕 -->
+                                        <button type="button" class="btn-remove-rule" style="background: none; border: none; color: #dc2626; cursor: pointer; font-size: 1.1rem; padding: 0 4px; display: grid; place-items: center; opacity: 0.8; transition: opacity 150ms;">
+                                            <i class="bi bi-x-circle-fill"></i>
+                                        </button>
+                                    </div>
+                                    {% empty %}
+                                    <div class="no-rules-hint" style="font-size: 0.8rem; color: var(--text-2); font-style: italic;">
+                                        目前無運作規則，水車在啟用時將預設持續運作。
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="workbench-empty" id="aeratorWorkbenchEmptyState" {% if aerator_cards %}style="display: none;"{% endif %} style="text-align: center; color: var(--text-2); font-size: 0.9rem; padding: 10px 0;">
+                        尚無配置水車，可將工具切換至「放置水車」，並點擊地圖空白處新增。
                     </div>
                 </section>
                 {% endif %}
@@ -419,9 +579,18 @@
                             <label for="historySensorSelect"><i class="bi bi-broadcast"></i> 感測器：</label>
                             <select id="historySensorSelect" class="filter-select">
                                 <option value="all" selected>全部感測器</option>
-                                {% for item in sensor_cards %}
-                                <option value="{{ item.sensor.pk }}">{{ item.sensor.name }}</option>
-                                {% endfor %}
+                                <optgroup label="📟 感測器">
+                                    {% for item in sensor_cards %}
+                                    <option value="{{ item.sensor.pk }}">{{ item.sensor.name }}</option>
+                                    {% endfor %}
+                                </optgroup>
+                                {% if aerator_cards %}
+                                <optgroup label="🌀 水車狀態">
+                                    {% for item in aerator_cards %}
+                                    <option value="aerator_{{ item.aerator.pk }}">{{ item.aerator.name }}</option>
+                                    {% endfor %}
+                                </optgroup>
+                                {% endif %}
                             </select>
                         </div>
                         <div class="filter-item">
