@@ -39,7 +39,8 @@ def check_and_trigger_discord_alerts(config, force: bool = False) -> dict:
     Returns a status dict containing information on what was run and sent.
     """
     from django.utils import timezone
-    from water.models import Pond, PondSensor, SensorReading, WaterThreshold, WaterSensorAlert
+    from water.models import PondSensor, SensorReading, WaterThreshold, WaterSensorAlert
+    from water.aerators import evaluate_aerator_operations, resolve_cron_ponds
     from water.utils import METRIC_DEFINITIONS, check_metrics_status
     from water.views import get_pond_owner_for_thresholds, threshold_map_for
 
@@ -51,19 +52,18 @@ def check_and_trigger_discord_alerts(config, force: bool = False) -> dict:
             return {"status": "waiting", "elapsed": elapsed.total_seconds()}
 
     # Resolve ponds to check
-    ponds = list(config.ponds.all().order_by("name"))
-    if not ponds and config.target_user_id:
-        ponds = list(Pond.objects.filter(owners=config.target_user).order_by("name"))
+    ponds = resolve_cron_ponds(config)
+    aerator_snapshot = evaluate_aerator_operations(ponds)
 
     if not ponds:
         logger.warning("No ponds found for evaluation.")
-        return {"status": "no_ponds"}
+        return {"status": "no_ponds", "aerator_summary": aerator_snapshot.summary}
 
     # Find active sensors
     sensors = PondSensor.objects.filter(pond__in=ponds, is_active=True)
     if not sensors.exists():
         logger.info("No active sensors found in the target ponds.")
-        return {"status": "no_sensors"}
+        return {"status": "no_sensors", "aerator_summary": aerator_snapshot.summary}
 
     # We will group alert events by webhook URL
     # format: webhook_url -> {
@@ -199,7 +199,12 @@ def check_and_trigger_discord_alerts(config, force: bool = False) -> dict:
         "status": "success",
         "sent_status": sent_status,
         "triggered_count": total_triggered,
-        "resolved_count": total_resolved
+        "resolved_count": total_resolved,
+        "aerator_total": aerator_snapshot.total,
+        "aerator_operating": aerator_snapshot.operating,
+        "aerator_stopped": aerator_snapshot.stopped,
+        "aerator_disabled": aerator_snapshot.disabled,
+        "aerator_summary": aerator_snapshot.summary,
     }
 
 

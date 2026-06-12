@@ -19,7 +19,7 @@
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
-    <link rel="stylesheet" href="{% static 'css/core/mascot.css' %}">
+    <link rel="stylesheet" href="{% static 'css/core/mascot.css' %}?v=1.7">
     {% block link_css %}{% endblock %}
 </head>
 <body>
@@ -382,7 +382,7 @@
             <div class="mascot-chat-avatar" aria-hidden="true"></div>
             <div>
                 <div class="mascot-chat-title">水井龜導覽</div>
-                <div class="mascot-chat-status">活動、公告、魚池狀態、水質數據查詢</div>
+                <div class="mascot-chat-status">活動、魚池狀態、水質數據查詢</div>
             </div>
         </div>
         <div class="mascot-chat-actions">
@@ -442,8 +442,9 @@
     <!-- <div class="mascot-shadow"></div> -->
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 {% block link_js %}{% endblock %}
-<script src="{% static 'js/core/mascot_chat.js' %}"></script>
+<script src="{% static 'js/core/mascot_chat.js' %}?v=1.6"></script>
 {% block extra_js %}{% endblock %}
 {% block script %}{% endblock %}
 <script>

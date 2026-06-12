@@ -5,7 +5,10 @@
 {% block extra_css %}
 .chat-page {
     min-height: 100vh;
+    height: 100vh;
+    box-sizing: border-box;
     padding: 118px 16px 72px;
+    overflow: hidden;
     background:
         linear-gradient(180deg, rgba(46, 31, 15, 0.54), rgba(255, 250, 240, 0.94) 42%, rgba(255, 250, 240, 0.98)),
         url('/static/image/background.jpg') center/cover fixed;
@@ -15,13 +18,14 @@
     width: min(1200px, 100%);
     margin: 0 auto;
     display: grid;
-    grid-template-columns: 320px 1fr;
+    grid-template-columns: minmax(300px, 340px) minmax(0, 1fr);
     gap: 24px;
     height: min(740px, calc(100vh - 168px));
     min-height: 560px;
 }
 
 .chat-page-sidebar {
+    min-width: 0;
     display: flex;
     flex-direction: column;
     background: rgba(255, 250, 240, 0.9);
@@ -29,6 +33,7 @@
     border: 1px solid rgba(139, 105, 20, 0.22);
     border-radius: 8px;
     overflow: hidden;
+    overscroll-behavior: contain;
     box-shadow: 0 28px 80px rgba(25, 18, 8, 0.18);
 }
 
@@ -92,7 +97,9 @@
 
 .sidebar-list {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 16px;
     display: flex;
     flex-direction: column;
@@ -100,6 +107,7 @@
 }
 
 .sidebar-pond-item {
+    flex: 0 0 auto;
     background: #ffffff;
     border: 1px solid rgba(139, 105, 20, 0.12);
     border-radius: 6px;
@@ -107,7 +115,7 @@
     cursor: pointer;
     transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .sidebar-pond-item:hover {
@@ -121,12 +129,15 @@
     justify-content: space-between;
     align-items: center;
     gap: 8px;
+    min-width: 0;
 }
 
 .pond-item-name {
+    min-width: 0;
     font-weight: 800;
     color: #2e1f0f;
     font-size: 0.95rem;
+    overflow-wrap: anywhere;
 }
 
 .pond-item-badge {
@@ -336,9 +347,14 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    max-height: none;
+    overflow: visible;
+    padding-right: 2px;
 }
 
 .pond-sensor-row {
+    flex: 0 0 auto;
+    min-width: 0;
     background: rgba(139, 105, 20, 0.02);
     border: 1px solid rgba(139, 105, 20, 0.08);
     border-radius: 4px;
@@ -349,18 +365,21 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 8px;
     margin-bottom: 6px;
     border-bottom: 1px dashed rgba(139, 105, 20, 0.08);
     padding-bottom: 4px;
 }
 
 .sensor-row-name {
+    min-width: 0;
     font-size: 0.72rem;
     font-weight: 700;
     color: #0f766e;
     display: flex;
     align-items: center;
     gap: 4px;
+    flex-wrap: wrap;
 }
 
 .sensor-row-name i {
@@ -390,6 +409,15 @@
     animation: mascot-mic-pulse 1.2s infinite;
 }
 
+.chat-page-form button.chat-mic-btn.is-recording i {
+    animation: chat-mic-bounce 0.62s ease-in-out infinite alternate;
+}
+
+@keyframes chat-mic-bounce {
+    from { transform: translateY(0) scale(1); }
+    to { transform: translateY(-2px) scale(1.07); }
+}
+
 .chat-page-form button.chat-mic-btn.is-loading {
     background: #64748b !important;
     opacity: 0.7;
@@ -406,11 +434,28 @@
     cursor: pointer;
     display: inline-grid;
     place-items: center;
-    transition: background-color 0.15s ease;
+    animation: chat-cancel-slide-in 0.2s ease both;
+    transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.chat-cancel-mic-btn[hidden] {
+    display: none;
 }
 
 .chat-cancel-mic-btn:hover {
     background: #b91c1c;
+    transform: translateY(-1px);
+}
+
+@keyframes chat-cancel-slide-in {
+    from {
+        opacity: 0;
+        transform: translateX(10px) scale(0.92);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
 }
 
 /* ??Voice ASR previews */
@@ -654,15 +699,20 @@
 }
 
 .chat-page-form {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 48px 48px;
     gap: 10px;
     padding: 16px;
     border-top: 1px solid rgba(139, 105, 20, 0.14);
     background: #ffffff;
+    transition: grid-template-columns 0.22s ease;
+}
+
+.chat-page-form:has(.chat-cancel-mic-btn:not([hidden])) {
+    grid-template-columns: minmax(0, 1fr) 48px 48px 48px;
 }
 
 .chat-page-form input {
-    flex: 1;
     min-width: 0;
     height: 48px;
     border: 1px solid rgba(139, 105, 20, 0.22);
@@ -1003,6 +1053,22 @@
     // 側欄互動與統計計算
     const sidebar = document.querySelector(".chat-page-sidebar");
     if (sidebar) {
+        const sidebarList = sidebar.querySelector(".sidebar-list");
+        if (sidebarList) {
+            sidebarList.addEventListener("wheel", function (event) {
+                if (sidebarList.scrollHeight <= sidebarList.clientHeight) return;
+
+                const atTop = sidebarList.scrollTop <= 0;
+                const atBottom = sidebarList.scrollTop + sidebarList.clientHeight >= sidebarList.scrollHeight - 1;
+                if ((event.deltaY < 0 && atTop) || (event.deltaY > 0 && atBottom)) {
+                    event.preventDefault();
+                    return;
+                }
+
+                event.stopPropagation();
+            }, { passive: false });
+        }
+
         // Calculate danger/watch stats
         const dangerPonds = sidebar.querySelectorAll(".sidebar-pond-item.status-low_oxygen, .sidebar-pond-item.status-watch");
         const dangerCountEl = document.getElementById("statDangerCount");
@@ -1156,8 +1222,10 @@
                 try {
                     const config = JSON.parse(decodeURIComponent(configStr));
                     const canvas = card.querySelector(".chat-chart-canvas");
-                    initChart(canvas, config);
-                    card.classList.add("is-initialized");
+                    requestAnimationFrame(() => {
+                        initChart(canvas, config);
+                        card.classList.add("is-initialized");
+                    });
                 } catch (e) {
                     console.error("Failed to render chart:", e);
                 }
@@ -1194,7 +1262,31 @@
 
     function scrollLog() {
         log.scrollTop = log.scrollHeight;
+        updateScrollBottomButton();
     }
+
+    function isLogNearBottom() {
+        return log.scrollHeight - log.scrollTop - log.clientHeight < 80;
+    }
+
+    const scrollBottomBtn = document.createElement("button");
+    scrollBottomBtn.type = "button";
+    scrollBottomBtn.className = "chat-scroll-bottom";
+    scrollBottomBtn.setAttribute("aria-label", "回到最新訊息");
+    scrollBottomBtn.title = "回到最新訊息";
+    scrollBottomBtn.innerHTML = '<i class="bi bi-arrow-down"></i>';
+    shell.appendChild(scrollBottomBtn);
+
+    function updateScrollBottomButton() {
+        scrollBottomBtn.classList.toggle("is-visible", !isLogNearBottom());
+    }
+
+    scrollBottomBtn.addEventListener("click", () => {
+        log.scrollTo({ top: log.scrollHeight, behavior: "smooth" });
+        window.setTimeout(updateScrollBottomButton, 220);
+    });
+
+    log.addEventListener("scroll", updateScrollBottomButton, { passive: true });
 
     // 清空歷史招呼框
     function removeEmpty() {
@@ -1222,13 +1314,19 @@
         return item;
     }
 
+    function normalizeMessageText(value) {
+        return String(value || "")
+            .replace(/&lt;br\s*\/?&gt;/gi, "\n")
+            .replace(/<br\s*\/?>/gi, "\n");
+    }
+
     function formatMessage(text) {
         if (!text) return "";
 
         // 0. 先抽取並解析 [CHART]...[/CHART] 區塊，避免被 HTML 轉義破壞
         let chartPlaceholderCount = 0;
         const charts = [];
-        let processedText = text.replace(/\[CHART\]([\s\S]*?)\[\/CHART\]/g, (match, content) => {
+        let processedText = normalizeMessageText(text).replace(/\[CHART\]([\s\S]*?)\[\/CHART\]/g, (match, content) => {
             const id = `__CHART_PLACEHOLDER_${chartPlaceholderCount}__`;
             chartPlaceholderCount++;
             
@@ -1388,6 +1486,7 @@
         const lines = escaped.split("\n");
         let inTable = false;
         let tableHtml = "";
+        let tableRowCount = 0;
         let inList = false;
         const processedLines = [];
 
@@ -1401,6 +1500,7 @@
                 if (!inTable) {
                     inTable = true;
                     tableHtml = '<div class="table-responsive"><table class="chat-table">';
+                    tableRowCount = 0;
                 }
                 
                 const cells = line.split("|").slice(1, -1).map(c => c.trim());
@@ -1410,10 +1510,11 @@
                 
                 tableHtml += "<tr>";
                 cells.forEach(cell => {
-                    const tag = tableHtml.includes("<tr><tr>") || tableHtml.includes("</tr><tr>") ? "td" : "th";
+                    const tag = tableRowCount === 0 ? "th" : "td";
                     tableHtml += `<${tag}>${parseInlineMarkdown(cell)}</${tag}>`;
                 });
                 tableHtml += "</tr>";
+                tableRowCount++;
             } else {
                 if (inTable) {
                     inTable = false;
@@ -1436,12 +1537,10 @@
                         processedLines.push("</ul>");
                     }
                     
-                    if (line.startsWith("### ")) {
-                        processedLines.push('<h3>' + parseInlineMarkdown(line.substring(4).trim()) + '</h3>');
-                    } else if (line.startsWith("## ")) {
-                        processedLines.push('<h2>' + parseInlineMarkdown(line.substring(3).trim()) + '</h2>');
-                    } else if (line.startsWith("# ")) {
-                        processedLines.push('<h1>' + parseInlineMarkdown(line.substring(2).trim()) + '</h1>');
+                    const heading = line.match(/^(#{1,6})\s*(.+)$/);
+                    if (heading) {
+                        const level = Math.min(3, heading[1].length);
+                        processedLines.push('<h' + level + ' class="chat-markdown-heading">' + parseInlineMarkdown(heading[2].trim()) + '</h' + level + '>');
                     } else {
                         processedLines.push(parseInlineMarkdown(line));
                     }
@@ -1485,6 +1584,7 @@
 
     function parseInlineMarkdown(text) {
         return text
+            .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
             .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
             .replace(/\*(.+?)\*/g, "<em>$1</em>")
             .replace(/`(.+?)`/g, "<code>$1</code>");
@@ -1606,6 +1706,10 @@
     });
 
     clearBtn.addEventListener("click", async function () {
+        if (!window.confirm("確定要清除目前的 AI 對話紀錄嗎？")) {
+            input.focus();
+            return;
+        }
         clearBtn.disabled = true;
         try {
             await fetch(clearApi, { method: "POST" });
@@ -1806,6 +1910,7 @@
             micBtn.classList.remove("is-loading");
             micBtn.title = "結束並送出辨識";
             cancelMicBtn.hidden = false;
+            showWaiting("正在錄音中，請直接說話。按 X 可取消錄音。", true);
             if (input) {
                 input.placeholder = "🎙️ 聆聽中... 還可以說 20 秒";
                 input.disabled = true;

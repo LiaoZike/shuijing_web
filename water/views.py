@@ -12,20 +12,22 @@ from django.utils import timezone
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+from django.db import OperationalError
 from django.db.models import Q
 
-from .models import Pond, PondSensor, WaterThreshold, SensorReading, WaterSimulationCron, PondAerator
+from .models import Pond, PondSensor, WaterThreshold, SensorReading, WaterSimulationCron, PondAerator, PondAeratorStateLog
 from .simulator import run_simulation_round
+from .aerators import evaluate_aerator_operations, resolve_cron_ponds
 from .utils import METRIC_DEFINITIONS, default_thresholds, reading_status, calculate_stability, check_metrics_status
 
 
 def visible_ponds_for(user):
     if not user.is_authenticated:
-        return Pond.objects.none()
+        return Pond.objects.filter(is_public_viewer=True).distinct().order_by("name")
     if user.is_staff or user.is_superuser:
         return Pond.objects.all().distinct().order_by("name")
 
-    return Pond.objects.filter(Q(owners=user) | Q(viewers=user)).distinct().order_by("name")
+    return Pond.objects.filter(Q(owners=user) | Q(viewers=user) | Q(is_public_viewer=True)).distinct().order_by("name")
 
 
 def can_manage_pond(user, pond):
@@ -208,7 +210,12 @@ def admin_cron_run(request):
             from scratch.discord_notify import check_and_trigger_discord_alerts
             alert_result = check_and_trigger_discord_alerts(config, force=True)
             config.refresh_from_db()
-            msg = f"傳送狀態: {alert_result.get('sent_status')}。新警報: {alert_result.get('triggered_count')} 筆，恢復: {alert_result.get('resolved_count')} 筆。"
+            aerator_summary = alert_result.get("aerator_summary") or evaluate_aerator_operations(resolve_cron_ponds(config)).summary
+            msg = (
+                f"傳送狀態: {alert_result.get('sent_status')}。"
+                f"新警報: {alert_result.get('triggered_count')} 筆，恢復: {alert_result.get('resolved_count')} 筆。"
+                f"{aerator_summary}"
+            )
             config.discord_last_result = msg
             config.save(update_fields=["discord_last_result"])
         except Exception:
@@ -246,9 +253,26 @@ def admin_cron_run(request):
             })
 
     if force or force_anomaly or tick_sim:
-        result = run_simulation_round(config.pk, force=True, force_anomaly=force_anomaly)
+        try:
+            result = run_simulation_round(config.pk, force=True, force_anomaly=force_anomaly)
+        except OperationalError as exc:
+            if "database is locked" in str(exc).lower():
+                msg = "SQLite 資料庫正在被其他請求寫入，這次 cron 已略過；稍後會自動重試。"
+                try:
+                    config.last_result = msg
+                    config.save(update_fields=["last_result"])
+                except OperationalError:
+                    pass
+                return JsonResponse({
+                    "status": "locked",
+                    "message": msg,
+                    "next_run_epoch_ms": int((timezone.now() + timedelta(seconds=10)).timestamp() * 1000),
+                    "server_time_epoch_ms": int(timezone.now().timestamp() * 1000),
+                }, status=423)
+            raise
         config.refresh_from_db()
         next_run_at = cron_next_run_at(config)
+        aerator_snapshot = evaluate_aerator_operations(resolve_cron_ponds(config))
         
         if result.anomaly_label == "already_run":
             return JsonResponse({
@@ -257,6 +281,10 @@ def admin_cron_run(request):
                 "next_run_epoch_ms": int(next_run_at.timestamp() * 1000),
                 "server_time_epoch_ms": int(timezone.now().timestamp() * 1000),
             })
+
+        if aerator_snapshot.total:
+            config.last_result = f"{config.last_result} | {aerator_snapshot.summary}"
+            config.save(update_fields=["last_result"])
             
         return JsonResponse({
             "status": "success",
@@ -303,6 +331,8 @@ def threshold_map_for(user, pond, sensor=None):
         return threshold_map
 
     target_user = get_pond_owner_for_thresholds(pond) or user
+    if not getattr(target_user, "is_authenticated", False):
+        return threshold_map
 
     if sensor is not None:
         qs = WaterThreshold.objects.filter(user=target_user, pond=pond, sensor=sensor)
@@ -318,6 +348,10 @@ def threshold_map_for(user, pond, sensor=None):
 
 
 def save_thresholds(request, pond):
+    if not can_manage_pond(request.user, pond):
+        messages.error(request, "你沒有權限修改此池區的警戒值。")
+        return {"status": "error", "message": "你沒有權限修改此池區的警戒值。"}
+
     sensor_id = request.POST.get("sensor_id") or "default"
     sensor = None
     if sensor_id != "default":
@@ -360,8 +394,10 @@ def save_thresholds(request, pond):
                 defaults={"min_value": min_value, "max_value": max_value},
             )
 
-    if not has_error:
-        messages.success(request, "水質警戒值已更新。")
+    if has_error:
+        return {"status": "error", "message": "警戒值格式有誤，請檢查輸入。"}
+
+    messages.success(request, "水質警戒值已更新。")
 
 
 def add_sensor(request, pond):
@@ -525,6 +561,9 @@ def update_aerator(request, pond):
     is_active_val = request.POST.get("is_active")
     if is_active_val is not None:
         aerator.is_active = is_active_val in ("on", "true", "1")
+        if not aerator.is_active:
+            aerator.last_is_operating = False
+            aerator.last_evaluation_reason = "水車已停用。"
 
     rules_json = request.POST.get("rules")
     if rules_json is not None:
@@ -552,10 +591,9 @@ def delete_aerator(request, pond):
     return {"status": "success", "message": f"水車 {aerator_name} 已刪除。", "aerator_id": aerator_id}
 
 
-@login_required(login_url="login_portal")
 def pond_list(request):
     """顯示所有池區的網格視圖（主儀表板）"""
-    ponds = visible_ponds_for(request.user).prefetch_related("sensors", "owners")
+    ponds = visible_ponds_for(request.user).prefetch_related("sensors", "owners", "aerators")
     
     pond_cards = []
     alert_count = 0
@@ -607,7 +645,6 @@ def pond_list(request):
     return render(request, "water/pond_list.html", context)
 
 
-@login_required(login_url="login_portal")
 def pond_detail(request, pond_id):
     """顯示單個池區的詳細配置（感測器分布、水質數據）"""
     pond = get_object_or_404(Pond, pk=pond_id)
@@ -670,7 +707,7 @@ def pond_detail(request, pond_id):
 
         result = None
         if action == "save_thresholds":
-            save_thresholds(request, pond)
+            result = save_thresholds(request, pond)
         elif action == "add_sensor":
             result = add_sensor(request, pond)
         elif action == "update_sensor":
@@ -1016,7 +1053,6 @@ def delete_pond(request, pond_id):
     return render(request, "water/pond_delete_confirm.html", context)
 
 
-@login_required(login_url="login_portal")
 def pond_history_api(request, pond_id):
     """取得特定池區的歷史水質數據 (JSON 格式)"""
     pond = get_object_or_404(Pond, pk=pond_id)
@@ -1062,6 +1098,47 @@ def pond_history_api(request, pond_id):
                 aerator = pond.aerators.get(pk=aerator_id)
             except Exception:
                 return JsonResponse({"status": "error", "message": "找不到指定的水車。"}, status=400)
+
+            log_qs = PondAeratorStateLog.objects.filter(pond=pond, aerator=aerator)
+            if time_range == "custom" and start_date_str and end_date_str:
+                from django.utils.dateparse import parse_date
+                parsed_start = parse_date(start_date_str)
+                parsed_end = parse_date(end_date_str)
+                if parsed_start and parsed_end:
+                    start_dt = timezone.make_aware(timezone.datetime.combine(parsed_start, timezone.datetime.min.time()))
+                    end_dt = timezone.make_aware(timezone.datetime.combine(parsed_end, timezone.datetime.max.time()))
+                    log_qs = log_qs.filter(recorded_at__range=(start_dt, end_dt))
+            else:
+                now = timezone.now()
+                if time_range == "1h":
+                    start_date = now - timedelta(hours=1)
+                elif time_range == "3h":
+                    start_date = now - timedelta(hours=3)
+                elif time_range == "24h":
+                    start_date = now - timedelta(days=1)
+                elif time_range == "30d":
+                    start_date = now - timedelta(days=30)
+                else:
+                    start_date = now - timedelta(days=7)
+                log_qs = log_qs.filter(recorded_at__gte=start_date)
+
+            if log_qs.exists():
+                data = [
+                    {
+                        "measured_at": timezone.localtime(log.recorded_at).strftime("%Y-%m-%d %H:%M:%S"),
+                        "sensor_name": aerator.name,
+                        "aerator_state": 1 if log.is_operating else 0,
+                        "temperature": None,
+                        "ph": None,
+                        "dissolved_oxygen": None,
+                        "ammonia_nitrogen": None,
+                        "nitrite": None,
+                        "salinity": None,
+                        "stability_index": None,
+                    }
+                    for log in log_qs.order_by("-recorded_at")
+                ]
+                return JsonResponse({"status": "success", "data": data})
             
             reading_qs = readings.select_related("sensor").order_by("measured_at")
             latest_values = {}

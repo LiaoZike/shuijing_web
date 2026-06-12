@@ -366,9 +366,9 @@
                 </div>
             </div>
 
-            <!-- Panel 2: Discord 判讀狀態 -->
+            <!-- Panel 2: Discord and aerator operation evaluation -->
             <div class="cron-card cron-status">
-                <h2 style="color: #5865F2; margin-bottom: 8px; font-size: 1.25rem;">Discord 判讀狀態</h2>
+                <h2 style="color: #5865F2; margin-bottom: 8px; font-size: 1.25rem;">Discord 通知 / 水車運作處理</h2>
                 <span class="status-pill" id="discordEnabledText" style="background: #e0f2fe; color: #0369a1;">{% if config.discord_is_enabled %}Enabled{% else %}Disabled{% endif %}</span>
                 <div style="margin-top: 10px;">
                     <div style="font-size: 0.88rem; color: #64748b;">下次判讀倒數</div>
@@ -384,7 +384,7 @@
                 </div>
                 <div class="cron-actions" style="display: flex; flex-direction: column; gap: 8px; margin-top: 16px;">
                     <button class="cron-button btn-run-discord" type="button" id="runDiscordNow" style="width: 100%; text-align: center; justify-content: center; display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
-                        <i class="bi bi-discord"></i> 立即 Discord 通知判讀
+                        <i class="bi bi-discord"></i> 立即判讀 Discord 與水車
                     </button>
                 </div>
             </div>
@@ -552,6 +552,14 @@
             }
             if (data.next_run_epoch_ms) nextRunAt = data.next_run_epoch_ms;
             if (data.next_discord_run_epoch_ms) nextDiscordRunAt = data.next_discord_run_epoch_ms;
+            if (data.status === 'locked') {
+                const retryAt = (data.server_time_epoch_ms || Date.now()) + 10000;
+                if (isDiscordAction) {
+                    nextDiscordRunAt = Math.max(nextDiscordRunAt || 0, retryAt);
+                } else {
+                    nextRunAt = Math.max(nextRunAt || 0, retryAt);
+                }
+            }
             
             if (data.message) activeLog.textContent = data.message;
             if (data.last_run_at) lastRun.textContent = data.last_run_at;

@@ -21,8 +21,6 @@
   const voiceApi = panel.dataset.voiceApi;
   
   const defaultInputPlaceholder = input ? (input.getAttribute("placeholder") || "") : "";
-  const PANEL_STATE_KEY = "shuijing_mascot_chat_open";
-
   // 語音輸入變數
   let mediaRecorder = null;
   let audioChunks = [];
@@ -32,20 +30,6 @@
   let recordCountdownInterval = null;
   let transcribingInterval = null;
   let activeStream = null;
-
-  function rememberPanelState(isOpen) {
-    try {
-      sessionStorage.setItem(PANEL_STATE_KEY, isOpen ? "1" : "0");
-    } catch (error) {}
-  }
-
-  function wasPanelOpen() {
-    try {
-      return sessionStorage.getItem(PANEL_STATE_KEY) === "1";
-    } catch (error) {
-      return false;
-    }
-  }
 
   // ── Chart.js 畫圖輔助函數 ──
   function hexToRgb(hex) {
@@ -159,8 +143,10 @@
         try {
           const config = JSON.parse(decodeURIComponent(configStr));
           const canvas = card.querySelector(".chat-chart-canvas");
-          initChart(canvas, config);
-          card.classList.add("is-initialized");
+          requestAnimationFrame(() => {
+            initChart(canvas, config);
+            card.classList.add("is-initialized");
+          });
         } catch (e) {
           console.error("Failed to render chart:", e);
         }
@@ -204,7 +190,10 @@
     panel.classList.add("is-open");
     mascot.classList.add("is-chat-open");
     mascot.setAttribute("aria-expanded", "true");
-    rememberPanelState(true);
+    window.setTimeout(() => {
+      scrollLog();
+      updateScrollBottomButton();
+    }, 80);
     window.setTimeout(() => input && input.focus(), 80);
   }
 
@@ -212,7 +201,6 @@
     panel.classList.remove("is-open");
     mascot.classList.remove("is-chat-open");
     mascot.setAttribute("aria-expanded", "false");
-    rememberPanelState(false);
     window.setTimeout(() => {
       if (!panel.classList.contains("is-open")) panel.hidden = true;
     }, 180);
@@ -228,7 +216,31 @@
 
   function scrollLog() {
     log.scrollTop = log.scrollHeight;
+    updateScrollBottomButton();
   }
+
+  function isLogNearBottom() {
+    return log.scrollHeight - log.scrollTop - log.clientHeight < 80;
+  }
+
+  const scrollBottomBtn = document.createElement("button");
+  scrollBottomBtn.type = "button";
+  scrollBottomBtn.className = "chat-scroll-bottom";
+  scrollBottomBtn.setAttribute("aria-label", "回到最新訊息");
+  scrollBottomBtn.title = "回到最新訊息";
+  scrollBottomBtn.innerHTML = '<i class="bi bi-arrow-down"></i>';
+  panel.appendChild(scrollBottomBtn);
+
+  function updateScrollBottomButton() {
+    scrollBottomBtn.classList.toggle("is-visible", panel.classList.contains("is-open") && !isLogNearBottom());
+  }
+
+  scrollBottomBtn.addEventListener("click", () => {
+    log.scrollTo({ top: log.scrollHeight, behavior: "smooth" });
+    window.setTimeout(updateScrollBottomButton, 220);
+  });
+
+  log.addEventListener("scroll", updateScrollBottomButton, { passive: true });
 
   function removeEmpty() {
     const empty = log.querySelector("[data-chat-empty]");
@@ -256,13 +268,19 @@
     return item;
   }
 
+  function normalizeMessageText(value) {
+    return String(value || "")
+      .replace(/&lt;br\s*\/?&gt;/gi, "\n")
+      .replace(/<br\s*\/?>/gi, "\n");
+  }
+
   function formatMessage(text) {
     if (!text) return "";
 
     // 0. 先抽取並解析 [CHART]...[/CHART] 區塊，避免被 HTML 轉義破壞
     let chartPlaceholderCount = 0;
     const charts = [];
-    let processedText = text.replace(/\[CHART\]([\s\S]*?)\[\/CHART\]/g, (match, content) => {
+    let processedText = normalizeMessageText(text).replace(/\[CHART\]([\s\S]*?)\[\/CHART\]/g, (match, content) => {
       const id = `__CHART_PLACEHOLDER_${chartPlaceholderCount}__`;
       chartPlaceholderCount++;
       
@@ -420,46 +438,122 @@
       .replace(/>/g, "&gt;");
 
     const lines = escaped.split("\n");
-    let inTable = false;
-    let tableHtml = "";
+    let tableRows = [];
+    let listTag = "";
     const processedLines = [];
+
+    function isMarkdownTableDivider(cells) {
+      return cells.every(c => /^:?-+:?$/.test(c) || c === "");
+    }
+
+    function buildMascotTableCards(rows) {
+      const headers = rows[0] || [];
+      const bodyRows = rows.length > 1 ? rows.slice(1) : rows;
+
+      if (!bodyRows.length) return "";
+
+      const cards = bodyRows.map((row, rowIndex) => {
+        const normalizedHeaders = headers.length ? headers : row.map((_, index) => `欄位 ${index + 1}`);
+        const titleIndex = row.findIndex(cell => cell && cell.trim());
+        const titleLabel = normalizedHeaders[titleIndex] || `資料 ${rowIndex + 1}`;
+        const titleValue = titleIndex >= 0 ? row[titleIndex] : `資料 ${rowIndex + 1}`;
+
+        const fields = normalizedHeaders.map((header, index) => {
+          if (index === titleIndex && normalizedHeaders.length > 1) return "";
+          const value = row[index] || "";
+          if (!header && !value) return "";
+          return `
+            <div class="mascot-table-field">
+              <span class="mascot-table-label">${parseInlineMarkdown(header || `欄位 ${index + 1}`)}</span>
+              <span class="mascot-table-value">${parseInlineMarkdown(value || "-")}</span>
+            </div>
+          `;
+        }).join("");
+
+        return `
+          <section class="mascot-table-card">
+            <div class="mascot-table-card-title">
+              <span class="mascot-table-card-title-label">${parseInlineMarkdown(titleLabel)}</span>
+              <strong>${parseInlineMarkdown(titleValue)}</strong>
+            </div>
+            <div class="mascot-table-card-grid">${fields}</div>
+          </section>
+        `;
+      }).join("");
+
+      return `<div class="mascot-table-cards">${cards}</div>`;
+    }
+
+    function flushTableRows() {
+      if (!tableRows.length) return;
+      processedLines.push(buildMascotTableCards(tableRows));
+      tableRows = [];
+    }
+
+    function flushList() {
+      if (!listTag) return;
+      processedLines.push(`</${listTag}>`);
+      listTag = "";
+    }
+
+    function pushListItem(tag, content) {
+      if (listTag && listTag !== tag) flushList();
+      if (!listTag) {
+        listTag = tag;
+        processedLines.push(`<${tag} class="chat-markdown-list">`);
+      }
+      processedLines.push(`<li>${parseInlineMarkdown(content)}</li>`);
+    }
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
       if (line.startsWith("|") && line.endsWith("|")) {
-        if (!inTable) {
-          inTable = true;
-          tableHtml = '<div class="table-responsive"><table class="chat-table">';
-        }
-        
+        flushList();
         const cells = line.split("|").slice(1, -1).map(c => c.trim());
         // 🟢 修正的表格分隔線正則表達式，完美支援 ---, :---, ---:, :---:
-        if (cells.every(c => /^:?-+:?$/.test(c) || c === "")) {
+        if (isMarkdownTableDivider(cells)) {
           continue;
         }
-        
-        tableHtml += "<tr>";
-        cells.forEach(cell => {
-          const tag = tableHtml.includes("<tr><tr>") || tableHtml.includes("</tr><tr>") ? "td" : "th";
-          tableHtml += `<${tag}>${parseInlineMarkdown(cell)}</${tag}>`;
-        });
-        tableHtml += "</tr>";
+
+        tableRows.push(cells);
       } else {
-        if (inTable) {
-          inTable = false;
-          tableHtml += "</table></div>";
-          processedLines.push(tableHtml);
-          tableHtml = "";
+        flushTableRows();
+        if (!line) {
+          flushList();
+          continue;
         }
-        processedLines.push(parseInlineMarkdown(line));
+
+        const heading = line.match(/^(#{1,6})\s*(.+)$/);
+        const unordered = line.match(/^[-*+]\s+(.+)$/);
+        const ordered = line.match(/^\d+[.)]\s+(.+)$/);
+
+        if (heading) {
+          flushList();
+          const level = Math.min(3, heading[1].length + 1);
+          processedLines.push(`<h${level} class="chat-markdown-heading">${parseInlineMarkdown(heading[2])}</h${level}>`);
+        } else if (/^(-{3,}|\*{3,}|_{3,})$/.test(line)) {
+          flushList();
+          processedLines.push('<hr class="chat-markdown-divider">');
+        } else if (unordered) {
+          pushListItem("ul", unordered[1]);
+        } else if (ordered) {
+          pushListItem("ol", ordered[1]);
+        } else if (line.startsWith("&gt;")) {
+          flushList();
+          processedLines.push(`<blockquote class="chat-markdown-quote">${parseInlineMarkdown(line.replace(/^&gt;\s?/, ""))}</blockquote>`);
+        } else if (/^__(CHART|DASHBOARD)_PLACEHOLDER_\d+__$/.test(line)) {
+          flushList();
+          processedLines.push(line);
+        } else {
+          flushList();
+          processedLines.push(`<p>${parseInlineMarkdown(line)}</p>`);
+        }
       }
     }
-    if (inTable) {
-      tableHtml += "</table></div>";
-      processedLines.push(tableHtml);
-    }
+    flushTableRows();
+    flushList();
 
-    let finalHtml = processedLines.join("<br>");
+    let finalHtml = processedLines.join("");
 
     // 3. 還原 DASHBOARD 區塊 HTML
     dashboards.forEach(db => {
@@ -480,6 +574,7 @@
 
   function parseInlineMarkdown(text) {
     return text
+      .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
       .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
       .replace(/\*(.+?)\*/g, "<em>$1</em>")
       .replace(/`(.+?)`/g, "<code>$1</code>");
@@ -759,6 +854,7 @@
       micBtn.classList.remove("is-loading");
       micBtn.title = "結束並送出辨識";
       if (cancelMicBtn) cancelMicBtn.hidden = false;
+      showWaiting("正在錄音中，請直接說話。按 X 可取消錄音。", true, { immediate: true });
       if (input) {
         input.placeholder = "🎙️ 聆聽中... 還可以說 20 秒";
         input.disabled = true;
@@ -844,6 +940,10 @@
   });
 
   clearBtn.addEventListener("click", async () => {
+    if (!window.confirm("確定要清除目前的 AI 對話紀錄嗎？")) {
+      input.focus();
+      return;
+    }
     clearBtn.disabled = true;
     try {
       if (clearApi) {
@@ -896,7 +996,5 @@
 
   // 頁面加載時自動恢復本地對話紀錄
   loadHistory();
-  if (wasPanelOpen()) {
-    openPanel();
-  }
+  loadHistory();
 })();

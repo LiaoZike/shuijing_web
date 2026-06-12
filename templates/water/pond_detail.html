@@ -4,7 +4,7 @@
 {% block title %}{{ pond.name }} | 水井村{% endblock %}
 
 {% block link_css %}
-    <link rel="stylesheet" href="{% static 'css/water/pond_detail.css' %}">
+    <link rel="stylesheet" href="{% static 'css/water/pond_detail.css' %}?v=1.6">
 {% endblock %}
 
 {% block content %}
@@ -152,6 +152,44 @@
                                 <p style="margin: 0; font-size: 0.9rem;">此池區尚未配置感測器</p>
                                 {% if can_manage %}<p style="margin: 0; font-size: 0.78rem; color: var(--text-2);">點擊「管理感測器」開始配置</p>{% endif %}
                             </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="aerator-criteria-panel" id="aeratorCriteriaPanel" aria-label="水車判斷基準" {% if not aerator_cards %}style="display: none;"{% endif %}>
+                        <div class="aerator-criteria-head">
+                            <span><i class="bi bi-fan"></i> 水車判斷基準</span>
+                            <small>所有條件皆符合時才會啟動</small>
+                        </div>
+                        <div class="aerator-criteria-list" id="aeratorCriteriaList">
+                            {% for item in aerator_cards %}
+                            <article class="aerator-criteria-card {% if item.is_operating %}is-operating{% elif not item.aerator.is_active %}is-disabled{% else %}is-stopped{% endif %}" data-aerator-criteria-id="{{ item.aerator.pk }}">
+                                <div class="criteria-card-head">
+                                    <span class="criteria-icon"><i class="bi bi-fan"></i></span>
+                                    <strong>{{ item.aerator.name }}</strong>
+                                    <span class="criteria-status">
+                                        {% if item.is_operating %}運作中{% elif not item.aerator.is_active %}停用{% else %}已停止{% endif %}
+                                    </span>
+                                </div>
+                                <div class="criteria-rules">
+                                    {% if item.aerator.rules %}
+                                        {% for r in item.aerator.get_enriched_rules %}
+                                        <span class="criteria-rule-chip">
+                                            {{ r.sensor_name }} · {{ r.metric_label }}
+                                            {% if r.operator == 'lt' %}&lt;
+                                            {% elif r.operator == 'le' %}&le;
+                                            {% elif r.operator == 'gt' %}&gt;
+                                            {% elif r.operator == 'ge' %}&ge;
+                                            {% elif r.operator == 'eq' %}=
+                                            {% endif %}
+                                            {{ r.value }}
+                                        </span>
+                                        {% endfor %}
+                                    {% else %}
+                                        <span class="criteria-rule-chip criteria-rule-chip--default">啟用時預設持續運作</span>
+                                    {% endif %}
+                                </div>
+                            </article>
                             {% endfor %}
                         </div>
                     </div>
@@ -308,6 +346,19 @@
                         </button>
                     </div>
 
+                    <div class="settings-tabs" id="settingsTabs" role="tablist" aria-label="池區設定切換">
+                        <button type="button" class="settings-tab is-active" data-settings-tab="sensors" role="tab" aria-selected="true">
+                            <i class="bi bi-broadcast-pin"></i> 感測器
+                        </button>
+                        <button type="button" class="settings-tab" data-settings-tab="aerators" role="tab" aria-selected="false">
+                            <i class="bi bi-fan"></i> 水車
+                        </button>
+                        <button type="button" class="settings-tab" data-settings-tab="thresholds" role="tab" aria-selected="false">
+                            <i class="bi bi-sliders"></i> 警戒值
+                        </button>
+                    </div>
+
+                    <div class="settings-panel is-active" data-settings-panel="sensors">
                     <div class="workbench-list" id="workbenchList">
                         {% for item in sensor_cards %}
                         <div class="wb-row" data-sensor-id="{{ item.sensor.pk }}">
@@ -387,6 +438,8 @@
                     </div>
 
                     <!-- 🌀 水車與運作規則管理區塊 -->
+                    </div>
+                    <div class="settings-panel" data-settings-panel="aerators">
                     <div class="workbench-divider" style="margin: 24px 0; border-top: 1px dashed var(--border);"></div>
                     <div class="workbench-header" style="margin-bottom: 12px;">
                         <h2 class="section-title">水車與自動運作規則</h2>
@@ -485,12 +538,14 @@
                     <div class="workbench-empty" id="aeratorWorkbenchEmptyState" {% if aerator_cards %}style="display: none;"{% endif %} style="text-align: center; color: var(--text-2); font-size: 0.9rem; padding: 10px 0;">
                         尚無配置水車，可將工具切換至「放置水車」，並點擊地圖空白處新增。
                     </div>
+                    </div>
                 </section>
                 {% endif %}
 
                 {# ========== 警戒值設定 ========== #}
-                {% if can_manage or metric_definitions %}
-                <section class="thresholds-section" id="thresholdsSection">
+                {% if user.is_authenticated %}
+                <div id="thresholdsHome"></div>
+                <section class="thresholds-section is-readonly" id="thresholdsSection">
                     <div class="threshold-section-header">
                         <h2 class="section-title">警戒值設定</h2>
                         {% if can_manage %}
@@ -524,7 +579,7 @@
                                            class="input-threshold"
                                            value="{{ item.min|default:'' }}"
                                            step="0.1"
-                                           {% if not can_manage %}disabled{% endif %}
+                                           disabled
                                            placeholder="最小">
                                     <span class="threshold-separator">~</span>
                                     <input type="number" name="{{ item.key }}_max"
@@ -532,7 +587,7 @@
                                            class="input-threshold"
                                            value="{{ item.max|default:'' }}"
                                            step="0.1"
-                                           {% if not can_manage %}disabled{% endif %}
+                                           disabled
                                            placeholder="最大">
                                     <span class="threshold-unit">{{ item.unit }}</span>
                                 </div>
@@ -542,7 +597,7 @@
 
                         {% if can_manage %}
                         <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-primary" id="btnSaveThresholds" disabled>
                                 <i class="bi bi-check-circle"></i>
                                 <span>儲存警戒值</span>
                             </button>
@@ -567,9 +622,11 @@
                                 <i class="bi bi-magic"></i> 產生測試數據
                             </button>
                             {% endif %}
+                            {% if user.is_authenticated %}
                             <a id="btnExportCSV" href="#" class="btn-export-csv" title="匯出 CSV 格式資料 (Excel 相容)" target="_blank">
                                 <i class="bi bi-file-earmark-excel"></i> 匯出 CSV 資料
                             </a>
+                            {% endif %}
                         </div>
                     </div>
                     
@@ -635,7 +692,7 @@
                     <div class="history-table-container" data-lenis-prevent>
                         <table class="history-table">
                             <thead>
-                                <tr>
+                                <tr id="historyTableHead">
                                     <th>檢測時間</th>
                                     <th>感測器</th>
                                     <th>溫度</th>
@@ -694,5 +751,5 @@
 
 {% block script %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="{% static 'js/water/pond_detail.js' %}"></script>
+<script src="{% static 'js/water/pond_detail.js' %}?v=1.4"></script>
 {% endblock %}

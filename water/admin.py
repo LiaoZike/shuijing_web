@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Pond, PondSensor, PondAerator, SensorReading, WaterSimulationCron, WaterThreshold, WaterSensorAlert
+from .models import Pond, PondSensor, PondAerator, PondAeratorStateLog, SensorReading, WaterSimulationCron, WaterThreshold, WaterSensorAlert
 
 
 @admin.register(Pond)
@@ -25,8 +25,15 @@ class PondSensorAdmin(admin.ModelAdmin):
 
 @admin.register(PondAerator)
 class PondAeratorAdmin(admin.ModelAdmin):
-    list_display = ("name", "pond", "x_position", "y_position", "is_active", "rules")
-    list_filter = ("pond", "is_active")
+    list_display = ("name", "pond", "x_position", "y_position", "is_active", "last_is_operating", "last_evaluated_at", "rules")
+    list_filter = ("pond", "is_active", "last_is_operating")
+
+
+@admin.register(PondAeratorStateLog)
+class PondAeratorStateLogAdmin(admin.ModelAdmin):
+    list_display = ("aerator", "pond", "recorded_at", "is_operating")
+    list_filter = ("pond", "aerator", "is_operating")
+    date_hierarchy = "recorded_at"
 
 
 @admin.register(SensorReading)
@@ -68,5 +75,4 @@ class WaterSimulationCronAdmin(admin.ModelAdmin):
 class WaterSensorAlertAdmin(admin.ModelAdmin):
     list_display = ("sensor", "metric", "is_active", "first_triggered_at", "last_triggered_at", "last_notified_at", "resolved_at")
     list_filter = ("is_active", "metric", "sensor__pond")
-
 

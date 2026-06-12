@@ -14,6 +14,66 @@ def _trim(value: str | None, limit: int = 180) -> str:
     return f"{text[:limit].rstrip()}..."
 
 
+def _aerator_rule_summary(aerator) -> list[dict]:
+    operator_labels = {
+        "lt": "<",
+        "le": "<=",
+        "gt": ">",
+        "ge": ">=",
+        "eq": "=",
+    }
+    return [
+        {
+            "sensor_name": rule.get("sensor_name"),
+            "metric": rule.get("metric"),
+            "metric_label": rule.get("metric_label"),
+            "operator": rule.get("operator"),
+            "operator_label": operator_labels.get(rule.get("operator"), rule.get("operator")),
+            "value": rule.get("value"),
+        }
+        for rule in aerator.get_enriched_rules()
+    ]
+
+
+def _pond_aerator_summary(pond) -> list[dict]:
+    aerators = []
+    for aerator in pond.aerators.all().order_by("name"):
+        is_operating = aerator.is_operating()
+        aerators.append(
+            {
+                "aerator_id": aerator.pk,
+                "aerator_name": aerator.name,
+                "is_enabled": aerator.is_active,
+                "is_operating": is_operating,
+                "status_label": "運作中" if is_operating else "已停止",
+                "rule_mode": "all_rules_match" if aerator.rules else "always_on_when_enabled",
+                "rules": _aerator_rule_summary(aerator),
+            }
+        )
+    return aerators
+
+
+def _pond_sensor_summary(pond) -> list[dict]:
+    sensors = []
+    for sensor in pond.sensors.filter(is_active=True).order_by("name"):
+        latest = sensor.readings.first()
+        sensors.append(
+            {
+                "sensor_id": sensor.pk,
+                "sensor_name": sensor.name,
+                "sensor_type": sensor.get_sensor_type_display(),
+                "measured_at": latest.measured_at.isoformat() if latest else "",
+                "temperature_c": latest.temperature if latest else None,
+                "ph": latest.ph if latest else None,
+                "dissolved_oxygen_mg_l": latest.dissolved_oxygen if latest else None,
+                "ammonia_nitrogen_mg_l": latest.ammonia_nitrogen if latest else None,
+                "nitrite_mg_l": latest.nitrite if latest else None,
+                "salinity_ppt": latest.salinity if latest else None,
+            }
+        )
+    return sensors
+
+
 def list_upcoming_activities(limit: int = 5) -> dict:
     today = timezone.localdate()
     limit = max(1, min(int(limit or 5), 10))
@@ -199,6 +259,42 @@ def get_latest_water_quality(pond_name: str, user=None) -> dict:
         "ph": latest.ph,
         "dissolved_oxygen_mg_l": latest.dissolved_oxygen,
         "salinity_ppt": latest.salinity,
+        "sensors": _pond_sensor_summary(pond),
+        "aerators": _pond_aerator_summary(pond),
+    }
+
+
+def get_aerator_status(pond_name: str | None = None, user=None) -> dict:
+    from water.views import visible_ponds_for
+
+    visible_ponds = visible_ponds_for(user).prefetch_related("aerators", "sensors")
+    if pond_name:
+        try:
+            visible_ponds = visible_ponds.filter(name=pond_name)
+            if not visible_ponds.exists():
+                raise Pond.DoesNotExist
+        except Pond.DoesNotExist:
+            all_ponds = visible_ponds_for(user)
+            return {
+                "error": f"unknown pond or permission denied: {pond_name}",
+                "available_ponds": list(all_ponds.values_list("name", flat=True)),
+            }
+
+    ponds = []
+    for pond in visible_ponds.order_by("name"):
+        aerators = _pond_aerator_summary(pond)
+        ponds.append(
+            {
+                "pond": pond.name,
+                "aerator_count": len(aerators),
+                "operating_count": sum(1 for item in aerators if item["is_operating"]),
+                "aerators": aerators,
+            }
+        )
+
+    return {
+        "pond_count": len(ponds),
+        "ponds": ponds,
     }
 
 
@@ -276,6 +372,7 @@ def get_pond_summary(days: int = 7, user=None) -> dict:
                 "latest_ph": latest.ph if latest else None,
                 "latest_dissolved_oxygen_mg_l": latest.dissolved_oxygen if latest else None,
                 "latest_salinity_ppt": latest.salinity if latest else None,
+                "sensors": _pond_sensor_summary(pond),
                 "recent_days": days,
                 "recent_reading_count": stats["reading_count"],
                 "avg_temperature_c": round(stats["avg_temperature"], 2)
@@ -291,6 +388,7 @@ def get_pond_summary(days: int = 7, user=None) -> dict:
                 if stats["avg_salinity"] is not None
                 else None,
                 "status": status,
+                "aerators": _pond_aerator_summary(pond),
             }
         )
 
@@ -405,6 +503,22 @@ TOOL_SCHEMAS = [
     {
         "type": "function",
         "function": {
+            "name": "get_aerator_status",
+            "description": "查詢可見魚池內所有水車/增氧設備目前是運作中或已停止，並列出自動啟動條件與依據的感測器規則。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "pond_name": {
+                        "type": "string",
+                        "description": "可選。指定魚池名稱；不填則查詢所有可見魚池。",
+                    }
+                },
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "get_pond_summary",
             "description": "Summarize all ponds with latest readings and recent averages, including dissolved oxygen status.",
             "parameters": {
@@ -428,6 +542,7 @@ _TOOL_REGISTRY = {
     "list_usr_highlights": list_usr_highlights,
     "get_latest_water_quality": get_latest_water_quality,
     "get_average_do": get_average_do,
+    "get_aerator_status": get_aerator_status,
     "get_pond_summary": get_pond_summary,
 }
 
@@ -437,7 +552,7 @@ def dispatch(name: str, arguments: dict, user=None) -> dict:
     if fn is None:
         return {"error": f"unknown tool: {name}"}
     try:
-        if name in ("get_latest_water_quality", "get_average_do", "get_pond_summary"):
+        if name in ("get_latest_water_quality", "get_average_do", "get_aerator_status", "get_pond_summary"):
             return fn(**arguments, user=user)
         return fn(**arguments)
     except TypeError as exc:

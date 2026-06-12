@@ -13,6 +13,8 @@
     const pinsContainer = document.getElementById('pinsContainer');
     const workbenchList = document.getElementById('workbenchList');
     const ajaxStatus = document.getElementById('ajaxStatus');
+    const aeratorCriteriaPanel = document.getElementById('aeratorCriteriaPanel');
+    const aeratorCriteriaList = document.getElementById('aeratorCriteriaList');
 
     // Threshold elements
     const thresholdTargetSelect = document.getElementById('thresholdTargetSelect');
@@ -21,6 +23,11 @@
     const btnRestoreThresholds = document.getElementById('btnRestoreThresholds');
     const formTargetSensorId = document.getElementById('formTargetSensorId');
     const thresholdsDataEl = document.getElementById('thresholdsData');
+    const thresholdsSection = document.getElementById('thresholdsSection');
+    const thresholdsHome = document.getElementById('thresholdsHome');
+    const btnSaveThresholds = document.getElementById('btnSaveThresholds');
+    const settingsTabs = document.getElementById('settingsTabs');
+    const canManageThresholds = Boolean(btnEditMode);
 
     // History elements
     const historySensorSelect = document.getElementById('historySensorSelect');
@@ -29,6 +36,7 @@
     const btnExportCSV = document.getElementById('btnExportCSV');
     const btnGenerateMock = document.getElementById('btnGenerateMock');
     const historyTableBody = document.getElementById('historyTableBody');
+    const historyTableHead = document.getElementById('historyTableHead');
     const chartEmptyState = document.getElementById('chartEmptyState');
     const historyStartDate = document.getElementById('historyStartDate');
     const historyEndDate = document.getElementById('historyEndDate');
@@ -53,6 +61,163 @@
     let statusTimeout = null;
     let ignoreNextMapClick = false;
     let thresholdsData = {};
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function operatorLabel(operator) {
+        if (operator === 'lt') return '&lt;';
+        if (operator === 'le') return '&le;';
+        if (operator === 'gt') return '&gt;';
+        if (operator === 'ge') return '&ge;';
+        if (operator === 'eq') return '=';
+        return escapeHtml(operator || '');
+    }
+
+    function cssEscape(value) {
+        if (window.CSS && typeof window.CSS.escape === 'function') {
+            return window.CSS.escape(String(value));
+        }
+        return String(value).replace(/["\\]/g, '\\$&');
+    }
+
+    function statusTextForAerator(aerator) {
+        if (!aerator || !aerator.is_active) return '停用';
+        return aerator.is_operating ? '運作中' : '已停止';
+    }
+
+    function criteriaClassForAerator(aerator) {
+        if (!aerator || !aerator.is_active) return 'is-disabled';
+        return aerator.is_operating ? 'is-operating' : 'is-stopped';
+    }
+
+    function renderAeratorCriteriaCard(aerator) {
+        if (!aerator || !aerator.id) return '';
+        const rules = Array.isArray(aerator.enriched_rules) ? aerator.enriched_rules : [];
+        const rulesHtml = rules.length
+            ? rules.map(rule => `
+                <span class="criteria-rule-chip">
+                    ${escapeHtml(rule.sensor_name)} · ${escapeHtml(rule.metric_label)}
+                    ${operatorLabel(rule.operator)}
+                    ${escapeHtml(rule.value)}
+                </span>
+            `).join('')
+            : '<span class="criteria-rule-chip criteria-rule-chip--default">啟用時預設持續運作</span>';
+
+        return `
+            <article class="aerator-criteria-card ${criteriaClassForAerator(aerator)}" data-aerator-criteria-id="${escapeHtml(aerator.id)}">
+                <div class="criteria-card-head">
+                    <span class="criteria-icon"><i class="bi bi-fan"></i></span>
+                    <strong>${escapeHtml(aerator.name)}</strong>
+                    <span class="criteria-status">${statusTextForAerator(aerator)}</span>
+                </div>
+                <div class="criteria-rules">${rulesHtml}</div>
+            </article>
+        `;
+    }
+
+    function upsertAeratorCriteriaCard(aerator) {
+        if (!aeratorCriteriaList || !aerator || !aerator.id) return;
+        const existing = aeratorCriteriaList.querySelector(`[data-aerator-criteria-id="${cssEscape(aerator.id)}"]`);
+        const html = renderAeratorCriteriaCard(aerator);
+        if (existing) {
+            existing.outerHTML = html;
+        } else {
+            aeratorCriteriaList.insertAdjacentHTML('beforeend', html);
+        }
+        if (aeratorCriteriaPanel) aeratorCriteriaPanel.style.display = '';
+    }
+
+    function removeAeratorCriteriaCard(aeratorId) {
+        if (!aeratorCriteriaList || !aeratorId) return;
+        const existing = aeratorCriteriaList.querySelector(`[data-aerator-criteria-id="${cssEscape(aeratorId)}"]`);
+        if (existing) existing.remove();
+        if (aeratorCriteriaPanel && aeratorCriteriaList.children.length === 0) {
+            aeratorCriteriaPanel.style.display = 'none';
+        }
+    }
+
+    function isThresholdEditEnabled() {
+        return canManageThresholds && isEditMode;
+    }
+
+    function syncThresholdEditState() {
+        const canEdit = isThresholdEditEnabled();
+
+        if (thresholdsSection) {
+            thresholdsSection.classList.toggle('is-readonly', !canEdit);
+            thresholdsSection.classList.toggle('is-editing', canEdit);
+        }
+
+        if (thresholdsForm) {
+            thresholdsForm.querySelectorAll('.input-threshold').forEach(input => {
+                input.disabled = !canEdit;
+            });
+        }
+
+        if (btnSaveThresholds) {
+            btnSaveThresholds.disabled = !canEdit;
+        }
+
+        if (btnRestoreThresholds) {
+            const target = thresholdTargetSelect ? thresholdTargetSelect.value : 'default';
+            const targetData = thresholdsData[target];
+            const shouldShowRestore = canEdit && target !== 'default' && targetData && targetData.is_custom;
+            btnRestoreThresholds.disabled = !canEdit;
+            btnRestoreThresholds.style.display = shouldShowRestore ? 'inline-flex' : 'none';
+        }
+    }
+
+    function ensureThresholdSettingsPanel() {
+        if (!workbench || !thresholdsSection) return null;
+
+        let panel = workbench.querySelector('[data-settings-panel="thresholds"]');
+        if (!panel) {
+            panel = document.createElement('div');
+            panel.className = 'settings-panel';
+            panel.dataset.settingsPanel = 'thresholds';
+            workbench.appendChild(panel);
+        }
+        return panel;
+    }
+
+    function moveThresholdsIntoSettings() {
+        const panel = ensureThresholdSettingsPanel();
+        if (!panel || !thresholdsSection || thresholdsSection.parentElement === panel) return;
+        panel.appendChild(thresholdsSection);
+    }
+
+    function moveThresholdsHome() {
+        if (!thresholdsHome || !thresholdsSection || thresholdsSection.parentElement === thresholdsHome.parentElement) return;
+        thresholdsHome.insertAdjacentElement('afterend', thresholdsSection);
+    }
+
+    function switchSettingsTab(tab) {
+        if (!settingsTabs || !workbench) return;
+
+        settingsTabs.querySelectorAll('[data-settings-tab]').forEach(button => {
+            const active = button.dataset.settingsTab === tab;
+            button.classList.toggle('is-active', active);
+            button.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+
+        workbench.querySelectorAll('[data-settings-panel]').forEach(panel => {
+            panel.classList.toggle('is-active', panel.dataset.settingsPanel === tab);
+        });
+    }
+
+    function highlightSection(section) {
+        if (!section) return;
+        section.classList.remove('highlight-flash');
+        void section.offsetWidth;
+        section.classList.add('highlight-flash');
+    }
 
     if (thresholdsDataEl) {
         try {
@@ -115,6 +280,11 @@
         if (workbench) {
             workbench.classList.toggle('is-open', isEditMode);
             if (isEditMode) {
+                moveThresholdsIntoSettings();
+            } else {
+                moveThresholdsHome();
+            }
+            if (isEditMode) {
                 // 平滑滾動到管理面板
                 setTimeout(() => {
                     workbench.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -126,6 +296,8 @@
         document.querySelectorAll('.sensor-pin, .map-gate').forEach(el => {
             el.style.cursor = isEditMode ? 'grab' : '';
         });
+
+        syncThresholdEditState();
     }
 
     if (btnEditMode) {
@@ -136,12 +308,70 @@
         btnCloseWorkbench.addEventListener('click', () => toggleEditMode(false));
     }
 
+    if (settingsTabs) {
+        settingsTabs.addEventListener('click', function (e) {
+            const button = e.target.closest('[data-settings-tab]');
+            if (!button) return;
+            if (button.dataset.settingsTab === 'thresholds') {
+                moveThresholdsIntoSettings();
+            }
+            switchSettingsTab(button.dataset.settingsTab);
+        });
+    }
+
+    function focusSensorContext(sensorId, metricKey = 'dissolved_oxygen') {
+        if (!sensorId) return;
+
+        if (thresholdTargetSelect && thresholdTargetSelect.querySelector(`option[value="${sensorId}"]`)) {
+            thresholdTargetSelect.value = sensorId;
+            thresholdTargetSelect.dispatchEvent(new Event('change'));
+        }
+
+        if (historySensorSelect && historySensorSelect.querySelector(`option[value="${sensorId}"]`)) {
+            historySensorSelect.value = sensorId;
+            if (historyMetricSelect && metricKey && historyMetricSelect.querySelector(`option[value="${metricKey}"]`)) {
+                historyMetricSelect.value = metricKey;
+            }
+            historySensorSelect.dispatchEvent(new Event('change'));
+        }
+
+        if (isEditMode) {
+            moveThresholdsIntoSettings();
+            switchSettingsTab('thresholds');
+        }
+
+        highlightSection(thresholdsSection);
+        highlightSection(document.querySelector('.history-section'));
+    }
+
+    function focusAeratorContext(aeratorId) {
+        if (!aeratorId) return;
+        const optionValue = `aerator_${aeratorId}`;
+
+        if (historySensorSelect && historySensorSelect.querySelector(`option[value="${optionValue}"]`)) {
+            historySensorSelect.value = optionValue;
+            historySensorSelect.dispatchEvent(new Event('change'));
+        }
+
+        if (isEditMode) {
+            switchSettingsTab('aerators');
+        }
+
+        highlightSection(document.querySelector('.history-section'));
+    }
+
     // ========== 點擊卡片跳轉與連動右邊圖表 ==========
     document.querySelectorAll('.btn-link-to-history').forEach(btn => {
         btn.addEventListener('click', function (e) {
             e.preventDefault();
             e.stopPropagation();
             const sensorId = this.dataset.sensorId;
+            focusSensorContext(sensorId);
+            const historySection = document.querySelector('.history-section');
+            if (historySection) {
+                historySection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            return;
             if (sensorId && historySensorSelect) {
                 // 1. 連動右側歷史分析感測器下拉選單
                 if (historySensorSelect.querySelector(`option[value="${sensorId}"]`)) {
@@ -171,6 +401,12 @@
             e.stopPropagation();
             const sensorId = this.dataset.sensorId;
             const metricKey = this.dataset.metric;
+            focusSensorContext(sensorId, metricKey);
+            const historySection = document.querySelector('.history-section');
+            if (historySection) {
+                historySection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            return;
             
             if (sensorId && metricKey && historySensorSelect && historyMetricSelect) {
                 let updated = false;
@@ -314,6 +550,16 @@
             gate.addEventListener('touchstart', onGateTouchStart, { passive: false });
             gate.addEventListener('click', onGateClick);
         });
+
+        document.querySelectorAll('.aerator-pin').forEach(pin => {
+            pin.removeEventListener('mousedown', onAeratorDragStart);
+            pin.removeEventListener('touchstart', onAeratorTouchStart);
+            pin.removeEventListener('click', onAeratorPinClick);
+
+            pin.addEventListener('mousedown', onAeratorDragStart);
+            pin.addEventListener('touchstart', onAeratorTouchStart, { passive: false });
+            pin.addEventListener('click', onAeratorPinClick);
+        });
     }
 
     function onGateClick(e) {
@@ -329,6 +575,12 @@
         
         const sensorId = wrapper.dataset.sensorId;
         if (sensorId) {
+            focusSensorContext(sensorId);
+            if (window.innerWidth < 1200) {
+                const historySection = document.querySelector('.history-section');
+                if (historySection) historySection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            return;
             if (thresholdTargetSelect) {
                 thresholdTargetSelect.value = sensorId;
                 thresholdTargetSelect.dispatchEvent(new Event('change'));
@@ -351,6 +603,18 @@
                     thresholdsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }
             }
+        }
+    }
+
+    function onAeratorPinClick(e) {
+        if (isDraggingOccurred) return;
+        const wrapper = e.currentTarget.closest('.aerator-wrapper');
+        if (!wrapper) return;
+
+        focusAeratorContext(wrapper.dataset.aeratorId);
+        if (window.innerWidth < 1200) {
+            const historySection = document.querySelector('.history-section');
+            if (historySection) historySection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
     }
 
@@ -1079,12 +1343,18 @@
                     }
                 }
             }
+            syncThresholdEditState();
         });
     }
 
     // 還原為池區預設警戒值 (一鍵重設)
     if (btnRestoreThresholds) {
         btnRestoreThresholds.addEventListener('click', function () {
+            if (!isThresholdEditEnabled()) {
+                showAjaxStatus('error', '請先點擊「管理感測器」再修改警戒值。');
+                return;
+            }
+
             const target = thresholdTargetSelect ? thresholdTargetSelect.value : 'default';
             if (target === 'default') return;
 
@@ -1121,6 +1391,11 @@
     if (thresholdsForm) {
         thresholdsForm.addEventListener('submit', function (e) {
             e.preventDefault();
+            if (!isThresholdEditEnabled()) {
+                showAjaxStatus('error', '請先點擊「管理感測器」再儲存警戒值。');
+                return;
+            }
+
             const target = thresholdTargetSelect ? thresholdTargetSelect.value : 'default';
 
             const payload = {
@@ -1284,10 +1559,13 @@
 
         const sensorId = historySensorSelect.value;
         const isAerator = sensorId.startsWith('aerator_');
+        const metricFilter = historyMetricSelect.closest('.filter-item');
         if (isAerator) {
             historyMetricSelect.disabled = true;
+            if (metricFilter) metricFilter.hidden = true;
         } else {
             historyMetricSelect.disabled = false;
+            if (metricFilter) metricFilter.hidden = false;
         }
 
         const metricKey = isAerator ? 'aerator_state' : historyMetricSelect.value;
@@ -1356,6 +1634,14 @@
     function updateHistoryUI(data, metricKey) {
         if (!historyTableBody) return;
         historyTableBody.innerHTML = '';
+        const isAeratorMetric = metricKey === 'aerator_state';
+
+        if (historyTableHead) {
+            const headers = isAeratorMetric
+                ? ['記錄時間', '水車', '運作狀態']
+                : ['檢測時間', '感測器', '溫度', 'pH值', '溶氧', '氨氮', '亞硝酸鹽', '鹽度'];
+            historyTableHead.innerHTML = headers.map(label => `<th>${label}</th>`).join('');
+        }
 
         if (data.length === 0) {
             if (chartEmptyState) chartEmptyState.style.display = 'flex';
@@ -1366,7 +1652,7 @@
                 historyChart.data.datasets[2].data = [];
                 historyChart.update();
             }
-            historyTableBody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--muted); font-style: italic; padding: 36px 0;">該時間區段與篩選條件下尚無檢測數據</td></tr>`;
+            historyTableBody.innerHTML = `<tr><td colspan="${isAeratorMetric ? 3 : 8}" style="text-align: center; color: var(--muted); font-style: italic; padding: 36px 0;">該時間區段與篩選條件下尚無歷史資料</td></tr>`;
             return;
         }
 
@@ -1398,6 +1684,8 @@
             };
 
             const opt = metricOpts[metricKey] || { label: '數值', color: '#0f766e' };
+            metricOpts.aerator_state = { label: '水車運作狀態', color: '#0d9488' };
+
             historyChart.data.labels = labels;
             historyChart.data.datasets[0].label = opt.label;
             historyChart.data.datasets[0].data = values;
@@ -1434,6 +1722,19 @@
                 };
             }
 
+            if (metricKey === 'aerator_state') {
+                historyChart.options.scales.y.ticks.callback = function(value) {
+                    if (value === 0) return '關';
+                    if (value === 1) return '開';
+                    return '';
+                };
+                historyChart.options.plugins.tooltip.callbacks = {
+                    label: function(context) {
+                        return `運作狀態：${context.parsed.y === 1 ? '開' : '關'}`;
+                    }
+                };
+            }
+
             const sensorId = historySensorSelect ? historySensorSelect.value : 'all';
             const limits = getHistoryThresholds(sensorId, metricKey);
             const minLine = limits ? thresholdLineData(labels, limits.min) : [];
@@ -1446,17 +1747,19 @@
         }
 
         // 填充表格 (保持最新數據在最上方，即原本 data 的順序)
-        const tableLabels = ['檢測時間', '感測器/水車', '溫度', 'pH值', '溶氧', '氨氮', '亞硝酸鹽', '鹽度'];
+        const tableLabels = isAeratorMetric
+            ? ['記錄時間', '水車', '運作狀態']
+            : ['檢測時間', '感測器', '溫度', 'pH值', '溶氧', '氨氮', '亞硝酸鹽', '鹽度'];
         data.forEach(row => {
             const tr = document.createElement('tr');
-            if (metricKey === 'aerator_state') {
+            if (isAeratorMetric) {
                 const stateStr = row.aerator_state === 1 ? '運作中' : '已停止';
                 const badgeClass = row.aerator_state === 1 ? 'success' : 'secondary';
                 tr.innerHTML = `
                     <td>${row.measured_at}</td>
                     <td><span class="threshold-status-badge" style="background: rgba(13,148,136,0.1); color: #0f766e; border: 1px solid rgba(13,148,136,0.15);">${row.sensor_name}</span></td>
-                    <td colspan="6" style="text-align: center; font-weight: bold; color: var(--text-1);">
-                        運作狀態：<span class="badge badge-${badgeClass}" style="padding: 4px 10px; border-radius: 4px; ${row.aerator_state === 1 ? 'background: rgba(16,185,129,0.1); color: #10b981;' : 'background: rgba(107,114,128,0.1); color: #6b7280;'}">${stateStr}</span>
+                    <td style="font-weight: bold; color: var(--text-1);">
+                        <span class="badge badge-${badgeClass}" style="padding: 4px 10px; border-radius: 999px; ${row.aerator_state === 1 ? 'background: rgba(16,185,129,0.1); color: #10b981;' : 'background: rgba(107,114,128,0.1); color: #6b7280;'}">${stateStr}</span>
                     </td>
                 `;
             } else {
@@ -1530,6 +1833,7 @@
     if (thresholdTargetSelect) {
         thresholdTargetSelect.dispatchEvent(new Event('change'));
     }
+    syncThresholdEditState();
 
     function refreshPondData() {
         if (isEditMode || document.querySelector('.modal.show')) {
@@ -1651,6 +1955,18 @@
                             if (tooltipStatus) {
                                 tooltipStatus.textContent = `狀態: ${aeData.is_operating ? '運作中' : '已停止'}`;
                             }
+                            const criteriaCard = aeratorCriteriaList
+                                ? aeratorCriteriaList.querySelector(`[data-aerator-criteria-id="${cssEscape(aeData.aerator_id)}"]`)
+                                : null;
+                            if (criteriaCard) {
+                                criteriaCard.classList.toggle('is-operating', aeData.is_operating && aeData.is_active);
+                                criteriaCard.classList.toggle('is-stopped', !aeData.is_operating && aeData.is_active);
+                                criteriaCard.classList.toggle('is-disabled', !aeData.is_active);
+                                const criteriaStatus = criteriaCard.querySelector('.criteria-status');
+                                if (criteriaStatus) {
+                                    criteriaStatus.textContent = !aeData.is_active ? '停用' : (aeData.is_operating ? '運作中' : '已停止');
+                                }
+                            }
                         }
                     });
                 }
@@ -1762,6 +2078,8 @@
                         tooltipRulesContainer.innerHTML = `<div style="color: rgba(255,255,255,0.6);">預設無條件運作</div>`;
                     }
                 }
+
+                upsertAeratorCriteriaCard(data.aerator);
             }
         })
         .catch(err => {
@@ -1807,6 +2125,7 @@
         `;
 
         pinsContainer.appendChild(wrapper);
+        upsertAeratorCriteriaCard(ae);
 
         const emptyState = document.getElementById('mapEmptyState');
         if (emptyState) emptyState.style.display = 'none';
@@ -2060,6 +2379,7 @@
             const row = document.querySelector(`.wb-row[data-aerator-id="${aeratorId}"]`);
             if (row) row.remove();
 
+            removeAeratorCriteriaCard(aeratorId);
             updateAeratorIndexes();
         })
         .catch(err => {

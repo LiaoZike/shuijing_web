@@ -128,9 +128,16 @@ class PondAerator(models.Model):
     is_active = models.BooleanField("是否啟用", default=True)
     # rules: [{"sensor_id": 1, "metric": "dissolved_oxygen", "operator": "lt", "value": 4.5}]
     rules = models.JSONField("運作規則", default=list, blank=True)
+    last_is_operating = models.BooleanField("上次判斷是否運作", default=False)
+    last_evaluated_at = models.DateTimeField("上次判斷時間", null=True, blank=True)
+    last_evaluation_reason = models.TextField("上次判斷說明", blank=True, default="")
 
     def is_operating(self):
-        """判斷水車是否正在運作"""
+        """回傳上次排程判斷後儲存的水車狀態。"""
+        return bool(self.last_is_operating)
+
+    def evaluate_is_operating(self):
+        """依目前最新感測值即時計算水車是否應該運作。"""
         if not self.is_active:
             return False
         if not self.rules:
@@ -184,6 +191,27 @@ class PondAerator(models.Model):
                 
         return True
 
+    def build_evaluation_reason(self, is_operating=None):
+        if is_operating is None:
+            is_operating = self.evaluate_is_operating()
+        if not self.is_active:
+            return "水車已停用。"
+        if not self.rules:
+            return "未設定規則，啟用時預設持續運作。"
+        status = "符合，應啟動" if is_operating else "未完全符合，應停止"
+        return f"依 {len(self.rules)} 條規則判斷：{status}。"
+
+    def evaluate_and_store_state(self, evaluated_at=None):
+        from django.utils import timezone
+
+        evaluated_at = evaluated_at or timezone.now()
+        is_operating = self.evaluate_is_operating()
+        self.last_is_operating = is_operating
+        self.last_evaluated_at = evaluated_at
+        self.last_evaluation_reason = self.build_evaluation_reason(is_operating)
+        self.save(update_fields=["last_is_operating", "last_evaluated_at", "last_evaluation_reason"])
+        return is_operating
+
     def get_enriched_rules(self):
         """傳回包含感測器名稱與指標中文名稱的規則清單"""
         enriched = []
@@ -220,6 +248,26 @@ class PondAerator(models.Model):
 
     def __str__(self):
         return f"{self.pond.name} / {self.name}"
+
+
+class PondAeratorStateLog(models.Model):
+    """水車由排程判斷後留下的開關狀態紀錄。"""
+
+    pond = models.ForeignKey(Pond, on_delete=models.CASCADE, related_name="aerator_state_logs")
+    aerator = models.ForeignKey(PondAerator, on_delete=models.CASCADE, related_name="state_logs")
+    recorded_at = models.DateTimeField(db_index=True)
+    is_operating = models.BooleanField("是否運作")
+    reason = models.TextField("判斷說明", blank=True, default="")
+
+    class Meta:
+        ordering = ["-recorded_at"]
+        indexes = [
+            models.Index(fields=["pond", "aerator", "-recorded_at"]),
+        ]
+
+    def __str__(self):
+        status = "運作中" if self.is_operating else "已停止"
+        return f"{self.aerator} @ {self.recorded_at:%Y-%m-%d %H:%M} ({status})"
 
 
 
