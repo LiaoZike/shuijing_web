@@ -832,6 +832,11 @@
     z-index: 20;
 }
 
+.sensor-wrapper:hover,
+.aerator-wrapper:hover {
+    z-index: 180 !important;
+}
+
 .sensor-wrapper.dragging-wrapper {
     z-index: 35 !important;
 }

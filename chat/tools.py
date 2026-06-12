@@ -53,10 +53,18 @@ def _pond_aerator_summary(pond) -> list[dict]:
     return aerators
 
 
-def _pond_sensor_summary(pond) -> list[dict]:
+def _pond_sensor_summary(pond, user=None) -> list[dict]:
+    from water.views import threshold_map_for
+    from water.utils import check_metrics_status
     sensors = []
     for sensor in pond.sensors.filter(is_active=True).order_by("name"):
         latest = sensor.readings.first()
+        if latest:
+            sensor_thresholds = threshold_map_for(user, pond, sensor=sensor)
+            metric_status = check_metrics_status(latest, sensor_thresholds)
+        else:
+            metric_status = {}
+            
         sensors.append(
             {
                 "sensor_id": sensor.pk,
@@ -69,6 +77,7 @@ def _pond_sensor_summary(pond) -> list[dict]:
                 "ammonia_nitrogen_mg_l": latest.ammonia_nitrogen if latest else None,
                 "nitrite_mg_l": latest.nitrite if latest else None,
                 "salinity_ppt": latest.salinity if latest else None,
+                "metric_status": metric_status,
             }
         )
     return sensors
@@ -259,7 +268,7 @@ def get_latest_water_quality(pond_name: str, user=None) -> dict:
         "ph": latest.ph,
         "dissolved_oxygen_mg_l": latest.dissolved_oxygen,
         "salinity_ppt": latest.salinity,
-        "sensors": _pond_sensor_summary(pond),
+        "sensors": _pond_sensor_summary(pond, user=user),
         "aerators": _pond_aerator_summary(pond),
     }
 
@@ -324,10 +333,61 @@ def get_average_do(pond_name: str, days: int = 7, user=None) -> dict:
     }
 
 
+def get_pond_history(pond_name: str, days: int = 7, user=None) -> dict:
+    from datetime import timedelta
+    from django.db.models.functions import TruncDate
+    from django.db.models import Avg
+    from water.views import visible_ponds_for
+
+    visible_ponds = visible_ponds_for(user)
+    try:
+        pond = visible_ponds.get(name=pond_name)
+    except Pond.DoesNotExist:
+        return {
+            "error": f"unknown pond or permission denied: {pond_name}",
+            "available_ponds": list(visible_ponds.values_list("name", flat=True)),
+        }
+
+    days = max(1, min(int(days or 7), 30))
+    since = timezone.now() - timedelta(days=days)
+
+    readings = (
+        pond.readings.filter(measured_at__gte=since)
+        .annotate(date=TruncDate("measured_at"))
+        .values("date")
+        .annotate(
+            avg_temp=Avg("temperature"),
+            avg_ph=Avg("ph"),
+            avg_do=Avg("dissolved_oxygen"),
+            avg_sal=Avg("salinity"),
+        )
+        .order_by("date")
+    )
+
+    history_list = []
+    for r in readings:
+        d = r["date"]
+        date_str = d.strftime("%m/%d") if d else ""
+        history_list.append({
+            "date": date_str,
+            "avg_temperature_c": round(r["avg_temp"] or 0, 1),
+            "avg_ph": round(r["avg_ph"] or 0, 2),
+            "avg_dissolved_oxygen_mg_l": round(r["avg_do"] or 0, 1),
+            "avg_salinity_ppt": round(r["avg_sal"] or 0, 1),
+        })
+
+    return {
+        "pond": pond.name,
+        "days": days,
+        "history": history_list,
+    }
+
+
 def get_pond_summary(days: int = 7, user=None) -> dict:
     from datetime import timedelta
     from django.db.models import Avg, Count, Max, Min
-    from water.views import visible_ponds_for
+    from water.views import visible_ponds_for, threshold_map_for
+    from water.utils import reading_status
 
     days = max(1, min(int(days or 7), 30))
     since = timezone.now() - timedelta(days=days)
@@ -351,16 +411,39 @@ def get_pond_summary(days: int = 7, user=None) -> dict:
         min_do = stats["min_do"]
         status = "no_recent_data"
         if avg_do is not None:
-            if (latest_do is not None and latest_do < 4) or (min_do is not None and min_do < 4):
-                status = "low_oxygen"
-            elif (
-                (latest_do is not None and latest_do < 5)
-                or (min_do is not None and min_do < 5)
-                or avg_do < 5
-            ):
-                status = "watch"
-            else:
-                status = "normal"
+            # 取得使用者自訂警戒值，預設為 5.0
+            threshold_map = threshold_map_for(user, pond)
+            do_limits = threshold_map.get("dissolved_oxygen", {})
+            do_warn = do_limits.get("min")
+            if do_warn is None:
+                do_warn = 5.0
+            do_danger = max(1.0, do_warn - 1.0)
+
+            # 檢查池中所有啟用中感測器的最新測值，以決定最嚴重的狀態
+            has_data = False
+            worst_tone = "good"  # "good" < "warning" < "danger"
+            
+            for sensor in pond.sensors.filter(is_active=True):
+                sensor_latest = sensor.readings.first()
+                if not sensor_latest:
+                    continue
+                has_data = True
+                sensor_thresholds = threshold_map_for(user, pond, sensor=sensor)
+                res = reading_status(sensor_latest, sensor_thresholds)
+                
+                # Check for low oxygen danger
+                if sensor_latest.dissolved_oxygen is not None and sensor_latest.dissolved_oxygen < do_danger:
+                    worst_tone = "danger"
+                elif res["tone"] == "warning" and worst_tone != "danger":
+                    worst_tone = "warning"
+            
+            if has_data:
+                if worst_tone == "danger":
+                    status = "low_oxygen"
+                elif worst_tone == "warning":
+                    status = "watch"
+                else:
+                    status = "normal"
 
         summaries.append(
             {
@@ -372,7 +455,7 @@ def get_pond_summary(days: int = 7, user=None) -> dict:
                 "latest_ph": latest.ph if latest else None,
                 "latest_dissolved_oxygen_mg_l": latest.dissolved_oxygen if latest else None,
                 "latest_salinity_ppt": latest.salinity if latest else None,
-                "sensors": _pond_sensor_summary(pond),
+                "sensors": _pond_sensor_summary(pond, user=user),
                 "recent_days": days,
                 "recent_reading_count": stats["reading_count"],
                 "avg_temperature_c": round(stats["avg_temperature"], 2)
@@ -532,6 +615,27 @@ TOOL_SCHEMAS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_pond_history",
+            "description": "獲取指定魚池近期的歷史水質資料趨勢（包含每日平均溫度、pH、溶氧、鹽度），供繪製歷史趨勢折線圖/圖表使用。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "pond_name": {
+                        "type": "string",
+                        "description": "魚池名稱，例如：文蛤一號池, 2 號池.",
+                    },
+                    "days": {
+                        "type": "integer",
+                        "description": "查詢的天數，預設為 7，最多 30 天。",
+                    },
+                },
+                "required": ["pond_name"],
+            },
+        },
+    },
 ]
 
 
@@ -544,6 +648,7 @@ _TOOL_REGISTRY = {
     "get_average_do": get_average_do,
     "get_aerator_status": get_aerator_status,
     "get_pond_summary": get_pond_summary,
+    "get_pond_history": get_pond_history,
 }
 
 
@@ -552,7 +657,7 @@ def dispatch(name: str, arguments: dict, user=None) -> dict:
     if fn is None:
         return {"error": f"unknown tool: {name}"}
     try:
-        if name in ("get_latest_water_quality", "get_average_do", "get_aerator_status", "get_pond_summary"):
+        if name in ("get_latest_water_quality", "get_average_do", "get_aerator_status", "get_pond_summary", "get_pond_history"):
             return fn(**arguments, user=user)
         return fn(**arguments)
     except TypeError as exc:

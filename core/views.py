@@ -461,6 +461,8 @@ def global_search(request):
     aiot_results = []
     usr_results = []
     link_results = []
+    pond_results = []
+    show_monitor_shortcut = False
 
     if query:
         # 搜尋：活動 (Activity)
@@ -501,7 +503,23 @@ def global_search(request):
             Q(category__icontains=query)
         ).order_by('order')[:8]
 
-    total_count = len(activities) + len(aiot_results) + len(usr_results) + len(link_results)
+        # 搜尋：魚池 (Pond)
+        from water.views import visible_ponds_for
+        try:
+            visible_ponds = visible_ponds_for(request.user)
+            pond_results = visible_ponds.filter(
+                Q(name__icontains=query) |
+                Q(species__icontains=query) |
+                Q(description__icontains=query)
+            ).distinct()[:6]
+        except Exception:
+            pond_results = []
+
+        # 額外匹配：如果搜尋關鍵字包含監控相關詞彙，則主動推薦監控系統入口
+        monitor_keywords = ["監控", "水池", "魚池", "水質", "養殖", "漁塭", "溫度", "溶氧", "鹽度"]
+        show_monitor_shortcut = any(kw in query for kw in monitor_keywords)
+
+    total_count = len(activities) + len(aiot_results) + len(usr_results) + len(link_results) + len(pond_results) + (1 if show_monitor_shortcut else 0)
 
     return render(request, 'core/search_results.html', {
         'query': query,
@@ -509,6 +527,8 @@ def global_search(request):
         'aiot_results': aiot_results,
         'usr_results': usr_results,
         'link_results': link_results,
+        'pond_results': pond_results,
+        'show_monitor_shortcut': show_monitor_shortcut,
         'total_count': total_count,
         'today': today,
     })

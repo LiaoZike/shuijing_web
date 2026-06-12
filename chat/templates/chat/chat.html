@@ -434,28 +434,28 @@
     cursor: pointer;
     display: inline-grid;
     place-items: center;
-    animation: chat-cancel-slide-in 0.2s ease both;
-    transition: background-color 0.15s ease, transform 0.15s ease;
+    transition: width 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+                margin 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+                opacity 0.25s ease,
+                background-color 0.15s ease,
+                transform 0.15s ease;
+    overflow: hidden;
+    opacity: 1;
 }
 
 .chat-cancel-mic-btn[hidden] {
-    display: none;
+    display: inline-grid !important;
+    width: 0 !important;
+    opacity: 0 !important;
+    margin-right: -10px !important;
+    padding: 0 !important;
+    border: none !important;
+    pointer-events: none;
 }
 
 .chat-cancel-mic-btn:hover {
     background: #b91c1c;
     transform: translateY(-1px);
-}
-
-@keyframes chat-cancel-slide-in {
-    from {
-        opacity: 0;
-        transform: translateX(10px) scale(0.92);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0) scale(1);
-    }
 }
 
 /* ??Voice ASR previews */
@@ -698,18 +698,26 @@
     color: #31583d;
 }
 
+.chat-page-prompts button:first-child {
+    border: 1px solid #456b4d;
+    background: #456b4d;
+    color: #ffffff;
+    font-weight: 700;
+}
+
+.chat-page-prompts button:first-child:hover {
+    background: #31583d;
+    border-color: #31583d;
+    color: #ffffff;
+}
+
 .chat-page-form {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 48px 48px;
+    grid-template-columns: minmax(0, 1fr) auto 48px 48px;
     gap: 10px;
     padding: 16px;
     border-top: 1px solid rgba(139, 105, 20, 0.14);
     background: #ffffff;
-    transition: grid-template-columns 0.22s ease;
-}
-
-.chat-page-form:has(.chat-cancel-mic-btn:not([hidden])) {
-    grid-template-columns: minmax(0, 1fr) 48px 48px 48px;
 }
 
 .chat-page-form input {
@@ -873,21 +881,21 @@
                             <div class="pond-item-metrics">
                                 <div class="pond-metric">
                                     <span class="metric-lbl">水溫</span>
-                                    <span class="metric-val">{{ sensor.temperature_c|default:"--" }}°C</span>
+                                    <span class="metric-val {% if sensor.metric_status.temperature == 'warning' %}text-danger font-weight-bold{% endif %}">{{ sensor.temperature_c|default:"--" }}°C</span>
                                 </div>
                                 <div class="pond-metric">
                                     <span class="metric-lbl">pH</span>
-                                    <span class="metric-val">{{ sensor.ph|default:"--" }}</span>
+                                    <span class="metric-val {% if sensor.metric_status.ph == 'warning' %}text-danger font-weight-bold{% endif %}">{{ sensor.ph|default:"--" }}</span>
                                 </div>
                                 <div class="pond-metric">
                                     <span class="metric-lbl">溶氧</span>
-                                    <span class="metric-val {% if sensor.dissolved_oxygen_mg_l < 4.5 %}text-danger font-weight-bold{% endif %}">
+                                    <span class="metric-val {% if sensor.metric_status.dissolved_oxygen == 'warning' or sensor.dissolved_oxygen_mg_l < 4.5 %}text-danger font-weight-bold{% endif %}">
                                         {{ sensor.dissolved_oxygen_mg_l|default:"--" }}
                                     </span>
                                 </div>
                                 <div class="pond-metric">
                                     <span class="metric-lbl">鹽度</span>
-                                    <span class="metric-val">{{ sensor.salinity_ppt|default:"--" }}</span>
+                                    <span class="metric-val {% if sensor.metric_status.salinity == 'warning' %}text-danger font-weight-bold{% endif %}">{{ sensor.salinity_ppt|default:"--" }}</span>
                                 </div>
                             </div>
                         </div>
@@ -910,7 +918,7 @@
                     <div class="pond-item-aerators-list" style="margin-top: 10px; border-top: 1px dashed rgba(0,0,0,0.06); padding-top: 8px;">
                         {% for ae in pond.aerators %}
                         <div class="pond-aerator-row" style="display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px; padding: 2px 4px;">
-                            <span class="aerator-row-name" style="color: var(--text-1); font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                            <span class="aerator-row-name" style="color: #aa7d01; font-weight: 600; display: flex; align-items: center; gap: 4px;">
                                 <i class="bi bi-fan {% if ae.is_operating %}spin-animation{% endif %}" style="color: #0d9488;"></i> {{ ae.aerator_name }}
                             </span>
                             <span class="aerator-row-status" 
@@ -1070,23 +1078,26 @@
         }
 
         // Calculate danger/watch stats
-        const dangerPonds = sidebar.querySelectorAll(".sidebar-pond-item.status-low_oxygen, .sidebar-pond-item.status-watch");
-        const dangerCountEl = document.getElementById("statDangerCount");
-        if (dangerCountEl) {
-            dangerCountEl.textContent = dangerPonds.length;
+        function updateStats() {
+            const dangerPonds = document.querySelectorAll(".sidebar-pond-item.status-low_oxygen, .sidebar-pond-item.status-watch");
+            const dangerCountEl = document.getElementById("statDangerCount");
+            if (dangerCountEl) {
+                dangerCountEl.textContent = dangerPonds.length;
+            }
         }
+        updateStats();
 
         // Sidebar Search and Filters
         const searchInput = document.getElementById("pondSearchInput");
         const filterTabs = document.querySelectorAll(".filter-tab");
-        const pondItems = sidebar.querySelectorAll(".sidebar-pond-item");
 
         function filterPonds() {
             const query = (searchInput ? searchInput.value : "").trim().toLowerCase();
             const activeTab = document.querySelector(".filter-tab.active");
             const filterType = activeTab ? activeTab.getAttribute("data-filter") : "all";
+            const currentPondItems = document.querySelectorAll(".sidebar-pond-item");
 
-            pondItems.forEach(item => {
+            currentPondItems.forEach(item => {
                 const name = (item.getAttribute("data-pond-name") || "").toLowerCase();
                 const matchesSearch = name.includes(query);
                 
@@ -1118,32 +1129,66 @@
             });
         });
 
-        // Sidebar card click to query chatbot
-        pondItems.forEach(item => {
-            item.addEventListener("click", (e) => {
-                const pondName = item.getAttribute("data-pond-name");
-                if (pondName && input && form) {
-                    input.value = `請幫我對${pondName} 的最新水質狀態進行功能健檢，包含計算穩定度與各個感測器讀值，並提醒有何異常？`;
-                    form.dispatchEvent(new Event("submit"));
-                }
-            });
-
-            // Action buttons inside card (prevent bubbling)
-            item.querySelectorAll(".pond-action-btn").forEach(btn => {
-                btn.addEventListener("click", (e) => {
+        // Use Event Delegation for sidebar card and action button clicks
+        if (sidebarList) {
+            sidebarList.addEventListener("click", (e) => {
+                const actionBtn = e.target.closest(".pond-action-btn");
+                const pondItem = e.target.closest(".sidebar-pond-item");
+                
+                if (actionBtn && pondItem) {
                     e.stopPropagation(); // Stop bubbling to card
-                    const pondName = item.getAttribute("data-pond-name");
+                    const pondName = pondItem.getAttribute("data-pond-name");
                     if (!pondName || !input || !form) return;
                     
-                    if (btn.classList.contains("action-chart")) {
+                    if (actionBtn.classList.contains("action-chart")) {
                         input.value = `請用折線圖畫出${pondName} 的最新水質歷史趨勢圖`;
-                    } else if (btn.classList.contains("action-health")) {
+                    } else if (actionBtn.classList.contains("action-health")) {
                         input.value = `請對 ${pondName} 進行完整的功能健檢，包含計算穩定度與逐一感測器讀值檢查。`;
                     }
                     form.dispatchEvent(new Event("submit"));
-                });
+                } else if (pondItem) {
+                    const pondName = pondItem.getAttribute("data-pond-name");
+                    if (pondName && input && form) {
+                        input.value = `請幫我對${pondName} 的最新水質狀態進行功能健檢，包含計算穩定度與各個感測器讀值，並提醒有何異常？`;
+                        form.dispatchEvent(new Event("submit"));
+                    }
+                }
             });
-        });
+        }
+
+        // Auto-refresh sidebar data in background every 30 seconds
+        async function refreshSidebar() {
+            try {
+                const response = await fetch(window.location.href);
+                if (!response.ok) return;
+                const html = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // Replace stats counts
+                const newStats = doc.querySelector('.sidebar-stats');
+                const oldStats = document.querySelector('.sidebar-stats');
+                if (newStats && oldStats) {
+                    oldStats.innerHTML = newStats.innerHTML;
+                }
+                
+                // Replace list items
+                const newList = doc.querySelector('.sidebar-list');
+                const oldList = document.querySelector('.sidebar-list');
+                if (newList && oldList) {
+                    const scrollTop = oldList.scrollTop;
+                    oldList.innerHTML = newList.innerHTML;
+                    oldList.scrollTop = scrollTop;
+                }
+                
+                // Apply search/filter to newly fetched items
+                filterPonds();
+                updateStats();
+            } catch (e) {
+                console.error("Error auto-refreshing sidebar:", e);
+            }
+        }
+        setInterval(refreshSidebar, 30000);
     }
 
     // Chart.js 相關圖表初始化

@@ -646,6 +646,20 @@
     sendBtn.disabled = true;
     const typing = addTyping();
 
+    let waitMsg = "水井龜正在幫您分析水質資料...";
+    if (message.includes("活動")) {
+      waitMsg = "水井龜正在為您查詢最新活動資訊...";
+    } else if (message.includes("公告")) {
+      waitMsg = "水井龜正在抓取最新網站公告...";
+    } else if (message.includes("警報")) {
+      waitMsg = "水井龜正在檢測目前是否有感測器警報...";
+    } else if (message.includes("功能健檢") || message.includes("穩定")) {
+      waitMsg = "水井龜正在為您評估魚池穩定度指標...";
+    } else if (message.includes("歷史") || message.includes("趨勢")) {
+      waitMsg = "水井龜正在繪製精美的水質歷史趨勢圖...";
+    }
+    showWaiting(waitMsg);
+
     try {
       const response = await fetch(chatApi, {
         method: "POST",
@@ -654,6 +668,7 @@
       });
       const data = await response.json();
       typing.remove();
+      hideWaiting();
       if (response.ok) {
         const botReply = data.reply || "我目前沒有找到合適的回覆。";
         addMessage("水井龜", botReply, "bot");
@@ -665,6 +680,7 @@
       }
     } catch (error) {
       typing.remove();
+      hideWaiting();
       const connErrMsg = `連線失敗：${error.message}`;
       addMessage("系統", connErrMsg, "error");
       saveMessage("系統", connErrMsg, "error");

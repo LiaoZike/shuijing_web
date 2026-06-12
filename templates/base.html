@@ -64,7 +64,7 @@
                 href="{% url 'home' %}">首 頁</a>
             </li>
             <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle {% if request.resolver_match.url_name == 'about' or request.resolver_match.url_name == 'story' or request.resolver_match.url_name == 'related_links' or request.resolver_match.url_name == 'usr' or request.resolver_match.app_name == 'guide' %}active{% endif %}"
+                <a class="nav-link dropdown-toggle {% if request.resolver_match.url_name == 'about' or request.resolver_match.url_name == 'story' or request.resolver_match.url_name == 'related_links' or request.resolver_match.url_name == 'usr' %}active{% endif %}"
                 href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                     關 於
                 </a>
@@ -72,9 +72,12 @@
                     <li><a class="dropdown-item" href="{% url 'about' %}">關於風雲客棧</a></li>
                     <li><a class="dropdown-item" href="{% url 'story' %}">關於水井村</a></li>
                     <li><a class="dropdown-item" href="{% url 'usr' %}">USR 成果</a></li>
-                    <li><a class="dropdown-item" href="{% url 'guide:home' %}">互動導覽</a></li>
                     <li><a class="dropdown-item" href="{% url 'related_links' %}">在地商家連結</a></li>
                 </ul>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.app_name == 'guide' %}active{% endif %}"
+                href="{% url 'guide:home' %}">互動導覽</a>
             </li>
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle {% if 'event' in request.resolver_match.url_name or 'notice' in request.resolver_match.url_name %}active{% endif %}"

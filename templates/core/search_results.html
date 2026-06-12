@@ -320,6 +320,53 @@ body { background:#F5F0E8; color:#2E1F0F; }
 
         {% else %}
 
+        <!-- ════ 魚池養殖與水質監控 ════ -->
+        {% if show_monitor_shortcut or pond_results %}
+        <div class="results-section">
+            <div class="section-header">
+                <span class="section-icon">🐟</span>
+                <h2 class="section-heading">魚池養殖與水質監控</h2>
+                <span class="section-count">{% widthratio pond_results|length|add:show_monitor_shortcut 1 1 %} 筆</span>
+            </div>
+            <div class="row row-cols-1 row-cols-md-2 g-4">
+                {% if show_monitor_shortcut %}
+                <div class="col" data-aos="fade-up">
+                    <a href="{% url 'water:pond_list' %}" class="grid-result-card d-block text-decoration-none">
+                        <span class="grid-card-icon">📊</span>
+                        <div class="grid-card-tags">
+                            <span class="grid-card-tag" style="border-color:#3A5C30;color:#3A5C30;background:rgba(58,92,48,0.06);font-weight:700;">系統專區</span>
+                        </div>
+                        <h3 class="grid-card-title">低碳智慧漁塭養殖監控系統</h3>
+                        <p class="grid-card-desc">水井村核心水質監測平台。提供各監測魚池之水溫、pH、溶氧、鹽度等即時感測讀值，支援水車自動開關狀態監控、水質穩定度指標檢測、CSV 歷史數據匯出與 Chart.js 趨勢折線圖表分析。</p>
+                    </a>
+                </div>
+                {% endif %}
+                
+                {% for pond in pond_results %}
+                <div class="col" data-aos="fade-up">
+                    <a href="{% url 'water:pond_detail' pond.pk %}" class="grid-result-card d-block text-decoration-none">
+                        <span class="grid-card-icon">🌊</span>
+                        <div class="grid-card-tags">
+                            <span class="grid-card-tag">實體魚池</span>
+                            {% if pond.species %}
+                            <span class="grid-card-tag">{{ pond.species }}</span>
+                            {% endif %}
+                        </div>
+                        <h3 class="grid-card-title">{{ pond.name }}</h3>
+                        <p class="grid-card-desc">
+                            {% if pond.description %}
+                            {{ pond.description }}
+                            {% else %}
+                            主要養殖魚種為 {{ pond.species|default:"未註明" }} 的監測池區。點擊此處前往查看該池感測器即時讀值、歷史數據走勢與水質安全警報。
+                            {% endif %}
+                        </p>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
         <!-- ════ 活動結果 ════ -->
         {% if activities %}
         <div class="results-section">
