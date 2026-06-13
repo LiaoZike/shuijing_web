@@ -90,8 +90,12 @@
                 </ul>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if request.resolver_match.namespace == 'water' %}active{% endif %}"
+                <a class="nav-link {% if request.resolver_match.namespace == 'water' and request.resolver_match.url_name != 'ar_feed' %}active{% endif %}"
                 href="{% url 'water:dashboard' %}">水質監控</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'ar_feed' %}active{% endif %}"
+                href="{% url 'water:ar_feed' %}">AR 養殖遊戲</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}"

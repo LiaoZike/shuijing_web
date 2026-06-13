@@ -1498,3 +1498,54 @@ def unshare_pond(request, pond_id):
         
     return redirect("water:manage_pond", pond_id=pond.pk)
 
+
+def ar_feed(request):
+    """
+    AR 在地養殖餵食體驗頁面
+    目前先使用模擬水質資料。
+    之後可改成讀取你現有水質監測系統的最新資料。
+    """
+    import os
+    from django.conf import settings
+
+    static_dir = os.path.join(settings.BASE_DIR, "static", "water", "assets")
+    glb_exists = {
+        "milkfish": os.path.exists(os.path.join(static_dir, "milkfish.glb")),
+        "shrimp": os.path.exists(os.path.join(static_dir, "shrimp.glb")),
+        "clam": os.path.exists(os.path.join(static_dir, "clam.glb")),
+        "fish": False,  # 先拿掉 fish.glb 模型，退回球體
+    }
+
+    initial_water = {
+        "temperature": 27.2,
+        "ph": 7.4,
+        "oxygen": 6.5,
+        "turbidity": 20,
+        "source": "simulation",
+        "updated_at": timezone.localtime().strftime("%Y-%m-%d %H:%M:%S"),
+    }
+
+    return render(request, "water/ar_feed.html", {
+        "initial_water": initial_water,
+        "glb_exists": glb_exists,
+    })
+
+
+def latest_water_api(request):
+    """
+    簡易水質 API。
+    目前回傳模擬值，方便前端測試。
+    你之後可以把這裡改成讀資料庫最新監測資料。
+    """
+    data = {
+        "temperature": round(random.uniform(26.5, 28.5), 1),
+        "ph": round(random.uniform(7.1, 7.8), 1),
+        "oxygen": round(random.uniform(5.8, 6.8), 1),
+        "turbidity": random.randint(18, 28),
+        "source": "simulation_api",
+        "updated_at": timezone.localtime().strftime("%Y-%m-%d %H:%M:%S"),
+    }
+
+    return JsonResponse(data)
+
+

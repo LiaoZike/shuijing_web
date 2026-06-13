@@ -27,4 +27,8 @@ urlpatterns = [
     path("<int:pond_id>/history/", views.pond_history_api, name="pond_history_api"),
     path("<int:pond_id>/export-csv/", views.export_pond_csv, name="export_pond_csv"),
     path("<int:pond_id>/generate-mock-readings/", views.generate_mock_readings, name="generate_mock_readings"),
+
+    # AR 養殖小遊戲
+    path("ar-feed/", views.ar_feed, name="ar_feed"),
+    path("api/latest/", views.latest_water_api, name="latest_water_api"),
 ]
