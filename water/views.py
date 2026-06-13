@@ -139,6 +139,9 @@ def admin_cron_page(request):
         except ValueError:
             config.discord_suppression_interval_seconds = 3600
 
+        config.asr_url = (request.POST.get("asr_url") or "").strip()
+        config.asr_backup_url = (request.POST.get("asr_backup_url") or "").strip()
+
         config.save()
 
 
@@ -505,7 +508,10 @@ def voice_transcribe(request):
             continue
             
         endpoint = base_url
-        if not endpoint.endswith("/transcribe"):
+        if ".modal.run" in endpoint:
+            # Modal web endpoints are served at the root, do not append /transcribe
+            pass
+        elif not endpoint.endswith("/transcribe"):
             if endpoint.endswith("/"):
                 endpoint += "transcribe"
             else:
@@ -516,7 +522,7 @@ def voice_transcribe(request):
                 endpoint,
                 data=audio_data,
                 headers={"Content-Type": audio_file.content_type or "audio/webm"},
-                timeout=15
+                timeout=60
             )
             if res.status_code == 200:
                 return JsonResponse(res.json())

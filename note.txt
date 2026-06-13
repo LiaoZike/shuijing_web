@@ -26,6 +26,10 @@ chmod -R 755 /home/web41243166/shuijing/static
 python manage.py collectstatic
 chmod -R 755 /home/web41243166/shuijing/staticfiles
 chmod -R 755 /home/web41243166/shuijing/media
+chmod 644 /home/web41243166/shuijing/chat/templates/chat/chat.html
+chmod 755 /home/web41243166/shuijing/chat/templates/chat
+chmod 755 /home/web41243166/shuijing/chat/templates
+
 find /home/web41243166/shuijing/media -type f -exec chmod 644 {} \;
 
 /static/ => /home/web41243166/shuijing/staticfiles/

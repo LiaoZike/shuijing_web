@@ -234,6 +234,16 @@ def load_model(model_id: str, model_dir: Path, device_arg: str) -> None:
     )
     print("[MODEL] ASR model is ready.")
 
+    # 預先進行一次空語音暖機，初始化 GPU/CUDA 上下文，避免第一筆語音請求因為初始化時間過長而逾時
+    try:
+        import numpy as np
+        print("[MODEL] Warming up GPU/CUDA context with a dummy forward pass...")
+        dummy_pcm = np.zeros(16000, dtype=np.float32)
+        pipe(dummy_pcm)
+        print("[MODEL] Warm-up completed successfully.")
+    except Exception as e:
+        print(f"[WARN] Model warm-up failed (non-fatal): {e}")
+
 
 @app.get("/")
 def health():
@@ -307,7 +317,7 @@ async def transcribe(request: Request):
             os.unlink(tmp_path)
 
 
-def start_ngrok(port: int) -> None:
+def start_ngrok(port: int, domain: str = None) -> None:
     token = (
         os.environ.get("NGROK_TOKEN", "")
         or os.environ.get("NGROK_AUTHTOKEN", "")
@@ -318,11 +328,20 @@ def start_ngrok(port: int) -> None:
         print(f"[NGROK] Local API URL: http://127.0.0.1:{port}/transcribe")
         return
 
-    from pyngrok import ngrok
+    from pyngrok import conf, ngrok
+
+    # 預設使用日本 (jp) 節點，連線較穩定且延遲低
+    region = os.environ.get("NGROK_REGION", "jp")
+    conf.get_default().region = region
 
     print("[NGROK] Starting tunnel...")
     ngrok.set_auth_token(token)
-    public_url = ngrok.connect(port)
+    
+    connect_kwargs = {}
+    if domain:
+        connect_kwargs["domain"] = domain
+        
+    public_url = ngrok.connect(port, **connect_kwargs)
     print("\n" + "=" * 70)
     print("[NGROK] Public API URL:")
     print(f"  {public_url}/transcribe")
@@ -348,6 +367,11 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--port", type=int, default=env_int("ASR_PORT", DEFAULT_PORT))
     parser.add_argument("--no-ngrok", action="store_true")
+    parser.add_argument(
+        "--domain",
+        default=os.environ.get("NGROK_DOMAIN", ""),
+        help="Custom permanent ngrok domain (e.g. xxx.ngrok-free.app)",
+    )
     return parser.parse_args()
 
 
@@ -358,7 +382,7 @@ if __name__ == "__main__":
 
     load_model(args.model_id, model_dir, args.device)
     if not args.no_ngrok:
-        start_ngrok(args.port)
+        start_ngrok(args.port, domain=args.domain)
 
     print(f"[SYSTEM] Starting FastAPI server on port {args.port}...")
     uvicorn.run(app, host="0.0.0.0", port=args.port, log_level="warning")
