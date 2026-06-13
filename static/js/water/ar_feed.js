@@ -530,6 +530,9 @@ document.addEventListener("DOMContentLoaded", () => {
     eventDesc: document.getElementById("eventDesc"),
     eventCloseBtn: document.getElementById("eventCloseBtn"),
     pondMarker: document.getElementById("pondMarker"),
+    aeratorAssembly: document.getElementById("aeratorAssembly"),
+    aeratorWheel: document.getElementById("aeratorWheel"),
+    aeratorSplashGroup: document.getElementById("aeratorSplashGroup"),
     feedGroup: document.getElementById("feedGroup"),
     bubbleGroup: document.getElementById("bubbleGroup"),
   };
@@ -539,6 +542,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let weatherTimer = 0;
   let crabSpawnTimer = 0;
   let lastBubbleTime = 0;
+  let lastAeratorSplashTime = 0;
   let lastExchangeTime = 0;
 
   function clamp(value, min, max) {
@@ -828,6 +832,7 @@ document.addEventListener("DOMContentLoaded", () => {
     aerateBtn.addEventListener("click", () => {
       if (state.timeRemaining <= 0) return;
       state.aeratorOn = !state.aeratorOn;
+      updateAeratorVisual(0);
       pushMessage(state.aeratorOn ? "⚡ 啟動增氧水車！消耗成長值但能持續提升溶氧。" : "🔌 關閉增氧水車。");
       renderActionButtons();
     });
@@ -1183,6 +1188,40 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 900);
   }
 
+  function updateAeratorVisual(dt) {
+    if (!el.aeratorAssembly || !el.aeratorWheel) return;
+
+    el.aeratorAssembly.setAttribute("visible", state.aeratorOn ? "true" : "false");
+    if (!state.aeratorOn) return;
+
+    const rotation = el.aeratorWheel.object3D.rotation;
+    rotation.z -= dt * 12.5;
+  }
+
+  function spawnAeratorSplash() {
+    if (!el.aeratorSplashGroup) return;
+
+    const splash = document.createElement("a-sphere");
+    const x = 0.018 + Math.random() * 0.05;
+    const y = -0.018 + Math.random() * 0.035;
+    const z = (Math.random() - 0.5) * 0.06;
+    const endX = x + 0.045 + Math.random() * 0.05;
+    const endY = y + 0.025 + Math.random() * 0.035;
+    const endZ = z + (Math.random() - 0.5) * 0.06;
+    const size = 0.004 + Math.random() * 0.007;
+
+    splash.setAttribute("radius", String(size));
+    splash.setAttribute("material", "color: #caf0f8; opacity: 0.72; transparent: true");
+    splash.setAttribute("position", `${x} ${y} ${z}`);
+    splash.setAttribute("animation", `property: position; to: ${endX} ${endY} ${endZ}; dur: 420; easing: easeOutQuad`);
+    splash.setAttribute("animation__fade", "property: material.opacity; from: 0.72; to: 0; delay: 180; dur: 240");
+
+    el.aeratorSplashGroup.appendChild(splash);
+    setTimeout(() => {
+      splash.remove();
+    }, 460);
+  }
+
   function spawnExchangeParticle() {
     if (!el.feedGroup) return;
     const particle = document.createElement("a-sphere");
@@ -1211,6 +1250,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!lastTime) lastTime = time;
     const dt = Math.min((time - lastTime) / 1000, 0.1);
     lastTime = time;
+    updateAeratorVisual(dt);
 
     if (state.gameActive && state.timeRemaining > 0) {
       // 1. Natural Parameter decays & Rotting Food penalties
@@ -1239,6 +1279,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (time - lastBubbleTime > 120) {
           spawnSingleBubble();
           lastBubbleTime = time;
+        }
+
+        if (time - lastAeratorSplashTime > 70) {
+          spawnAeratorSplash();
+          lastAeratorSplashTime = time;
         }
       }
 

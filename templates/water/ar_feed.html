@@ -271,6 +271,41 @@
 
 
         <!-- 餵食粒子容器 -->
+        <!-- Aerator paddle wheel visual -->
+        <a-entity
+          id="aeratorAssembly"
+          position="-0.50 0.09 0"
+          rotation="0 0 0"
+          visible="false"
+        >
+          <a-cylinder
+            position="0 -0.045 0"
+            radius="0.035"
+            height="0.10"
+            rotation="90 0 0"
+            material="color: #22495a; opacity: 0.78; transparent: true; roughness: 0.35"
+          ></a-cylinder>
+          <a-entity id="aeratorWheel" rotation="0 0 0">
+            <a-torus
+              radius="0.075"
+              radius-tubular="0.006"
+              rotation="90 0 0"
+              material="color: #7ee8ff; opacity: 0.84; transparent: true; metalness: 0.1; roughness: 0.25"
+            ></a-torus>
+            <a-cylinder
+              radius="0.016"
+              height="0.026"
+              rotation="90 0 0"
+              material="color: #caf0f8; opacity: 0.9; transparent: true"
+            ></a-cylinder>
+            <a-box position="0 0.055 0" scale="0.020 0.075 0.012" material="color: #d9f9ff; opacity: 0.8; transparent: true"></a-box>
+            <a-box position="0 -0.055 0" scale="0.020 0.075 0.012" material="color: #d9f9ff; opacity: 0.8; transparent: true"></a-box>
+            <a-box position="0.055 0 0" scale="0.075 0.020 0.012" material="color: #d9f9ff; opacity: 0.8; transparent: true"></a-box>
+            <a-box position="-0.055 0 0" scale="0.075 0.020 0.012" material="color: #d9f9ff; opacity: 0.8; transparent: true"></a-box>
+          </a-entity>
+          <a-entity id="aeratorSplashGroup"></a-entity>
+        </a-entity>
+
         <a-entity id="feedGroup"></a-entity>
 
         <!-- 曝氣泡泡容器 -->
