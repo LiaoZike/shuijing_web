@@ -21,7 +21,7 @@ const state = {
   isGameOverReason: "", // "oxygen_depletion", "water_pollution", "clam_annihilation" or ""
   oxygenWarningTimer: 0,
   pollutionWarningTimer: 0,
-  nextCrabSpawnInterval: Math.random() * 3 + 5, // random between 5 and 8 seconds
+  nextCrabSpawnInterval: Math.random() * 4 + 8, // random between 8 and 12 seconds
   leaderboardSource: "result"
 };
 
@@ -987,15 +987,49 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const targetClam = getTargetClamWithLeastTargeters(clams, null);
     if (!targetClam) return;
-    const angle = Math.random() * Math.PI * 2;
-    const startX = 0.52 * Math.cos(angle);
-    const startZ = 0.52 * Math.sin(angle);
+
+    // Get position of target clam
+    const clamPos = targetClam.getAttribute('position');
+    let clamX = 0, clamZ = 0;
+    if (typeof clamPos === 'string') {
+      const parts = clamPos.split(" ").map(Number);
+      clamX = parts[0];
+      clamZ = parts[2];
+    } else {
+      clamX = clamPos.x || 0;
+      clamZ = clamPos.z || 0;
+    }
+
+    let startX, startZ;
+    if (Math.random() < 0.70) {
+      // 70% chance: spawn near the target clam (dist 0.16m to 0.24m)
+      const spawnAngle = Math.random() * Math.PI * 2;
+      const spawnDist = 0.16 + Math.random() * 0.08; // 0.16m to 0.24m away
+      
+      let testX = clamX + Math.cos(spawnAngle) * spawnDist;
+      let testZ = clamZ + Math.sin(spawnAngle) * spawnDist;
+      
+      // Keep it within pond boundary (0.52m radius)
+      const distFromCenter = Math.sqrt(testX * testX + testZ * testZ);
+      if (distFromCenter > 0.52) {
+        const scale = 0.52 / distFromCenter;
+        testX *= scale;
+        testZ *= scale;
+      }
+      startX = testX;
+      startZ = testZ;
+    } else {
+      // 30% chance: spawn at the outer edge of the pond
+      const angle = Math.random() * Math.PI * 2;
+      startX = 0.52 * Math.cos(angle);
+      startZ = 0.52 * Math.sin(angle);
+    }
 
     const crab = document.createElement('a-entity');
     crab.className = 'crab-pest';
     crab.setAttribute('position', `${startX} 0.015 ${startZ}`);
     crab.dataset.targetId = targetClam.id;
-    crab.dataset.speed = "0.032"; // Crawl speed (m/s)
+    crab.dataset.speed = "0.026"; // Crawl speed (m/s)
     crab.dataset.squished = "false";
 
     // Adding a red glowing target ring at the bottom of the crab so it is always visible/tappable
@@ -1231,11 +1265,11 @@ document.addEventListener("DOMContentLoaded", () => {
         updateUI();
       }
 
-      // Spawn pest crab every 5 to 8 seconds randomly
+      // Spawn pest crab every 8 to 12 seconds randomly
       if (crabSpawnTimer >= state.nextCrabSpawnInterval) {
         spawnCrab();
         crabSpawnTimer = 0;
-        state.nextCrabSpawnInterval = Math.random() * 3 + 5;
+        state.nextCrabSpawnInterval = Math.random() * 4 + 8;
       }
 
       // 5. Check Early Game Over / Death conditions & Warning alerts
