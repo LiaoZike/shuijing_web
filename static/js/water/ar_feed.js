@@ -17,7 +17,12 @@ const state = {
     turbidity: 20,
     dynamicVal: 50 // Algae density %
   },
-  messages: []
+  messages: [],
+  isGameOverReason: "", // "oxygen_depletion", "water_pollution", "clam_annihilation" or ""
+  oxygenWarningTimer: 0,
+  pollutionWarningTimer: 0,
+  nextCrabSpawnInterval: Math.random() * 3 + 5, // random between 5 and 8 seconds
+  leaderboardSource: "result"
 };
 
 // Global helper for food pellets eating mechanism
@@ -69,17 +74,45 @@ AFRAME.registerComponent('fish-swim-simulation', {
     this.wanderAngle = Math.random() * Math.PI * 2;
   },
   tick: function (time, timeDelta) {
-    if (!state.gameActive) return;
+    const isDead = (state.isGameOverReason !== "" || state.water.oxygen < 2.0);
+    if (!state.gameActive && !isDead) return;
 
     const dt = Math.min(timeDelta / 1000, 0.1);
     const pos = this.el.object3D.position;
+
+    if (isDead) {
+      // 1. Float to surface Y = 0.085
+      if (pos.y < 0.085) {
+        pos.y = Math.min(0.085, pos.y + 0.02 * dt);
+      } else {
+        // Gentle bobbing on the surface
+        pos.y = 0.085 + 0.002 * Math.sin(time / 400 + this.randomPhase);
+      }
+      // Slow drift
+      pos.x += 0.0025 * Math.sin(time / 2000 + this.randomPhase) * dt;
+      pos.z += 0.0025 * Math.cos(time / 2000 + this.randomPhase) * dt;
+
+      // Clamp position within boundaries
+      const distXZ = Math.sqrt(pos.x * pos.x + pos.z * pos.z);
+      if (distXZ > 0.56) {
+        pos.x = (pos.x / distXZ) * 0.56;
+        pos.z = (pos.z / distXZ) * 0.56;
+      }
+
+      // Rotate: roll 180 degrees (belly-up), keep current heading yaw, pitch 0
+      const currentRotation = this.el.getAttribute('rotation') || { x: 0, y: 0, z: 0 };
+      this.el.setAttribute('rotation', { x: 0, y: currentRotation.y, z: 180 });
+      return;
+    }
+
+    const isChoking = (state.water.oxygen < 3.0);
 
     // 1. Wander Force
     const wanderForce = new THREE.Vector3(
       Math.cos(this.wanderAngle),
       0,
       Math.sin(this.wanderAngle)
-    ).multiplyScalar(0.04);
+    ).multiplyScalar(isChoking ? 0.015 : 0.04);
     this.wanderAngle += (Math.random() - 0.5) * 0.6;
 
     // 2. Boundary Avoidance Force
@@ -89,12 +122,14 @@ AFRAME.registerComponent('fish-swim-simulation', {
       boundaryForce.set(-pos.x, 0, -pos.z).normalize().multiplyScalar((distXZ - this.data.boundsRadius) * 2.5);
     }
 
-    // 3. Depth Constraints (Water is at height 0.09, stay submerged)
+    // 3. Depth Constraints (Water is at height 0.09, stay submerged. If choking, float to gulp air)
     const heightForce = new THREE.Vector3();
-    if (pos.y < 0.035) {
-      heightForce.y = (0.035 - pos.y) * 2.0;
-    } else if (pos.y > 0.08) {
-      heightForce.y = (0.08 - pos.y) * 2.0;
+    const minY = isChoking ? 0.072 : 0.035;
+    const maxY = isChoking ? 0.086 : 0.08;
+    if (pos.y < minY) {
+      heightForce.y = (minY - pos.y) * 2.0;
+    } else if (pos.y > maxY) {
+      heightForce.y = (maxY - pos.y) * 2.0;
     } else {
       // Natural vertical bobbing
       heightForce.y = 0.002 * Math.sin(time / 500 + this.randomPhase);
@@ -124,28 +159,31 @@ AFRAME.registerComponent('fish-swim-simulation', {
       separationForce.multiplyScalar(0.06);
     }
 
-    // 5. Food Pellets Attraction Force
+    // 5. Food Pellets Attraction Force (only if not choking)
     const foodForce = new THREE.Vector3();
     const pellets = document.querySelectorAll('.food-pellet');
     let closestPellet = null;
     let minDist = 999;
-    pellets.forEach(pellet => {
-      if (pellet.dataset.rotting === "true") return; // ignore rotting food
-      const pelletPos = pellet.object3D.position;
-      const d = pos.distanceTo(pelletPos);
-      if (d < minDist && d < 0.28) {
-        minDist = d;
-        closestPellet = pellet;
-      }
-    });
+    
+    if (!isChoking) {
+      pellets.forEach(pellet => {
+        if (pellet.dataset.rotting === "true") return; // ignore rotting food
+        const pelletPos = pellet.object3D.position;
+        const d = pos.distanceTo(pelletPos);
+        if (d < minDist && d < 0.28) {
+          minDist = d;
+          closestPellet = pellet;
+        }
+      });
 
-    if (closestPellet) {
-      const targetPos = closestPellet.object3D.position;
-      foodForce.subVectors(targetPos, pos).normalize().multiplyScalar(0.35);
-      
-      // Eat pellet when close
-      if (minDist < 0.048) {
-        eatFoodPellet(closestPellet, 2.0); // fish gains score
+      if (closestPellet) {
+        const targetPos = closestPellet.object3D.position;
+        foodForce.subVectors(targetPos, pos).normalize().multiplyScalar(0.35);
+        
+        // Eat pellet when close
+        if (minDist < 0.048) {
+          eatFoodPellet(closestPellet, 2.0); // fish gains score
+        }
       }
     }
 
@@ -162,11 +200,12 @@ AFRAME.registerComponent('fish-swim-simulation', {
     
     // Clamp velocities depending on whether they target food
     const speed = this.velocity.length();
-    const targetSpeed = closestPellet ? this.data.speed * 1.6 : this.data.speed;
+    const baseSpeed = this.data.speed * (isChoking ? 0.35 : 1.0);
+    const targetSpeed = closestPellet && !isChoking ? this.data.speed * 1.6 : baseSpeed;
     if (speed > targetSpeed) {
       this.velocity.normalize().multiplyScalar(targetSpeed);
-    } else if (speed < this.data.speed * 0.5) {
-      this.velocity.normalize().multiplyScalar(this.data.speed * 0.5);
+    } else if (speed < baseSpeed * 0.5) {
+      this.velocity.normalize().multiplyScalar(baseSpeed * 0.5);
     }
 
     // Apply Position
@@ -184,7 +223,12 @@ AFRAME.registerComponent('fish-swim-simulation', {
     // Align rotation with velocity direction (head-first)
     const yaw = Math.atan2(this.velocity.x, this.velocity.z) * 180 / Math.PI + 180;
     const speedXZ = Math.sqrt(this.velocity.x * this.velocity.x + this.velocity.z * this.velocity.z);
-    const pitch = Math.atan2(this.velocity.y, speedXZ) * 180 / Math.PI;
+    let pitch = Math.atan2(this.velocity.y, speedXZ) * 180 / Math.PI;
+
+    if (isChoking) {
+      // Tilt head up slightly to gasp for air
+      pitch = Math.max(pitch, 15);
+    }
 
     this.el.setAttribute('rotation', { x: pitch, y: yaw, z: 0 });
   }
@@ -211,17 +255,30 @@ AFRAME.registerComponent('shrimp-move-simulation', {
     this.wanderAngle = Math.random() * Math.PI * 2;
   },
   tick: function (time, timeDelta) {
-    if (!state.gameActive) return;
+    const isDead = (state.isGameOverReason !== "" || state.water.oxygen < 2.0);
+    if (!state.gameActive && !isDead) return;
 
     const dt = Math.min(timeDelta / 1000, 0.1);
     const pos = this.el.object3D.position;
+
+    if (isDead) {
+      // Remain at bottom Y = 0.015, gentle bobbing
+      pos.y = 0.015 + 0.001 * Math.sin(time / 600 + this.randomPhase);
+      
+      // Roll 180 degrees (belly-up) on floor
+      const currentRotation = this.el.getAttribute('rotation') || { x: 0, y: 0, z: 0 };
+      this.el.setAttribute('rotation', { x: 0, y: currentRotation.y, z: 180 });
+      return;
+    }
+
+    const isChoking = (state.water.oxygen < 3.0);
 
     // 1. Wander Force
     const wanderForce = new THREE.Vector3(
       Math.cos(this.wanderAngle),
       0,
       Math.sin(this.wanderAngle)
-    ).multiplyScalar(0.03);
+    ).multiplyScalar(isChoking ? 0.01 : 0.03);
     this.wanderAngle += (Math.random() - 0.5) * 0.6;
 
     // 2. Boundary Avoidance
@@ -231,28 +288,31 @@ AFRAME.registerComponent('shrimp-move-simulation', {
       boundaryForce.set(-pos.x, 0, -pos.z).normalize().multiplyScalar((distXZ - this.data.boundsRadius) * 2.0);
     }
 
-    // 3. Food Attraction (attracted to both fresh and rotting pellets on floor)
+    // 3. Food Attraction (only if not choking)
     const foodForce = new THREE.Vector3();
     const pellets = document.querySelectorAll('.food-pellet');
     let closestPellet = null;
     let minDist = 999;
-    pellets.forEach(pellet => {
-      const pelletPos = pellet.object3D.position;
-      const d = pos.distanceTo(pelletPos);
-      if (d < minDist && d < 0.22) {
-        minDist = d;
-        closestPellet = pellet;
-      }
-    });
+    
+    if (!isChoking) {
+      pellets.forEach(pellet => {
+        const pelletPos = pellet.object3D.position;
+        const d = pos.distanceTo(pelletPos);
+        if (d < minDist && d < 0.22) {
+          minDist = d;
+          closestPellet = pellet;
+        }
+      });
 
-    if (closestPellet) {
-      const targetPos = closestPellet.object3D.position;
-      foodForce.set(targetPos.x - pos.x, 0, targetPos.z - pos.z).normalize().multiplyScalar(0.3);
-      
-      // Eat pellet when close
-      if (minDist < 0.038) {
-        const isRotting = closestPellet.dataset.rotting === "true";
-        eatFoodPellet(closestPellet, isRotting ? 1.5 : 2.5); // Shrimps clean pond bottom
+      if (closestPellet) {
+        const targetPos = closestPellet.object3D.position;
+        foodForce.set(targetPos.x - pos.x, 0, targetPos.z - pos.z).normalize().multiplyScalar(0.3);
+        
+        // Eat pellet when close
+        if (minDist < 0.038) {
+          const isRotting = closestPellet.dataset.rotting === "true";
+          eatFoodPellet(closestPellet, isRotting ? 1.5 : 2.5); // Shrimps clean pond bottom
+        }
       }
     }
 
@@ -266,11 +326,12 @@ AFRAME.registerComponent('shrimp-move-simulation', {
     
     // Clamp speed
     const speed = this.velocity.length();
-    const targetSpeed = closestPellet ? this.data.speed * 1.5 : this.data.speed;
+    const baseSpeed = this.data.speed * (isChoking ? 0.35 : 1.0);
+    const targetSpeed = closestPellet && !isChoking ? this.data.speed * 1.5 : baseSpeed;
     if (speed > targetSpeed) {
       this.velocity.normalize().multiplyScalar(targetSpeed);
-    } else if (speed < this.data.speed * 0.5) {
-      this.velocity.normalize().multiplyScalar(this.data.speed * 0.5);
+    } else if (speed < baseSpeed * 0.5) {
+      this.velocity.normalize().multiplyScalar(baseSpeed * 0.5);
     }
 
     // Update Position on X-Z floor
@@ -291,8 +352,8 @@ AFRAME.registerComponent('shrimp-move-simulation', {
 
     // Yaw heading aligned with movement (and child mesh rotated +270 to align head-first)
     const yaw = Math.atan2(this.velocity.x, this.velocity.z) * 180 / Math.PI + 180;
-    const pitch = this.data.pitchAmp * Math.sin(t);
-    const roll = this.data.rollAmp * Math.cos(t * 2.0);
+    const pitch = this.data.pitchAmp * Math.sin(t) * (isChoking ? 0.2 : 1.0);
+    const roll = this.data.rollAmp * Math.cos(t * 2.0) * (isChoking ? 0.2 : 1.0);
 
     this.el.setAttribute('rotation', { x: pitch, y: yaw, z: roll });
   }
@@ -345,12 +406,38 @@ document.addEventListener("DOMContentLoaded", () => {
     ? JSON.parse(glbExistsNode.textContent)
     : { milkfish: false, shrimp: false, clam: false, fish: false };
 
+  function cleanupGLTFModel(evt) {
+    const model = evt.detail.model;
+    if (!model) return;
+
+    // Hide calibration target cubes or helper tools in GLB files
+    const hideTargets = ['Cube_2', 'Object_4', '_Cube_0', 'Cube_0'];
+    hideTargets.forEach((name) => {
+      const targetNode = model.getObjectByName(name);
+      if (targetNode) targetNode.visible = false;
+    });
+
+    model.traverse((child) => {
+      if (child.name && (
+        child.name.toLowerCase().includes('colorchecker') ||
+        child.name.toLowerCase().includes('calibration') ||
+        child.name.toLowerCase().includes('color_checker') ||
+        child.name.toLowerCase() === 'object_4' ||
+        child.name.toLowerCase() === '_cube_0' ||
+        child.name.toLowerCase() === 'cube_0'
+      )) {
+        child.visible = false;
+      }
+    });
+  }
+
   // Base scale adjustments for GLTF models when loaded
   const glbBaseScale = {
     milkfish: { x: 0.55, y: 0.55, z: 0.55 },
     shrimp: { x: 0.03, y: 0.03, z: 0.03 },
     clam: { x: 0.012, y: 0.012, z: 0.012 },
-    fish: { x: 0.03, y: 0.03, z: 0.03 }
+    fish: { x: 0.03, y: 0.03, z: 0.03 },
+    crab: { x: 1.7, y: 1.7, z: 1.7 }
   };
 
   // Base rotation adjustments for GLTF models when loaded
@@ -358,7 +445,8 @@ document.addEventListener("DOMContentLoaded", () => {
     milkfish: "0 180 0",
     shrimp: "0 270 0",
     clam: "90 0 0",
-    fish: "0 90 0"
+    fish: "0 90 0",
+    crab: "0 180 0"
   };
 
   // Scene Configuration (Dedicated to Clam Polyculture Pond)
@@ -383,7 +471,7 @@ document.addEventListener("DOMContentLoaded", () => {
       title: "⛈️ 午後雷陣雨",
       desc: "暴雨降臨！泥沙被沖入漁塭使濁度急升，池水溶氧也快速下降！",
       effect: (water) => {
-        water.oxygen = clamp(water.oxygen - 1.2, 3.2, 8.5);
+        water.oxygen = clamp(water.oxygen - 1.8, 1.5, 8.5);
         water.turbidity = clamp(water.turbidity + 18, 5, 85);
       }
     },
@@ -393,14 +481,14 @@ document.addEventListener("DOMContentLoaded", () => {
       effect: (water) => {
         water.dynamicVal = clamp(water.dynamicVal + 20, 0, 100);
         water.temperature = clamp(water.temperature + 1.5, 22.0, 34.0);
-        water.oxygen = clamp(water.oxygen - 0.4, 3.2, 8.5);
+        water.oxygen = clamp(water.oxygen - 0.8, 1.5, 8.5);
       }
     },
     {
       title: "💨 季風吹拂",
       desc: "強風掠過池面！增加了溶氧含量，同時水溫有些微下降。",
       effect: (water) => {
-        water.oxygen = clamp(water.oxygen + 0.8, 3.2, 8.5);
+        water.oxygen = clamp(water.oxygen + 1.2, 1.5, 8.5);
         water.temperature = clamp(water.temperature - 1.0, 22.0, 34.0);
       }
     }
@@ -494,24 +582,8 @@ document.addEventListener("DOMContentLoaded", () => {
       obj.removeAttribute("material");
 
       obj.addEventListener("model-loaded", (evt) => {
+        cleanupGLTFModel(evt);
         const model = evt.detail.model;
-
-        // Hide calibration tools
-        const hideTargets = ['Cube_2', 'Object_4'];
-        hideTargets.forEach((name) => {
-          const targetNode = model.getObjectByName(name);
-          if (targetNode) targetNode.visible = false;
-        });
-
-        model.traverse((child) => {
-          if (child.name && (
-            child.name.toLowerCase().includes('colorchecker') ||
-            child.name.toLowerCase().includes('calibration') ||
-            child.name.toLowerCase().includes('color_checker')
-          )) {
-            child.visible = false;
-          }
-        });
 
         if (model && model.animations) {
           model.animations.forEach((clip) => {
@@ -568,6 +640,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     gltfLoaded = true;
+
+
+
     console.log("[AR] Loaded compressed Draco GLTF models into scene.");
   }  function drawRoundedRect(ctx, x, y, width, height, radius) {
     ctx.beginPath();
@@ -587,7 +662,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const status = getWaterStatus();
     const pondBase = document.getElementById("pondBase");
     const dangerRing = document.getElementById("dangerRing");
-    const selectedHalo = document.getElementById("selectedHalo");
 
     if (!pondBase) return;
 
@@ -617,15 +691,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (dangerRing) {
       dangerRing.setAttribute("visible", status.label === "危險");
-    }
-
-    // Selected halo focus on the first living clam
-    const livingClams = Array.from(document.querySelectorAll(".clam-member")).filter(c => c.getAttribute("visible") !== "false");
-    if (selectedHalo && livingClams.length > 0) {
-      selectedHalo.setAttribute("visible", "true");
-      selectedHalo.setAttribute("position", livingClams[0].getAttribute("position"));
-    } else if (selectedHalo) {
-      selectedHalo.setAttribute("visible", "false");
     }
 
     // Draw text and indicators onto HTML canvas texture
@@ -883,16 +948,45 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 400);
   }
 
+  function getTargetClamWithLeastTargeters(clams, excludingCrab) {
+    if (clams.length === 0) return null;
+    
+    const counts = {};
+    clams.forEach(c => {
+      counts[c.id] = 0;
+    });
+    
+    const crabs = document.querySelectorAll('.crab-pest');
+    crabs.forEach(crab => {
+      if (crab === excludingCrab || crab.dataset.squished === "true") return;
+      const targetId = crab.dataset.targetId;
+      if (counts[targetId] !== undefined) {
+        counts[targetId]++;
+      }
+    });
+    
+    let minCount = 999;
+    clams.forEach(c => {
+      if (counts[c.id] < minCount) {
+        minCount = counts[c.id];
+      }
+    });
+    
+    const candidateClams = clams.filter(c => counts[c.id] === minCount);
+    return candidateClams[Math.floor(Math.random() * candidateClams.length)];
+  }
+
   // Spawn Pest Crab from edges crawling towards a random clam
   function spawnCrab() {
     const pondGroup = document.getElementById('pondGroup');
     if (!pondGroup) return;
 
-    // Filter living clams
-    const clams = Array.from(document.querySelectorAll('.clam-member')).filter(c => c.getAttribute('visible') !== 'false');
+    // Filter living clams by eaten status
+    const clams = Array.from(document.querySelectorAll('.clam-member')).filter(c => c.dataset.eaten !== 'true');
     if (clams.length === 0) return; // No clams left
 
-    const targetClam = clams[Math.floor(Math.random() * clams.length)];
+    const targetClam = getTargetClamWithLeastTargeters(clams, null);
+    if (!targetClam) return;
     const angle = Math.random() * Math.PI * 2;
     const startX = 0.52 * Math.cos(angle);
     const startZ = 0.52 * Math.sin(angle);
@@ -901,28 +995,53 @@ document.addEventListener("DOMContentLoaded", () => {
     crab.className = 'crab-pest';
     crab.setAttribute('position', `${startX} 0.015 ${startZ}`);
     crab.dataset.targetId = targetClam.id;
-    crab.dataset.speed = "0.018"; // Crawl speed (m/s)
+    crab.dataset.speed = "0.032"; // Crawl speed (m/s)
     crab.dataset.squished = "false";
 
-    // Body mesh representation
-    const body = document.createElement('a-box');
-    body.setAttribute('width', '0.04');
-    body.setAttribute('height', '0.012');
-    body.setAttribute('depth', '0.03');
-    body.setAttribute('material', 'color: #d90429; roughness: 0.8');
-    crab.appendChild(body);
+    // Adding a red glowing target ring at the bottom of the crab so it is always visible/tappable
+    const ring = document.createElement('a-ring');
+    ring.setAttribute('radius-inner', '0.06');
+    ring.setAttribute('radius-outer', '0.08');
+    ring.setAttribute('rotation', '-90 0 0');
+    ring.setAttribute('material', 'color: #ff3b3b; shader: flat; opacity: 0.90; transparent: true; depthWrite: false');
+    ring.setAttribute('animation', 'property: scale; from: 0.85 0.85 0.85; to: 1.15 1.15 1.15; dir: alternate; dur: 350; loop: true');
+    crab.appendChild(ring);
 
-    const clawL = document.createElement('a-sphere');
-    clawL.setAttribute('radius', '0.008');
-    clawL.setAttribute('position', '-0.018 0.005 0.014');
-    clawL.setAttribute('material', 'color: #ef233c');
-    crab.appendChild(clawL);
+    if (glbExists.crab) {
+      const model = document.createElement('a-entity');
+      model.className = 'crab-member';
+      model.setAttribute('gltf-model', 'url(/static/water/assets/crab.glb)');
+      const s = glbBaseScale.crab.x;
+      model.setAttribute('scale', `${s} ${s} ${s}`);
+      model.setAttribute('rotation', '0 180 0'); // Base rotation to align head-first
+      model.setAttribute('animation-mixer', 'clip: *; loop: repeat; timeScale: 1.0;');
+      
+      model.addEventListener('model-loaded', cleanupGLTFModel);
+      model.addEventListener('model-error', (err) => {
+        console.error("[AR] Crab model load error:", err);
+      });
+      crab.appendChild(model);
+    } else {
+      // Body mesh representation
+      const body = document.createElement('a-box');
+      body.setAttribute('width', '0.04');
+      body.setAttribute('height', '0.012');
+      body.setAttribute('depth', '0.03');
+      body.setAttribute('material', 'color: #d90429; roughness: 0.8');
+      crab.appendChild(body);
 
-    const clawR = document.createElement('a-sphere');
-    clawR.setAttribute('radius', '0.008');
-    clawR.setAttribute('position', '0.018 0.005 0.014');
-    clawR.setAttribute('material', 'color: #ef233c');
-    crab.appendChild(clawR);
+      const clawL = document.createElement('a-sphere');
+      clawL.setAttribute('radius', '0.008');
+      clawL.setAttribute('position', '-0.018 0.005 0.014');
+      clawL.setAttribute('material', 'color: #ef233c');
+      crab.appendChild(clawL);
+
+      const clawR = document.createElement('a-sphere');
+      clawR.setAttribute('radius', '0.008');
+      clawR.setAttribute('position', '0.018 0.005 0.014');
+      clawR.setAttribute('material', 'color: #ef233c');
+      crab.appendChild(clawR);
+    }
 
     pondGroup.appendChild(crab);
     pushMessage("🦀 警告：一隻害蟲螃蟹侵入池底！快點擊消滅牠以免咬食文蛤！");
@@ -937,11 +1056,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const targetId = crab.dataset.targetId;
       const targetClam = document.getElementById(targetId);
       
-      // If target clam is dead or gone, re-target a living one
-      if (!targetClam || targetClam.getAttribute('visible') === 'false') {
-        const clams = Array.from(document.querySelectorAll('.clam-member')).filter(c => c.getAttribute('visible') !== 'false');
-        if (clams.length > 0) {
-          crab.dataset.targetId = clams[Math.floor(Math.random() * clams.length)].id;
+      // If target clam is dead or gone, re-target a living one with least targeters
+      if (!targetClam || targetClam.dataset.eaten === "true") {
+        const clams = Array.from(document.querySelectorAll('.clam-member')).filter(c => c.dataset.eaten !== 'true');
+        const newTargetClam = getTargetClamWithLeastTargeters(clams, crab);
+        if (newTargetClam) {
+          crab.dataset.targetId = newTargetClam.id;
         } else {
           // No clams left, just crawl around randomly
           crab.dataset.squished = "true";
@@ -967,9 +1087,17 @@ document.addEventListener("DOMContentLoaded", () => {
       const dist = dir.length();
 
       if (dist < 0.04) {
-        // Crab reaches clam and eats it!
-        targetClam.setAttribute('visible', 'false');
-        targetClam.object3D.visible = false;
+        // Crab reaches clam and eats it! Flipped flat dead shell
+        targetClam.setAttribute('scale', `${glbBaseScale.clam.x * 1.3} ${glbBaseScale.clam.y * 0.15} ${glbBaseScale.clam.z * 1.3}`);
+        targetClam.setAttribute('rotation', '90 45 180');
+        targetClam.removeAttribute('class');
+        targetClam.dataset.eaten = "true";
+        
+        // Hide the clam's green ring when eaten
+        const ring = document.getElementById(targetClam.id + "_ring");
+        if (ring) {
+          ring.setAttribute('visible', 'false');
+        }
         
         state.growth = Math.max(0, state.growth - 15);
         pushMessage("🚨 慘劇！螃蟹吃掉了一個文蛤！成長值 -15。");
@@ -1041,9 +1169,21 @@ document.addEventListener("DOMContentLoaded", () => {
     lastTime = time;
 
     if (state.gameActive && state.timeRemaining > 0) {
-      // 1. Natural Parameter decays
-      state.water.oxygen = Math.max(3.2, state.water.oxygen - 0.035 * dt);
-      state.water.dynamicVal = Math.min(100, state.water.dynamicVal + 0.07 * dt);
+      // 1. Natural Parameter decays & Rotting Food penalties
+      const rottingPellets = document.querySelectorAll('.food-pellet[data-rotting="true"]').length;
+      
+      // Base oxygen decay is faster to encourage active aeration
+      const o2Decay = -0.075 * dt - (rottingPellets * 0.035 * dt);
+      state.water.oxygen = Math.max(1.5, state.water.oxygen + o2Decay);
+      
+      // Algae bloom and turbidity increase
+      const algaeIncrease = 0.07 * dt + (rottingPellets * 0.25 * dt);
+      state.water.dynamicVal = Math.min(100, state.water.dynamicVal + algaeIncrease);
+      
+      const turbidityIncrease = rottingPellets * 0.3 * dt;
+      if (turbidityIncrease > 0) {
+        state.water.turbidity = Math.min(100, state.water.turbidity + turbidityIncrease);
+      }
 
       // 2. Active Actuator Effects
       if (state.aeratorOn) {
@@ -1091,10 +1231,71 @@ document.addEventListener("DOMContentLoaded", () => {
         updateUI();
       }
 
-      // Spawn pest crab every 12 seconds
-      if (crabSpawnTimer >= 12) {
+      // Spawn pest crab every 5 to 8 seconds randomly
+      if (crabSpawnTimer >= state.nextCrabSpawnInterval) {
         spawnCrab();
         crabSpawnTimer = 0;
+        state.nextCrabSpawnInterval = Math.random() * 3 + 5;
+      }
+
+      // 5. Check Early Game Over / Death conditions & Warning alerts
+      let showingAlert = false;
+      const alertEl = document.getElementById("dangerAlert");
+      const alertTextEl = document.getElementById("dangerAlertText");
+
+      // Clam Annihilation check
+      const livingClams = Array.from(document.querySelectorAll('.clam-member')).filter(c => c.dataset.eaten !== 'true').length;
+      if (livingClams === 0) {
+        state.isGameOverReason = "clam_annihilation";
+        state.gameActive = false;
+        finishExperience();
+      }
+
+      // Hypoxia warning & trigger
+      if (state.water.oxygen < 3.0) {
+        state.oxygenWarningTimer += dt;
+        showingAlert = true;
+        
+        const countdown = Math.max(0, Math.ceil(5.0 - state.oxygenWarningTimer));
+        if (alertTextEl) {
+          alertTextEl.textContent = `⚠️ 嚴重缺氧！魚蝦即將窒息死亡，剩餘挽救時間：${countdown} 秒！`;
+        }
+        
+        if (state.water.oxygen < 2.0 && state.oxygenWarningTimer >= 5.0) {
+          state.isGameOverReason = "oxygen_depletion";
+          state.gameActive = false;
+          finishExperience();
+        }
+      } else {
+        state.oxygenWarningTimer = 0;
+      }
+
+      // Water pollution / toxic algae bloom warning & trigger
+      if (!showingAlert && (state.water.dynamicVal > 95.0 || state.water.turbidity > 90.0)) {
+        state.pollutionWarningTimer += dt;
+        showingAlert = true;
+        
+        const countdown = Math.max(0, Math.ceil(8.0 - state.pollutionWarningTimer));
+        if (alertTextEl) {
+          alertTextEl.textContent = `⚠️ 水質嚴重毒化崩壞！剩餘倒池時間：${countdown} 秒！請立即換水！`;
+        }
+        
+        if (state.pollutionWarningTimer >= 8.0) {
+          state.isGameOverReason = "water_pollution";
+          state.gameActive = false;
+          finishExperience();
+        }
+      } else {
+        state.pollutionWarningTimer = 0;
+      }
+
+      // Show or hide dangerAlert element
+      if (alertEl) {
+        if (showingAlert) {
+          alertEl.classList.remove("hidden");
+        } else {
+          alertEl.classList.add("hidden");
+        }
       }
 
       // Game End Check
@@ -1102,6 +1303,10 @@ document.addEventListener("DOMContentLoaded", () => {
         state.gameActive = false;
         finishExperience();
       }
+    } else {
+      // Hide alert when game is inactive
+      const alertEl = document.getElementById("dangerAlert");
+      if (alertEl) alertEl.classList.add("hidden");
     }
 
     requestAnimationFrame(updateGame);
@@ -1136,8 +1341,30 @@ document.addEventListener("DOMContentLoaded", () => {
     const turb = state.water.turbidity;
     const algae = state.water.dynamicVal;
 
-    // Count remaining living clams
-    const livingClams = Array.from(document.querySelectorAll('.clam-member')).filter(c => c.getAttribute('visible') !== 'false').length;
+    // Count remaining living clams by eaten status
+    const livingClams = Array.from(document.querySelectorAll('.clam-member')).filter(c => c.dataset.eaten !== 'true').length;
+
+    // Check early game over reasons
+    if (state.isGameOverReason === "oxygen_depletion") {
+      score = 0;
+      badge = "池區集體缺氧倒池";
+      text = "養殖失敗！由於您忽視了溶氧量控制，池水溶氧降至極低的極限值（低於 2.0 mg/L），導致虱目魚與白蝦集體缺氧窒息死亡！在混養中，溶氧是生命線，請記得及時開啟「增氧水車」！";
+      return { score, badge, text };
+    }
+
+    if (state.isGameOverReason === "water_pollution") {
+      score = 5;
+      badge = "水質毒化倒池慘劇";
+      text = "養殖失敗！投餌過量導致殘餌腐爛，或是放任藻類過度暴增（藻相破表或濁度破表），引發水質毒化崩壞！養殖先養水，水質惡化時請務必使用「換水」功能！";
+      return { score, badge, text };
+    }
+
+    if (state.isGameOverReason === "clam_annihilation" || livingClams === 0) {
+      score = 10;
+      badge = "文蛤全滅慘劇";
+      text = "很遺憾，所有的文蛤都被入侵的螃蟹吃光了！混養管理中，保護底棲的文蛤是首要任務。請多注意池底動靜並點擊螃蟹將其消滅！";
+      return { score, badge, text };
+    }
 
     // Max growth score is 40 points
     score += clamp(state.growth * 0.4, 0, 40);
@@ -1168,9 +1395,6 @@ document.addEventListener("DOMContentLoaded", () => {
     } else if (score >= 60) {
       badge = "合格池區管理員";
       text = `穩健的管理！你成功維護了文蛤的生存 (${livingClams}/4 存活)。如果能更靈活地開啟增氧水車調解溶氧，或者更迅速地除掉侵入池底的螃蟹，你的成績會更好！`;
-    } else if (livingClams === 0) {
-      badge = "文蛤全滅慘劇";
-      text = "很遺憾，所有的文蛤都被入侵的螃蟹吃光了！混養管理中，除害蟲與防衛也是重要的一環。請多注意池底動靜並點擊螃蟹將其消滅！";
     } else {
       badge = "新手實習養殖員";
       text = "水質管理失調或文蛤損失過多。養殖先養水，投餌過多會加速水質劣化；水質過濃或缺氧時記得點擊「換水」與「開啟曝氣」。再挑戰一次吧！";
@@ -1191,14 +1415,29 @@ document.addEventListener("DOMContentLoaded", () => {
     el.resultScore.textContent = `${result.score} 分`;
     el.resultText.textContent = result.text;
 
-    // Save score to leaderboard array in localStorage
-    const todayStr = new Date().toISOString().split('T')[0];
+    // Save score to leaderboard array in localStorage (keeping only the highest score per name/account)
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const date = String(d.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${date}`;
+    
+    const name = (typeof GOOGLE_USER_NAME !== 'undefined') ? GOOGLE_USER_NAME : "匿名者";
     let leaderboard = JSON.parse(localStorage.getItem("ar_feed_leaderboard") || "[]");
-    leaderboard.push({
-      name: (typeof GOOGLE_USER_NAME !== 'undefined') ? GOOGLE_USER_NAME : "匿名者",
-      score: result.score,
-      date: todayStr
-    });
+    
+    const existingIndex = leaderboard.findIndex(item => item.name === name);
+    if (existingIndex !== -1) {
+      if (result.score > leaderboard[existingIndex].score) {
+        leaderboard[existingIndex].score = result.score;
+        leaderboard[existingIndex].date = todayStr;
+      }
+    } else {
+      leaderboard.push({
+        name: name,
+        score: result.score,
+        date: todayStr
+      });
+    }
     leaderboard.sort((a, b) => b.score - a.score);
     leaderboard = leaderboard.slice(0, 10);
     localStorage.setItem("ar_feed_leaderboard", JSON.stringify(leaderboard));
@@ -1216,7 +1455,27 @@ document.addEventListener("DOMContentLoaded", () => {
       })
     );
 
-    el.resultOverlay.classList.remove("hidden");
+    // If game ended due to disaster, show warning and delay result modal so users can view the belly-up scene
+    if (state.isGameOverReason !== "") {
+      const alertEl = document.getElementById("dangerAlert");
+      const alertTextEl = document.getElementById("dangerAlertText");
+      if (alertEl && alertTextEl) {
+        alertEl.classList.remove("hidden");
+        if (state.isGameOverReason === "oxygen_depletion") {
+          alertTextEl.textContent = `💥 嚴重缺氧！漁塭已倒池，正在生成養殖報告...`;
+        } else if (state.isGameOverReason === "water_pollution") {
+          alertTextEl.textContent = `💥 水質嚴重毒化！漁塭已倒池，正在生成養殖報告...`;
+        } else if (state.isGameOverReason === "clam_annihilation") {
+          alertTextEl.textContent = `💥 文蛤全滅！守護任務失敗，正在生成養殖報告...`;
+        }
+      }
+      setTimeout(() => {
+        if (alertEl) alertEl.classList.add("hidden");
+        el.resultOverlay.classList.remove("hidden");
+      }, 3500);
+    } else {
+      el.resultOverlay.classList.remove("hidden");
+    }
   }
 
   function restartExperience() {
@@ -1272,8 +1531,28 @@ document.addEventListener("DOMContentLoaded", () => {
       leaderboard = null;
     }
     
+    // Specifically filter out old test records of "子科" and "LiaoZike"
+    if (leaderboard) {
+      try {
+        let arr = JSON.parse(leaderboard);
+        const filtered = arr.filter(item => item.name !== "子科" && item.name !== "LiaoZike");
+        if (filtered.length !== arr.length) {
+          localStorage.setItem("ar_feed_leaderboard", JSON.stringify(filtered));
+          leaderboard = JSON.stringify(filtered);
+        }
+      } catch (e) {
+        localStorage.removeItem("ar_feed_leaderboard");
+        leaderboard = null;
+      }
+    }
+    
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const date = String(d.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${date}`;
+    
     if (!leaderboard) {
-      const todayStr = new Date().toISOString().split('T')[0];
       const mockData = [
         { name: "睏寶(bot)", score: 75, date: todayStr },
         { name: "藍寶(bot)", score: 65, date: todayStr },
@@ -1285,11 +1564,25 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function showLeaderboard() {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const date = String(d.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${date}`;
+    
     const dateEl = document.getElementById("leaderboardDate");
     if (dateEl) dateEl.textContent = `今日日期：${todayStr}`;
     
-    const leaderboard = JSON.parse(localStorage.getItem("ar_feed_leaderboard") || "[]");
+    let leaderboard = JSON.parse(localStorage.getItem("ar_feed_leaderboard") || "[]");
+    
+    // Ensure bot entries dynamically update their date so they are always present on today's leaderboard
+    leaderboard = leaderboard.map(item => {
+      if (item.name.includes("(bot)")) {
+        item.date = todayStr;
+      }
+      return item;
+    });
+    localStorage.setItem("ar_feed_leaderboard", JSON.stringify(leaderboard));
     const listEl = document.getElementById("leaderboardList");
     if (listEl) {
       listEl.innerHTML = "";
@@ -1324,6 +1617,15 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
     
+    // Hide instructions if showing leaderboard
+    const instructionsOverlay = document.getElementById("instructionsOverlay");
+    if (instructionsOverlay && !instructionsOverlay.classList.contains("hidden")) {
+      instructionsOverlay.classList.add("hidden");
+      state.leaderboardSource = "instructions";
+    } else {
+      state.leaderboardSource = "result";
+    }
+    
     document.getElementById("leaderboardOverlay").classList.remove("hidden");
   }
 
@@ -1336,10 +1638,22 @@ document.addEventListener("DOMContentLoaded", () => {
       showLbBtn.addEventListener("click", showLeaderboard);
     }
     
+    const startLbBtn = document.getElementById("startLeaderboardBtn");
+    if (startLbBtn) {
+      startLbBtn.addEventListener("click", showLeaderboard);
+    }
+    
     const backLbBtn = document.getElementById("leaderboardBackBtn");
     if (backLbBtn) {
       backLbBtn.addEventListener("click", () => {
         document.getElementById("leaderboardOverlay").classList.add("hidden");
+        // Restore instructions overlay if opened from start screen
+        if (state.leaderboardSource === "instructions") {
+          const instructionsOverlay = document.getElementById("instructionsOverlay");
+          if (instructionsOverlay) {
+            instructionsOverlay.classList.remove("hidden");
+          }
+        }
       });
     }
 

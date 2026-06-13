@@ -57,7 +57,7 @@
           position="0 0.045 0"
           radius="0.60"
           height="0.09"
-          material="color: #168aad; opacity: 0.45; transparent: true"
+          material="color: #168aad; opacity: 0.45; transparent: true; depthWrite: false"
         ></a-cylinder>
 
         <!-- 漁塭外框 -->
@@ -69,16 +69,6 @@
           material="color: #caf0f8; opacity: 0.9; transparent: true"
         ></a-ring>
 
-        <!-- 選取中的生物光圈 (會自動定位在第一個文蛤身上) -->
-        <a-ring
-          id="selectedHalo"
-          position="-0.15 0.02 0.25"
-          radius-inner="0.05"
-          radius-outer="0.07"
-          rotation="-90 0 0"
-          material="color: #ffd166; opacity: 0.95; transparent: true"
-          animation="property: scale; from: 0.9 0.9 0.9; to: 1.25 1.25 1.25; dir: alternate; dur: 650; loop: true"
-        ></a-ring>
 
         <!-- 危險警示光圈 -->
         <a-ring
@@ -122,7 +112,7 @@
             position="0 0 0"
             geometry="primitive: sphere; radius: 0.04"
             material="color: #7bdff2"
-            rotation="0 180 0"
+            rotation="0 0 0"
           ></a-entity>
         </a-entity>
 
@@ -191,6 +181,17 @@
           material="color: #f5deb3"
           rotation="0 45 0"
         ></a-entity>
+        <!-- 文蛤 0 定位環 (獨立實體，不受 GLB 縮放影響) -->
+        <a-ring
+          id="clamObj_0_ring"
+          class="clam-ring"
+          position="-0.15 0.016 0.25"
+          radius-inner="0.032"
+          radius-outer="0.038"
+          rotation="-90 0 0"
+          material="color: #39ff14; shader: flat; opacity: 0.85; transparent: true; depthWrite: false"
+          animation="property: scale; from: 0.9 0.9 0.9; to: 1.1 1.1 1.1; dir: alternate; dur: 800; loop: true"
+        ></a-ring>
 
         <!-- 文蛤 1 (靜態散落) -->
         <a-entity
@@ -202,6 +203,17 @@
           material="color: #f5deb3"
           rotation="0 120 0"
         ></a-entity>
+        <!-- 文蛤 1 定位環 -->
+        <a-ring
+          id="clamObj_1_ring"
+          class="clam-ring"
+          position="0.20 0.016 0.30"
+          radius-inner="0.032"
+          radius-outer="0.038"
+          rotation="-90 0 0"
+          material="color: #39ff14; shader: flat; opacity: 0.85; transparent: true; depthWrite: false"
+          animation="property: scale; from: 0.9 0.9 0.9; to: 1.1 1.1 1.1; dir: alternate; dur: 800; loop: true"
+        ></a-ring>
 
         <!-- 文蛤 2 (靜態散落) -->
         <a-entity
@@ -213,6 +225,17 @@
           material="color: #f5deb3"
           rotation="0 230 0"
         ></a-entity>
+        <!-- 文蛤 2 定位環 -->
+        <a-ring
+          id="clamObj_2_ring"
+          class="clam-ring"
+          position="-0.25 0.016 -0.18"
+          radius-inner="0.032"
+          radius-outer="0.038"
+          rotation="-90 0 0"
+          material="color: #39ff14; shader: flat; opacity: 0.85; transparent: true; depthWrite: false"
+          animation="property: scale; from: 0.9 0.9 0.9; to: 1.1 1.1 1.1; dir: alternate; dur: 800; loop: true"
+        ></a-ring>
 
         <!-- AR 浮動水質儀表板 (使用 HTML Canvas 紋理渲染中文字體) -->
         <a-plane
@@ -234,6 +257,18 @@
           material="color: #f5deb3"
           rotation="0 310 0"
         ></a-entity>
+        <!-- 文蛤 3 定位環 -->
+        <a-ring
+          id="clamObj_3_ring"
+          class="clam-ring"
+          position="0.15 0.016 -0.25"
+          radius-inner="0.032"
+          radius-outer="0.038"
+          rotation="-90 0 0"
+          material="color: #39ff14; shader: flat; opacity: 0.85; transparent: true; depthWrite: false"
+          animation="property: scale; from: 0.9 0.9 0.9; to: 1.1 1.1 1.1; dir: alternate; dur: 800; loop: true"
+        ></a-ring>
+
 
 
         <!-- 餵食粒子容器 -->
@@ -258,6 +293,12 @@
       <div id="markerStatus" class="marker-status offline">
         尚未偵測到標記
       </div>
+    </div>
+
+    <!-- 閃爍警報 Banner -->
+    <div id="dangerAlert" class="danger-alert hidden">
+      <span class="danger-icon">⚠️</span>
+      <span id="dangerAlertText">警告：池水溶氧極低，即將倒池！</span>
     </div>
 
     <!-- 右側水質儀表 -->
@@ -372,6 +413,7 @@
             <li><strong>觸控投餌：</strong>點擊水面掉落飼料（加分）。落底未吃完會<strong>腐爛缺氧</strong>。</li>
             <li><strong>除蟹防衛：</strong>點擊池底紅色螃蟹將其消滅，防止文蛤被吃掉扣分。</li>
             <li><strong>水車與換水：</strong>點擊按鈕調節溶氧與濁度（運作會扣除些許成長值）。</li>
+            <li><strong>🏆 榮譽排行：</strong>結算時可點擊「今日排行榜」查看您與其他管理員的最高分數排行！</li>
           </ul>
 
           <p><strong>📊 水質健康判定標準（良好 vs 危險）：</strong></p>
@@ -403,7 +445,10 @@
           </table>
           <p style="font-size: 11px; opacity: 0.85; line-height: 1.4; margin-top: 6px;">※ 只要有任一指標落入危險區間，狀態即顯示紅色危險，請立即調解！</p>
         </div>
-        <button id="startGameBtn" class="main-btn">開始體驗</button>
+        <div style="display: flex; gap: 12px; width: 100%; margin-top: 15px;">
+          <button id="startGameBtn" class="main-btn" style="flex: 1; margin: 0;">開始體驗</button>
+          <button id="startLeaderboardBtn" class="sub-btn" style="flex: 1; margin: 0;">今日排行榜</button>
+        </div>
       </div>
     </div>
 
@@ -418,7 +463,7 @@
         </div>
 
         <div class="result-actions" style="margin-top: 24px;">
-          <button id="leaderboardBackBtn" class="main-btn" style="grid-column: span 2;">返回結果</button>
+          <button id="leaderboardBackBtn" class="main-btn" style="grid-column: span 2;">返回</button>
         </div>
       </div>
     </div>

@@ -1513,6 +1513,7 @@ def ar_feed(request):
         "milkfish": os.path.exists(os.path.join(static_dir, "milkfish.glb")),
         "shrimp": os.path.exists(os.path.join(static_dir, "shrimp.glb")),
         "clam": os.path.exists(os.path.join(static_dir, "clam.glb")),
+        "crab": os.path.exists(os.path.join(static_dir, "crab.glb")),
         "fish": False,  # 先拿掉 fish.glb 模型，退回球體
     }
 
