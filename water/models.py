@@ -448,3 +448,33 @@ class WaterSensorAlert(models.Model):
     def __str__(self):
         status = "未解決" if self.is_active else "已恢復"
         return f"{self.sensor} / {self.get_metric_display()} ({status})"
+class ArFeedLeaderboardEntry(models.Model):
+    """Daily best score for the AR aquaculture game."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="ar_feed_scores",
+    )
+    player_key = models.CharField(max_length=80)
+    player_name = models.CharField(max_length=80)
+    score = models.PositiveSmallIntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    scene = models.CharField(max_length=40, default="clam_polyculture")
+    badge = models.CharField(max_length=120, blank=True, default="")
+    result_text = models.TextField(blank=True, default="")
+    growth = models.FloatField(default=0)
+    water = models.JSONField(default=dict, blank=True)
+    played_on = models.DateField(db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-score", "updated_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["played_on", "player_key"], name="unique_ar_feed_daily_player")
+        ]
+
+    def __str__(self):
+        return f"{self.played_on} / {self.player_name} / {self.score}"

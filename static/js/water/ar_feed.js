@@ -25,6 +25,16 @@ const state = {
   leaderboardSource: "result"
 };
 
+const AR_FEED_SCORE_URL = "score/";
+const AR_FEED_LEADERBOARD_URL = "leaderboard/";
+
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(";").shift();
+  return "";
+}
+
 // Global helper for food pellets eating mechanism
 function eatFoodPellet(pelletEl, points = 2.5) {
   if (pelletEl.dataset.eaten === "true") return;
@@ -59,7 +69,7 @@ AFRAME.registerComponent('disable-root-motion', {
 // A-Frame component for Milkfish Wander & Flocking Simulation
 AFRAME.registerComponent('fish-swim-simulation', {
   schema: {
-    speed: { type: 'number', default: 0.045 }, // base swimming speed (m/s)
+    speed: { type: 'number', default: 0.09 }, // base swimming speed (m/s)
     boundsRadius: { type: 'number', default: 0.52 },
     separationDistance: { type: 'number', default: 0.16 }
   },
@@ -201,7 +211,7 @@ AFRAME.registerComponent('fish-swim-simulation', {
     // Clamp velocities depending on whether they target food
     const speed = this.velocity.length();
     const baseSpeed = this.data.speed * (isChoking ? 0.35 : 1.0);
-    const targetSpeed = closestPellet && !isChoking ? this.data.speed * 1.6 : baseSpeed;
+    const targetSpeed = closestPellet && !isChoking ? this.data.speed * 1.8 : baseSpeed;
     if (speed > targetSpeed) {
       this.velocity.normalize().multiplyScalar(targetSpeed);
     } else if (speed < baseSpeed * 0.5) {
@@ -1437,6 +1447,61 @@ document.addEventListener("DOMContentLoaded", () => {
     return { score, badge, text };
   }
 
+  function saveScoreToServer(result) {
+    const name = (typeof GOOGLE_USER_NAME !== 'undefined') ? GOOGLE_USER_NAME : "訪客";
+    fetch(AR_FEED_SCORE_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCookie("csrftoken"),
+      },
+      credentials: "same-origin",
+      body: JSON.stringify({
+        scene: "clam_polyculture",
+        score: result.score,
+        badge: result.badge,
+        text: result.text,
+        growth: state.growth,
+        water: state.water,
+        player_name: name,
+      }),
+    }).catch((err) => {
+      console.warn("AR leaderboard save failed", err);
+    });
+  }
+
+  function migrateLocalLeaderboardToServer() {
+    const name = (typeof GOOGLE_USER_NAME !== 'undefined') ? GOOGLE_USER_NAME : "訪客";
+    const d = new Date();
+    const todayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+    try {
+      const leaderboard = JSON.parse(localStorage.getItem("ar_feed_leaderboard") || "[]");
+      const existing = leaderboard.find((item) => item.name === name && item.date === todayStr && !String(item.name).includes("(bot)"));
+      if (!existing) return;
+
+      fetch(AR_FEED_SCORE_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCookie("csrftoken"),
+        },
+        credentials: "same-origin",
+        body: JSON.stringify({
+          scene: "clam_polyculture",
+          score: existing.score,
+          badge: "歷史紀錄",
+          text: "由此瀏覽器的舊排行榜紀錄同步至資料庫。",
+          player_name: name,
+        }),
+      }).catch((err) => {
+        console.warn("AR leaderboard migration failed", err);
+      });
+    } catch (err) {
+      console.warn("AR leaderboard migration skipped", err);
+    }
+  }
+
   function finishExperience() {
     state.gameActive = false;
     const result = calculateResult();
@@ -1488,6 +1553,8 @@ document.addEventListener("DOMContentLoaded", () => {
         createdAt: new Date().toISOString(),
       })
     );
+
+    saveScoreToServer(result);
 
     // If game ended due to disaster, show warning and delay result modal so users can view the belly-up scene
     if (state.isGameOverReason !== "") {
@@ -1597,7 +1664,38 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function showLeaderboard() {
+  function renderLeaderboardItems(scores) {
+    const listEl = document.getElementById("leaderboardList");
+    if (!listEl) return;
+
+    listEl.innerHTML = "";
+    if (!scores.length) {
+      listEl.innerHTML = `<div class="leaderboard-item" style="justify-content: center;">今日尚無排行紀錄</div>`;
+      return;
+    }
+
+    scores.forEach((item, index) => {
+      const rank = index + 1;
+      let rankClass = `rank-${rank}`;
+      let rankIcon = `${rank}`;
+      if (rank === 1) rankIcon = "🥇";
+      if (rank === 2) rankIcon = "🥈";
+      if (rank === 3) rankIcon = "🥉";
+
+      const itemEl = document.createElement("div");
+      itemEl.className = `leaderboard-item ${rank <= 3 ? rankClass : ''}`;
+      itemEl.innerHTML = `
+        <div>
+          <span class="rank-badge">${rankIcon}</span>
+          <span class="leaderboard-name">${item.name}</span>
+        </div>
+        <span class="leaderboard-score">${item.score} 分</span>
+      `;
+      listEl.appendChild(itemEl);
+    });
+  }
+
+  async function showLeaderboard() {
     const d = new Date();
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -1605,6 +1703,30 @@ document.addEventListener("DOMContentLoaded", () => {
     const todayStr = `${year}-${month}-${date}`;
     
     const dateEl = document.getElementById("leaderboardDate");
+    try {
+      const response = await fetch(AR_FEED_LEADERBOARD_URL, {
+        credentials: "same-origin",
+        headers: { "Accept": "application/json" },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (dateEl && data.date) dateEl.textContent = `今日排行日期：${data.date}`;
+        renderLeaderboardItems(data.leaderboard || []);
+
+        const instructionsOverlay = document.getElementById("instructionsOverlay");
+        if (instructionsOverlay && !instructionsOverlay.classList.contains("hidden")) {
+          instructionsOverlay.classList.add("hidden");
+          state.leaderboardSource = "instructions";
+        } else {
+          state.leaderboardSource = "result";
+        }
+
+        document.getElementById("leaderboardOverlay").classList.remove("hidden");
+        return;
+      }
+    } catch (err) {
+      console.warn("AR leaderboard load failed", err);
+    }
     if (dateEl) dateEl.textContent = `今日日期：${todayStr}`;
     
     let leaderboard = JSON.parse(localStorage.getItem("ar_feed_leaderboard") || "[]");
@@ -1714,6 +1836,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function init() {
     initLeaderboard();
+    migrateLocalLeaderboardToServer();
     setupEvents();
     setupMarkerEvents();
 

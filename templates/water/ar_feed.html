@@ -20,8 +20,7 @@
   <link rel="stylesheet" href="{% static 'css/water/ar_feed.css' %}">
   
   <script>
-    // 獲取目前登入使用者的 Google 顯示名稱，若未登入則預設顯示為 匿名者
-    const GOOGLE_USER_NAME = "{{ request.user.first_name|default:request.user.username|default:'匿名者' }}";
+    const GOOGLE_USER_NAME = "{{ ar_player_name|escapejs }}";
   </script>
 </head>
 

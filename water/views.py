@@ -10,12 +10,12 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render, get_object_or_404
 from django.utils import timezone
 from django.http import JsonResponse, HttpResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
+from django.views.decorators.http import require_GET, require_POST
 from django.db import OperationalError
 from django.db.models import Q
 
-from .models import Pond, PondSensor, WaterThreshold, SensorReading, WaterSimulationCron, PondAerator, PondAeratorStateLog
+from .models import Pond, PondSensor, WaterThreshold, SensorReading, WaterSimulationCron, PondAerator, PondAeratorStateLog, ArFeedLeaderboardEntry
 from .simulator import run_simulation_round
 from .aerators import evaluate_aerator_operations, resolve_cron_ponds
 from .utils import METRIC_DEFINITIONS, default_thresholds, reading_status, calculate_stability, check_metrics_status
@@ -47,6 +47,13 @@ def can_delete_pond(user, pond):
         return pond.creator == user
     first_owner = pond.owners.order_by("id").first()
     return first_owner == user if first_owner else False
+
+
+def user_display_name(user, fallback="訪客"):
+    if not user or not user.is_authenticated:
+        return fallback
+    full_name = f"{user.first_name or ''} {user.last_name or ''}".strip()
+    return full_name or user.username or user.email or fallback
 
 
 def get_pond_owner_for_thresholds(pond):
@@ -1499,6 +1506,7 @@ def unshare_pond(request, pond_id):
     return redirect("water:manage_pond", pond_id=pond.pk)
 
 
+@ensure_csrf_cookie
 def ar_feed(request):
     """
     AR 在地養殖餵食體驗頁面
@@ -1529,6 +1537,108 @@ def ar_feed(request):
     return render(request, "water/ar_feed.html", {
         "initial_water": initial_water,
         "glb_exists": glb_exists,
+        "ar_player_name": user_display_name(request.user, fallback="匿名者"),
+    })
+
+
+@require_POST
+def ar_feed_save_score(request):
+    try:
+        payload = json.loads(request.body.decode("utf-8") or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"ok": False, "error": "invalid_json"}, status=400)
+
+    try:
+        score = int(payload.get("score", 0))
+    except (TypeError, ValueError):
+        return JsonResponse({"ok": False, "error": "invalid_score"}, status=400)
+
+    score = max(0, min(100, score))
+    played_on = timezone.localdate()
+
+    if request.user.is_authenticated:
+        user = request.user
+        player_key = f"user:{user.pk}"
+        player_name = user_display_name(user, fallback="玩家")
+    else:
+        if not request.session.session_key:
+            request.session.create()
+        user = None
+        player_key = f"session:{request.session.session_key}"
+        player_name = str(payload.get("player_name") or "訪客")[:80]
+
+    try:
+        growth = float(payload.get("growth") or 0)
+    except (TypeError, ValueError):
+        growth = 0
+
+    defaults = {
+        "user": user,
+        "player_name": player_name[:80],
+        "score": score,
+        "scene": str(payload.get("scene") or "clam_polyculture")[:40],
+        "badge": str(payload.get("badge") or "")[:120],
+        "result_text": str(payload.get("text") or ""),
+        "growth": growth,
+        "water": payload.get("water") if isinstance(payload.get("water"), dict) else {},
+    }
+
+    entry, created = ArFeedLeaderboardEntry.objects.get_or_create(
+        played_on=played_on,
+        player_key=player_key,
+        defaults=defaults,
+    )
+
+    saved_best = created or score > entry.score
+    should_update_name = entry.player_name != defaults["player_name"]
+    if saved_best:
+        for field, value in defaults.items():
+            setattr(entry, field, value)
+        entry.save()
+    elif should_update_name:
+        entry.player_name = defaults["player_name"]
+        entry.user = user
+        entry.save(update_fields=["player_name", "user", "updated_at"])
+
+    return JsonResponse({
+        "ok": True,
+        "saved_best": saved_best,
+        "score": entry.score,
+        "played_on": played_on.isoformat(),
+    })
+
+
+@require_GET
+def ar_feed_leaderboard(request):
+    played_on = timezone.localdate()
+    entries = list(
+        ArFeedLeaderboardEntry.objects
+        .filter(played_on=played_on)
+        .order_by("-score", "updated_at")[:10]
+    )
+
+    data = [
+        {
+            "name": entry.player_name,
+            "score": entry.score,
+            "date": entry.played_on.isoformat(),
+            "is_current_user": bool(request.user.is_authenticated and entry.user_id == request.user.id),
+        }
+        for entry in entries
+    ]
+
+    bot_entries = [
+        {"name": "睏寶(bot)", "score": 75, "date": played_on.isoformat(), "is_current_user": False, "is_bot": True},
+        {"name": "藍寶(bot)", "score": 65, "date": played_on.isoformat(), "is_current_user": False, "is_bot": True},
+        {"name": "痞子妹(bot)", "score": 55, "date": played_on.isoformat(), "is_current_user": False, "is_bot": True},
+        {"name": "囡囡(bot)", "score": 45, "date": played_on.isoformat(), "is_current_user": False, "is_bot": True},
+    ]
+    data = sorted(data + bot_entries, key=lambda item: item["score"], reverse=True)[:10]
+
+    return JsonResponse({
+        "ok": True,
+        "date": played_on.isoformat(),
+        "leaderboard": data,
     })
 
 

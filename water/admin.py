@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Pond, PondSensor, PondAerator, PondAeratorStateLog, SensorReading, WaterSimulationCron, WaterThreshold, WaterSensorAlert
+from .models import Pond, PondSensor, PondAerator, PondAeratorStateLog, SensorReading, WaterSimulationCron, WaterThreshold, WaterSensorAlert, ArFeedLeaderboardEntry
 
 
 @admin.register(Pond)
@@ -76,3 +76,9 @@ class WaterSensorAlertAdmin(admin.ModelAdmin):
     list_display = ("sensor", "metric", "is_active", "first_triggered_at", "last_triggered_at", "last_notified_at", "resolved_at")
     list_filter = ("is_active", "metric", "sensor__pond")
 
+
+@admin.register(ArFeedLeaderboardEntry)
+class ArFeedLeaderboardEntryAdmin(admin.ModelAdmin):
+    list_display = ("played_on", "player_name", "score", "user", "scene", "updated_at")
+    list_filter = ("played_on", "scene")
+    search_fields = ("player_name", "user__username", "user__email")
