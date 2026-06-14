@@ -1,6 +1,8 @@
 // Dynamic Web Audio API Sound Synthesizer
 const AudioSynth = {
   ctx: null,
+  aeratorNode: null,
+  waterExchangeNode: null,
   
   init() {
     if (!this.ctx) {
@@ -22,7 +24,7 @@ const AudioSynth = {
     osc.type = 'sine';
     osc.frequency.setValueAtTime(350, now);
     osc.frequency.exponentialRampToValueAtTime(1400, now + 0.12);
-    gain.gain.setValueAtTime(0.45, now);
+    gain.gain.setValueAtTime(0.35, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
     osc.start(now);
     osc.stop(now + 0.13);
@@ -39,7 +41,7 @@ const AudioSynth = {
     osc.type = 'triangle';
     osc.frequency.setValueAtTime(220, now);
     osc.frequency.exponentialRampToValueAtTime(40, now + 0.15);
-    gain.gain.setValueAtTime(0.75, now);
+    gain.gain.setValueAtTime(0.60, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
     osc.start(now);
     osc.stop(now + 0.16);
@@ -61,7 +63,7 @@ const AudioSynth = {
     const noiseNode = this.ctx.createBufferSource();
     noiseNode.buffer = buffer;
     const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(0.70, now);
+    gain.gain.setValueAtTime(0.55, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
     noiseNode.connect(gain);
     gain.connect(this.ctx.destination);
@@ -79,7 +81,7 @@ const AudioSynth = {
     const now = this.ctx.currentTime;
     osc.type = 'sine';
     osc.frequency.setValueAtTime(650, now);
-    gain.gain.setValueAtTime(0.35, now);
+    gain.gain.setValueAtTime(0.30, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
     osc.start(now);
     osc.stop(now + 0.05);
@@ -97,7 +99,7 @@ const AudioSynth = {
       gain.connect(this.ctx.destination);
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(freq, now + idx * 0.12);
-      gain.gain.setValueAtTime(0.45, now + idx * 0.12);
+      gain.gain.setValueAtTime(0.40, now + idx * 0.12);
       gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.35);
       osc.start(now + idx * 0.12);
       osc.stop(now + idx * 0.12 + 0.36);
@@ -115,10 +117,245 @@ const AudioSynth = {
     osc.type = 'sawtooth';
     osc.frequency.setValueAtTime(330, now);
     osc.frequency.linearRampToValueAtTime(110, now + 0.65);
-    gain.gain.setValueAtTime(0.50, now);
+    gain.gain.setValueAtTime(0.45, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
     osc.start(now);
     osc.stop(now + 0.66);
+  },
+
+  playAeratorToggle(isOn) {
+    this.init();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    
+    osc.type = 'triangle';
+    if (isOn) {
+      // Upward chirpy double tone (water wheel start)
+      osc.frequency.setValueAtTime(300, now);
+      osc.frequency.setValueAtTime(550, now + 0.08);
+      
+      // Keep volume loud for both notes, then decay
+      gain.gain.setValueAtTime(0.45, now);
+      gain.gain.setValueAtTime(0.45, now + 0.07);
+      gain.gain.linearRampToValueAtTime(0.01, now + 0.22);
+      
+      osc.start(now);
+      osc.stop(now + 0.23);
+    } else {
+      // Downward double tone (water wheel stop)
+      osc.frequency.setValueAtTime(450, now);
+      osc.frequency.setValueAtTime(250, now + 0.08);
+      
+      // Keep volume loud for both notes, then decay
+      gain.gain.setValueAtTime(0.40, now);
+      gain.gain.setValueAtTime(0.40, now + 0.07);
+      gain.gain.linearRampToValueAtTime(0.01, now + 0.22);
+      
+      osc.start(now);
+      osc.stop(now + 0.23);
+    }
+  },
+
+  playWaterExchangeToggle(isOn) {
+    this.init();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    
+    if (isOn) {
+      // Swoosh upward sweep (water exchange open)
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(200, now);
+      osc.frequency.exponentialRampToValueAtTime(800, now + 0.25);
+      gain.gain.setValueAtTime(0.35, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+      osc.start(now);
+      osc.stop(now + 0.26);
+    } else {
+      // Descending drop sweep (water exchange close)
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(600, now);
+      osc.frequency.exponentialRampToValueAtTime(150, now + 0.22);
+      gain.gain.setValueAtTime(0.30, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+      osc.start(now);
+      osc.stop(now + 0.23);
+    }
+  },
+
+  startAeratorSound() {
+    this.init();
+    if (!this.ctx) return;
+    if (this.aeratorNode) return; // already playing
+    
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const oscGain = this.ctx.createGain();
+    
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(90, now); // Low motor hum
+    oscGain.gain.setValueAtTime(0.05, now); // Soft background level
+    
+    const lfo = this.ctx.createOscillator();
+    const lfoGain = this.ctx.createGain();
+    lfo.frequency.setValueAtTime(6, now); // 6 Hz rotation speed
+    lfoGain.gain.setValueAtTime(25, now);
+    
+    lfo.connect(lfoGain);
+    lfoGain.connect(osc.frequency);
+    
+    osc.connect(oscGain);
+    oscGain.connect(this.ctx.destination);
+    
+    lfo.start(now);
+    osc.start(now);
+    
+    this.aeratorNode = { osc, lfo, oscGain };
+  },
+
+  stopAeratorSound() {
+    if (!this.aeratorNode || !this.ctx) return;
+    const now = this.ctx.currentTime;
+    const node = this.aeratorNode;
+    this.aeratorNode = null;
+    
+    node.oscGain.gain.linearRampToValueAtTime(0.001, now + 0.15);
+    setTimeout(() => {
+      try {
+        node.osc.stop();
+        node.lfo.stop();
+      } catch (e) {}
+    }, 200);
+  },
+
+  startWaterExchangeSound() {
+    this.init();
+    if (!this.ctx) return;
+    if (this.waterExchangeNode) return; // already playing
+    
+    const now = this.ctx.currentTime;
+    const bufferSize = this.ctx.sampleRate * 2;
+    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    
+    const noiseSource = this.ctx.createBufferSource();
+    noiseSource.buffer = buffer;
+    noiseSource.loop = true;
+    
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(450, now); // deep flow sound
+    
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.04, now); // Soft background level
+    
+    noiseSource.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.ctx.destination);
+    
+    noiseSource.start(now);
+    
+    this.waterExchangeNode = { noiseSource, gain };
+  },
+
+  stopWaterExchangeSound() {
+    if (!this.waterExchangeNode || !this.ctx) return;
+    const now = this.ctx.currentTime;
+    const node = this.waterExchangeNode;
+    this.waterExchangeNode = null;
+    
+    node.gain.gain.linearRampToValueAtTime(0.001, now + 0.15);
+    setTimeout(() => {
+      try {
+        node.noiseSource.stop();
+      } catch (e) {}
+    }, 200);
+  },
+
+  // --- BACKGROUND MUSIC RESERVATION (背景音樂預留區) ---
+  // You can easily enable/disable BGM by toggling this flag.
+  // To play an audio file, uncomment the code inside startBgm() and supply a valid URL to your music file.
+  bgmNode: null,
+  bgmEnabled: true, // Set this to true to enable BGM
+
+  startBgm() {
+    if (!this.bgmEnabled) return;
+    this.init();
+    if (!this.ctx) return;
+    if (this.bgmNode) return; // Already playing
+
+    const now = this.ctx.currentTime;
+    
+    // METHOD 2: HTML5 Audio Element (For playing external MP3/MP4 music files)
+    // Plays the audio track of the uploaded bckmusic.mp4 file in a continuous loop.
+    try {
+      const audio = new Audio();
+      audio.src = "/static/water/assets/bckmusic.mp4";
+      audio.loop = true;
+      audio.volume = 0.22; // Keep background music soft and balanced
+      
+      audio.play().catch(e => {
+        console.warn("Autoplay blocked or playback failed:", e);
+      });
+      
+      this.bgmNode = { audio, type: 'audio_file' };
+    } catch (e) {
+      console.warn("Failed to start audio file BGM:", e);
+    }
+  },
+
+  stopBgm() {
+    if (!this.bgmNode) return;
+    const node = this.bgmNode;
+    this.bgmNode = null;
+    
+    try {
+      if (node.type === 'synth') {
+        node.osc1.stop();
+        node.osc2.stop();
+      } else if (node.type === 'audio_file') {
+        node.audio.pause();
+        node.audio.src = ""; // release resource
+      }
+    } catch (e) {
+      console.warn("Failed to stop BGM", e);
+    }
+  },
+
+  pauseBgm() {
+    if (!this.bgmNode) return;
+    try {
+      if (this.bgmNode.type === 'synth') {
+        this.bgmNode.gainNode.gain.value = 0; // mute
+      } else if (this.bgmNode.type === 'audio_file') {
+        this.bgmNode.audio.pause();
+      }
+    } catch (e) {}
+  },
+
+  resumeBgm() {
+    if (!this.bgmNode) return;
+    try {
+      if (this.bgmNode.type === 'synth') {
+        this.bgmNode.gainNode.gain.value = 0.015; // unmute
+      } else if (this.bgmNode.type === 'audio_file') {
+        this.bgmNode.audio.play();
+      }
+    } catch (e) {}
   }
 };
 
@@ -146,7 +383,11 @@ const state = {
   oxygenWarningTimer: 0,
   pollutionWarningTimer: 0,
   nextCrabSpawnInterval: Math.random() * 4 + 8, // random between 8 and 12 seconds
-  leaderboardSource: "result"
+  leaderboardSource: "result",
+  clams: [],
+  activePellets: [],
+  rottingPelletsCount: 0,
+  activeCrabs: []
 };
 
 const AR_FEED_SCORE_URL = "score/";
@@ -206,9 +447,22 @@ AFRAME.registerComponent('fish-swim-simulation', {
     ).normalize().multiplyScalar(this.data.speed);
     
     this.wanderAngle = Math.random() * Math.PI * 2;
+
+    // Cache list of other milkfish to avoid DOM query on every frame
+    this.otherFish = null;
+
+    // Pre-allocated vectors to eliminate GC overhead in high-frequency tick loop
+    this.wanderForce = new THREE.Vector3();
+    this.boundaryForce = new THREE.Vector3();
+    this.heightForce = new THREE.Vector3();
+    this.separationForce = new THREE.Vector3();
+    this.diffVec = new THREE.Vector3();
+    this.foodForce = new THREE.Vector3();
+    this.aeratorAvoidanceForce = new THREE.Vector3();
+    this.steerForce = new THREE.Vector3();
   },
   tick: function (time, timeDelta) {
-    const isDead = (state.isGameOverReason !== "" || state.water.oxygen < 2.0);
+    const isDead = (state.isGameOverReason === "oxygen_depletion" || state.isGameOverReason === "water_pollution" || state.water.oxygen < 2.0);
     if (!state.gameActive && !isDead) return;
 
     const dt = Math.min(timeDelta / 1000, 0.1);
@@ -242,7 +496,7 @@ AFRAME.registerComponent('fish-swim-simulation', {
     const isChoking = (state.water.oxygen < 3.0);
 
     // 1. Wander Force
-    const wanderForce = new THREE.Vector3(
+    this.wanderForce.set(
       Math.cos(this.wanderAngle),
       0,
       Math.sin(this.wanderAngle)
@@ -251,51 +505,53 @@ AFRAME.registerComponent('fish-swim-simulation', {
 
     // 2. Boundary Avoidance Force
     const distXZ = Math.sqrt(pos.x * pos.x + pos.z * pos.z);
-    const boundaryForce = new THREE.Vector3();
+    this.boundaryForce.set(0, 0, 0);
     if (distXZ > this.data.boundsRadius) {
-      boundaryForce.set(-pos.x, 0, -pos.z).normalize().multiplyScalar((distXZ - this.data.boundsRadius) * 2.5);
+      this.boundaryForce.set(-pos.x, 0, -pos.z).normalize().multiplyScalar((distXZ - this.data.boundsRadius) * 2.5);
     }
 
     // 3. Depth Constraints (Water is at height 0.09, stay submerged. If choking, float to gulp air)
-    const heightForce = new THREE.Vector3();
+    this.heightForce.set(0, 0, 0);
     const minY = isChoking ? 0.072 : 0.035;
     const maxY = isChoking ? 0.086 : 0.08;
     if (pos.y < minY) {
-      heightForce.y = (minY - pos.y) * 2.0;
+      this.heightForce.y = (minY - pos.y) * 2.0;
     } else if (pos.y > maxY) {
-      heightForce.y = (maxY - pos.y) * 2.0;
+      this.heightForce.y = (maxY - pos.y) * 2.0;
     } else {
       // Natural vertical bobbing
-      heightForce.y = 0.002 * Math.sin(time / 500 + this.randomPhase);
+      this.heightForce.y = 0.002 * Math.sin(time / 500 + this.randomPhase);
     }
 
     // 4. Separation Force (avoid colliding with other fish wrappers)
-    const separationForce = new THREE.Vector3();
-    const otherFish = document.querySelectorAll('.milkfish-wrapper');
+    this.separationForce.set(0, 0, 0);
+    if (!this.otherFish) {
+      this.otherFish = Array.from(document.querySelectorAll('.milkfish-wrapper'));
+    }
     let neighborsCount = 0;
-    otherFish.forEach(other => {
+    this.otherFish.forEach(other => {
       if (other === this.el) return;
       const otherPos = other.object3D.position;
       const d = pos.distanceTo(otherPos);
       if (d < this.data.separationDistance && d > 0.001) {
-        const diff = pos.clone().sub(otherPos).normalize().divideScalar(d);
-        separationForce.add(diff);
+        this.diffVec.copy(pos).sub(otherPos).normalize().divideScalar(d);
+        this.separationForce.add(this.diffVec);
         neighborsCount++;
         // Apply vertical separation bias to break symmetry
         if (pos.y > otherPos.y) {
-          separationForce.y += 0.02;
+          this.separationForce.y += 0.02;
         } else {
-          separationForce.y -= 0.02;
+          this.separationForce.y -= 0.02;
         }
       }
     });
     if (neighborsCount > 0) {
-      separationForce.multiplyScalar(0.06);
+      this.separationForce.multiplyScalar(0.06);
     }
 
     // 5. Food Pellets Attraction Force (only if not choking)
-    const foodForce = new THREE.Vector3();
-    const pellets = document.querySelectorAll('.food-pellet');
+    this.foodForce.set(0, 0, 0);
+    const pellets = state.activePellets || [];
     let closestPellet = null;
     let minDist = 999;
     
@@ -312,7 +568,7 @@ AFRAME.registerComponent('fish-swim-simulation', {
 
       if (closestPellet) {
         const targetPos = closestPellet.object3D.position;
-        foodForce.subVectors(targetPos, pos).normalize().multiplyScalar(0.35);
+        this.foodForce.subVectors(targetPos, pos).normalize().multiplyScalar(0.35);
         
         // Eat pellet when close
         if (minDist < 0.048) {
@@ -322,7 +578,7 @@ AFRAME.registerComponent('fish-swim-simulation', {
     }
 
     // 6. Aerator Avoidance Force (Steer away from aerator assembly at x = -0.50, z = 0)
-    const aeratorAvoidanceForce = new THREE.Vector3();
+    this.aeratorAvoidanceForce.set(0, 0, 0);
     const aeratorX = -0.50;
     const aeratorZ = 0;
     const dx = pos.x - aeratorX;
@@ -331,23 +587,23 @@ AFRAME.registerComponent('fish-swim-simulation', {
     if (distToAerator < 0.16) {
       const forceMag = (0.16 - distToAerator) * 4.0;
       if (distToAerator > 0.001) {
-        aeratorAvoidanceForce.set(dx, 0, dz).normalize().multiplyScalar(forceMag);
+        this.aeratorAvoidanceForce.set(dx, 0, dz).normalize().multiplyScalar(forceMag);
       } else {
-        aeratorAvoidanceForce.set(1, 0, 0).multiplyScalar(forceMag);
+        this.aeratorAvoidanceForce.set(1, 0, 0).multiplyScalar(forceMag);
       }
     }
 
     // Combine Steering Forces
-    const steerForce = new THREE.Vector3()
-      .add(wanderForce)
-      .add(boundaryForce)
-      .add(heightForce)
-      .add(separationForce)
-      .add(foodForce)
-      .add(aeratorAvoidanceForce);
+    this.steerForce.set(0, 0, 0)
+      .add(this.wanderForce)
+      .add(this.boundaryForce)
+      .add(this.heightForce)
+      .add(this.separationForce)
+      .add(this.foodForce)
+      .add(this.aeratorAvoidanceForce);
 
     // Update Velocity
-    this.velocity.addScaledVector(steerForce, dt);
+    this.velocity.addScaledVector(this.steerForce, dt);
     
     // Clamp velocities depending on whether they target food
     const speed = this.velocity.length();
@@ -404,9 +660,17 @@ AFRAME.registerComponent('shrimp-move-simulation', {
     ).normalize().multiplyScalar(this.data.speed);
     
     this.wanderAngle = Math.random() * Math.PI * 2;
+
+    // Pre-allocated vectors to eliminate GC overhead in high-frequency tick loop
+    this.wanderForce = new THREE.Vector3();
+    this.boundaryForce = new THREE.Vector3();
+    this.foodForce = new THREE.Vector3();
+    this.aeratorAvoidanceForce = new THREE.Vector3();
+    this.steerForce = new THREE.Vector3();
+    this.reflectNormal = new THREE.Vector3();
   },
   tick: function (time, timeDelta) {
-    const isDead = (state.isGameOverReason !== "" || state.water.oxygen < 2.0);
+    const isDead = (state.isGameOverReason === "oxygen_depletion" || state.isGameOverReason === "water_pollution" || state.water.oxygen < 2.0);
     if (!state.gameActive && !isDead) return;
 
     const dt = Math.min(timeDelta / 1000, 0.1);
@@ -425,7 +689,7 @@ AFRAME.registerComponent('shrimp-move-simulation', {
     const isChoking = (state.water.oxygen < 3.0);
 
     // 1. Wander Force
-    const wanderForce = new THREE.Vector3(
+    this.wanderForce.set(
       Math.cos(this.wanderAngle),
       0,
       Math.sin(this.wanderAngle)
@@ -434,14 +698,14 @@ AFRAME.registerComponent('shrimp-move-simulation', {
 
     // 2. Boundary Avoidance
     const distXZ = Math.sqrt(pos.x * pos.x + pos.z * pos.z);
-    const boundaryForce = new THREE.Vector3();
+    this.boundaryForce.set(0, 0, 0);
     if (distXZ > this.data.boundsRadius) {
-      boundaryForce.set(-pos.x, 0, -pos.z).normalize().multiplyScalar((distXZ - this.data.boundsRadius) * 2.0);
+      this.boundaryForce.set(-pos.x, 0, -pos.z).normalize().multiplyScalar((distXZ - this.data.boundsRadius) * 2.0);
     }
 
     // 3. Food Attraction (only if not choking)
-    const foodForce = new THREE.Vector3();
-    const pellets = document.querySelectorAll('.food-pellet');
+    this.foodForce.set(0, 0, 0);
+    const pellets = state.activePellets || [];
     let closestPellet = null;
     let minDist = 999;
     
@@ -457,7 +721,7 @@ AFRAME.registerComponent('shrimp-move-simulation', {
 
       if (closestPellet) {
         const targetPos = closestPellet.object3D.position;
-        foodForce.set(targetPos.x - pos.x, 0, targetPos.z - pos.z).normalize().multiplyScalar(0.3);
+        this.foodForce.set(targetPos.x - pos.x, 0, targetPos.z - pos.z).normalize().multiplyScalar(0.3);
         
         // Eat pellet when close
         if (minDist < 0.038) {
@@ -468,7 +732,7 @@ AFRAME.registerComponent('shrimp-move-simulation', {
     }
 
     // 4. Aerator Avoidance Force (Steer away from aerator assembly at x = -0.50, z = 0)
-    const aeratorAvoidanceForce = new THREE.Vector3();
+    this.aeratorAvoidanceForce.set(0, 0, 0);
     const aeratorX = -0.50;
     const aeratorZ = 0;
     const dx = pos.x - aeratorX;
@@ -477,20 +741,20 @@ AFRAME.registerComponent('shrimp-move-simulation', {
     if (distToAerator < 0.16) {
       const forceMag = (0.16 - distToAerator) * 4.0;
       if (distToAerator > 0.001) {
-        aeratorAvoidanceForce.set(dx, 0, dz).normalize().multiplyScalar(forceMag);
+        this.aeratorAvoidanceForce.set(dx, 0, dz).normalize().multiplyScalar(forceMag);
       } else {
-        aeratorAvoidanceForce.set(1, 0, 0).multiplyScalar(forceMag);
+        this.aeratorAvoidanceForce.set(1, 0, 0).multiplyScalar(forceMag);
       }
     }
 
     // Combine forces
-    const force = new THREE.Vector3()
-      .add(wanderForce)
-      .add(boundaryForce)
-      .add(foodForce)
-      .add(aeratorAvoidanceForce);
+    this.steerForce.set(0, 0, 0)
+      .add(this.wanderForce)
+      .add(this.boundaryForce)
+      .add(this.foodForce)
+      .add(this.aeratorAvoidanceForce);
 
-    this.velocity.addScaledVector(force, dt);
+    this.velocity.addScaledVector(this.steerForce, dt);
     
     // Clamp speed
     const speed = this.velocity.length();
@@ -511,7 +775,8 @@ AFRAME.registerComponent('shrimp-move-simulation', {
     if (hardDistXZ > 0.56) {
       pos.x = (pos.x / hardDistXZ) * 0.56;
       pos.z = (pos.z / hardDistXZ) * 0.56;
-      this.velocity.reflect(new THREE.Vector3(-pos.x, 0, -pos.z).normalize());
+      this.reflectNormal.set(-pos.x, 0, -pos.z).normalize();
+      this.velocity.reflect(this.reflectNormal);
     }
 
     // Vertical wiggle close to the bottom ground Y=0.015
@@ -700,6 +965,8 @@ document.addEventListener("DOMContentLoaded", () => {
     waterExchangeFlowGroup: document.getElementById("waterExchangeFlowGroup"),
     feedGroup: document.getElementById("feedGroup"),
     bubbleGroup: document.getElementById("bubbleGroup"),
+    dangerAlert: document.getElementById("dangerAlert"),
+    dangerAlertText: document.getElementById("dangerAlertText"),
   };
 
   let gltfLoaded = false;
@@ -990,7 +1257,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    renderActionButtons();
+    updateActionButtons();
     updateARScene();
   }
 
@@ -999,34 +1266,47 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Aerator Button
     const aerateBtn = document.createElement("button");
+    aerateBtn.id = "aerateBtn";
     aerateBtn.className = `action-btn ${state.aeratorOn ? 'btn-action-primary' : 'btn-action-sub'}`;
     aerateBtn.textContent = state.aeratorOn ? "🔌 關閉曝氣水車" : "💨 開啟曝氣水車";
     aerateBtn.addEventListener("click", () => {
       if (state.timeRemaining <= 0) return;
-      AudioSynth.playClick();
       state.aeratorOn = !state.aeratorOn;
+      AudioSynth.playAeratorToggle(state.aeratorOn);
+      if (state.aeratorOn) {
+        AudioSynth.startAeratorSound();
+      } else {
+        AudioSynth.stopAeratorSound();
+      }
       updateAeratorVisual(0);
       pushMessage(state.aeratorOn ? "⚡ 啟動增氧水車！消耗成長值但能持續提升溶氧。" : "🔌 關閉增氧水車。");
-      renderActionButtons();
+      updateActionButtons();
     });
     el.actionButtonsContainer.appendChild(aerateBtn);
 
     // Water Exchange Button
     const exchangeBtn = document.createElement("button");
+    exchangeBtn.id = "exchangeBtn";
     exchangeBtn.className = `action-btn ${state.waterExchangeOn ? 'btn-action-primary' : 'btn-action-sub'}`;
     exchangeBtn.textContent = state.waterExchangeOn ? "🛑 停止換水" : "💧 引水換水";
     exchangeBtn.addEventListener("click", () => {
       if (state.timeRemaining <= 0) return;
-      AudioSynth.playClick();
       state.waterExchangeOn = !state.waterExchangeOn;
+      AudioSynth.playWaterExchangeToggle(state.waterExchangeOn);
+      if (state.waterExchangeOn) {
+        AudioSynth.startWaterExchangeSound();
+      } else {
+        AudioSynth.stopWaterExchangeSound();
+      }
       updateWaterExchangeVisual();
       pushMessage(state.waterExchangeOn ? "🌊 開始引水調節！持續控制藻相並降低濁度。" : "🛑 停止引水調節。");
-      renderActionButtons();
+      updateActionButtons();
     });
     el.actionButtonsContainer.appendChild(exchangeBtn);
 
     // Finish Experience Button
     const finishBtn = document.createElement("button");
+    finishBtn.id = "finishBtn";
     finishBtn.className = "action-btn btn-action-finish";
     finishBtn.textContent = "完成體驗";
     finishBtn.addEventListener("click", () => {
@@ -1034,6 +1314,20 @@ document.addEventListener("DOMContentLoaded", () => {
       finishExperience();
     });
     el.actionButtonsContainer.appendChild(finishBtn);
+  }
+
+  function updateActionButtons() {
+    const aerateBtn = document.getElementById("aerateBtn");
+    if (aerateBtn) {
+      aerateBtn.className = `action-btn ${state.aeratorOn ? 'btn-action-primary' : 'btn-action-sub'}`;
+      aerateBtn.textContent = state.aeratorOn ? "🔌 關閉曝氣水車" : "💨 開啟曝氣水車";
+    }
+
+    const exchangeBtn = document.getElementById("exchangeBtn");
+    if (exchangeBtn) {
+      exchangeBtn.className = `action-btn ${state.waterExchangeOn ? 'btn-action-primary' : 'btn-action-sub'}`;
+      exchangeBtn.textContent = state.waterExchangeOn ? "🛑 停止換水" : "💧 引水換水";
+    }
   }
 
   // --- AR SPATIAL CLICK RAYCAST INTERACTION ---
@@ -1284,9 +1578,12 @@ document.addEventListener("DOMContentLoaded", () => {
     pushMessage("🦀 警告：一隻害蟲螃蟹侵入池底！快點擊消滅牠以免咬食文蛤！");
   }
 
+  // Reusable vector to prevent Vector2 creation GC in updateCrabCrawling
+  const crabDirVec = new THREE.Vector2();
+
   // Crawl crab towards target clam
   function updateCrabCrawling(dt) {
-    const crabs = document.querySelectorAll('.crab-pest');
+    const crabs = state.activeCrabs || [];
     crabs.forEach(crab => {
       if (crab.dataset.squished === "true") return;
 
@@ -1295,7 +1592,7 @@ document.addEventListener("DOMContentLoaded", () => {
       
       // If target clam is dead or gone, re-target a living one with least targeters
       if (!targetClam || targetClam.dataset.eaten === "true") {
-        const clams = Array.from(document.querySelectorAll('.clam-member')).filter(c => c.dataset.eaten !== 'true');
+        const clams = state.clams.filter(c => c.dataset.eaten !== 'true');
         const newTargetClam = getTargetClamWithLeastTargeters(clams, crab);
         if (newTargetClam) {
           crab.dataset.targetId = newTargetClam.id;
@@ -1320,8 +1617,8 @@ document.addEventListener("DOMContentLoaded", () => {
         clamZ = clamPos.z || 0;
       }
 
-      const dir = new THREE.Vector2(clamX - crabPos.x, clamZ - crabPos.z);
-      const dist = dir.length();
+      crabDirVec.set(clamX - crabPos.x, clamZ - crabPos.z);
+      const dist = crabDirVec.length();
 
       if (dist < 0.04) {
         // Crab reaches clam and eats it! Flipped flat dead shell
@@ -1344,13 +1641,13 @@ document.addEventListener("DOMContentLoaded", () => {
         crab.remove();
       } else {
         // Crawl towards target
-        dir.normalize();
+        crabDirVec.normalize();
         const speed = Number(crab.dataset.speed);
-        crabPos.x += dir.x * speed * dt;
-        crabPos.z += dir.y * speed * dt;
+        crabPos.x += crabDirVec.x * speed * dt;
+        crabPos.z += crabDirVec.y * speed * dt;
 
         // Face crawl direction
-        const yaw = Math.atan2(dir.x, dir.y) * 180 / Math.PI + 180;
+        const yaw = Math.atan2(crabDirVec.x, crabDirVec.y) * 180 / Math.PI + 180;
         crab.setAttribute('rotation', `0 ${yaw} 0`);
       }
     });
@@ -1444,16 +1741,16 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!el.feedGroup) return;
     const particle = document.createElement("a-sphere");
     
-    // Flow inward from the inlet side.
-    const angle = -0.45 + (Math.random() - 0.5) * 0.55;
-    const startX = 0.52 * Math.cos(angle);
-    const startZ = 0.52 * Math.sin(angle);
+    // Flow inward from the nozzle tip (located at radius ~0.51m, angle ~-0.64 rad)
+    const angle = -0.64 + (Math.random() - 0.5) * 0.15;
+    const startX = 0.51 * Math.cos(angle);
+    const startZ = 0.51 * Math.sin(angle);
     const endX = 0.14 * Math.cos(angle + 0.15);
     const endZ = 0.14 * Math.sin(angle + 0.15);
 
     particle.setAttribute("radius", "0.007");
     particle.setAttribute("material", "color: #90e0ef; opacity: 0.75; transparent: true");
-    particle.setAttribute("position", `${startX} 0.08 ${startZ}`);
+    particle.setAttribute("position", `${startX} 0.10 ${startZ}`);
     particle.setAttribute("animation", `property: position; to: ${endX} 0.03 ${endZ}; dur: 1100; easing: easeOutQuad`);
     particle.setAttribute("animation__fade", `property: material.opacity; from: 0.75; to: 0; delay: 750; dur: 350`);
 
@@ -1471,9 +1768,14 @@ document.addEventListener("DOMContentLoaded", () => {
     updateAeratorVisual(dt);
     updateWaterExchangeVisual();
 
+    // Cache dynamic arrays once per frame to optimize boids, collision, and rotting checks
+    state.activePellets = Array.from(document.querySelectorAll('.food-pellet'));
+    state.rottingPelletsCount = state.activePellets.filter(p => p.dataset.rotting === "true").length;
+    state.activeCrabs = Array.from(document.querySelectorAll('.crab-pest'));
+
     if (state.gameActive && state.timeRemaining > 0) {
       // 1. Natural Parameter decays & Rotting Food penalties
-      const rottingPellets = document.querySelectorAll('.food-pellet[data-rotting="true"]').length;
+      const rottingPellets = state.rottingPelletsCount;
       
       // Base oxygen decay is faster to encourage active aeration
       const o2Decay = -0.075 * dt - (rottingPellets * 0.035 * dt);
@@ -1549,11 +1851,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // 5. Check Early Game Over / Death conditions & Warning alerts
       let showingAlert = false;
-      const alertEl = document.getElementById("dangerAlert");
-      const alertTextEl = document.getElementById("dangerAlertText");
+      const alertEl = el.dangerAlert;
+      const alertTextEl = el.dangerAlertText;
 
       // Clam Annihilation check
-      const livingClams = Array.from(document.querySelectorAll('.clam-member')).filter(c => c.dataset.eaten !== 'true').length;
+      const livingClams = state.clams.filter(c => c.dataset.eaten !== 'true').length;
       if (livingClams === 0) {
         state.isGameOverReason = "clam_annihilation";
         state.gameActive = false;
@@ -1570,7 +1872,7 @@ document.addEventListener("DOMContentLoaded", () => {
           alertTextEl.textContent = `⚠️ 嚴重缺氧！魚蝦即將窒息死亡，剩餘挽救時間：${countdown} 秒！`;
         }
         
-        if (state.water.oxygen < 2.0 && state.oxygenWarningTimer >= 5.0) {
+        if (state.oxygenWarningTimer >= 5.0) {
           state.isGameOverReason = "oxygen_depletion";
           state.gameActive = false;
           finishExperience();
@@ -1614,7 +1916,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     } else {
       // Hide alert when game is inactive
-      const alertEl = document.getElementById("dangerAlert");
+      const alertEl = el.dangerAlert;
       if (alertEl) alertEl.classList.add("hidden");
     }
 
@@ -1781,6 +2083,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // Turn off actuators
     state.aeratorOn = false;
     state.waterExchangeOn = false;
+    AudioSynth.stopAeratorSound();
+    AudioSynth.stopWaterExchangeSound();
+    AudioSynth.stopBgm();
 
     el.resultBadge.textContent = result.badge;
     el.resultScore.textContent = `${result.score} 分`;
@@ -1872,10 +2177,14 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!state.gameStarted) {
         state.gameStarted = true;
         state.gameActive = true;
+        AudioSynth.startBgm();
         pushMessage("💡 提示：點擊池水表面可投餵飼料；點擊害蟲螃蟹可將其消滅！");
       } else {
         state.gameActive = true;
         pushMessage("▶️ 重新偵測到圖卡，遊戲繼續。");
+        if (state.aeratorOn) AudioSynth.startAeratorSound();
+        if (state.waterExchangeOn) AudioSynth.startWaterExchangeSound();
+        AudioSynth.resumeBgm();
       }
     });
 
@@ -1892,6 +2201,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (state.gameStarted) {
         state.gameActive = false;
         pushMessage("⏸️ 標記離開畫面，遊戲已暫停。");
+        AudioSynth.stopAeratorSound();
+        AudioSynth.stopWaterExchangeSound();
+        AudioSynth.pauseBgm();
       }
     });
   }
@@ -2097,6 +2409,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (isOnline) {
           state.gameStarted = true;
           state.gameActive = true;
+          AudioSynth.startBgm();
           pushMessage("💡 提示：點擊池水表面可投餵飼料；點擊害蟲螃蟹可將其消滅！");
         } else {
           pushMessage("請將鏡頭對準 AR 辨識圖卡即可開始體驗！");
@@ -2112,11 +2425,14 @@ document.addEventListener("DOMContentLoaded", () => {
     migrateLocalLeaderboardToServer();
     setupEvents();
     setupMarkerEvents();
+    
+    renderActionButtons();
 
     state.timeRemaining = 60;
     state.growth = 0;
     state.water = { ...pondConfig.initialWater };
     state.messages = [];
+    state.clams = Array.from(document.querySelectorAll('.clam-member'));
 
     // Trigger loop ticking
     requestAnimationFrame(updateGame);
