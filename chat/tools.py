@@ -636,7 +636,118 @@ TOOL_SCHEMAS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "resolve_site_navigation",
+            "description": "根據使用者要求的目標頁面，解析為對應的網站網址路由。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "destination": {
+                        "type": "string",
+                        "description": "使用者想前往的目的地描述（例如：水質監控、AR遊戲、公告、首頁、近期活動等）。",
+                    }
+                },
+                "required": ["destination"],
+            },
+        },
+    },
 ]
+
+
+def resolve_site_navigation(destination: str) -> dict:
+    dest = (destination or "").strip().lower()
+    
+    # 阻擋敏感或無權限後台路徑
+    if any(k in dest for k in ["admin", "後台", "cron", "manage", "delete", "edit"]):
+        return {
+            "allowed": False,
+            "reason": "安全性限制：無法導覽至系統管理或敏感操作頁面。"
+        }
+        
+    if "監控" in dest or "監測" in dest or "儀表板" in dest or "dashboard" in dest:
+        return {
+            "allowed": True,
+            "url": "/water/dashboard/",
+            "title": "個人魚池監控",
+            "message": "好的，水井龜這就帶您前往水質監控儀表板。"
+        }
+    elif "ar" in dest or "遊戲" in dest or "混養" in dest or "模擬" in dest:
+        return {
+            "allowed": True,
+            "url": "/water/ar-feed/",
+            "title": "AR 混養模擬遊戲",
+            "message": "好的，正在為您載入 AR 混養模擬遊戲。"
+        }
+    elif "ai" in dest or "諮詢" in dest or "聊天" in dest or "問答" in dest or "導覽" in dest:
+        return {
+            "allowed": True,
+            "url": "/chat/",
+            "title": "AI 養殖諮詢",
+            "message": "好的，正在為您切換至 AI 養殖諮詢主頁面。"
+        }
+    elif "公告" in dest or "最新公告" in dest or "notice" in dest:
+        return {
+            "allowed": True,
+            "url": "/notices/",
+            "title": "網站最新公告",
+            "message": "好的，水井龜帶您去查看網站最新公告。"
+        }
+    elif "活動" in dest or "近期活動" in dest or "event" in dest:
+        return {
+            "allowed": True,
+            "url": "/events/",
+            "title": "近期活動列表",
+            "message": "好的，正在為您打開近期活動列表。"
+        }
+    elif "故事" in dest or "地方故事" in dest or "story" in dest:
+        return {
+            "allowed": True,
+            "url": "/story/",
+            "title": "地方故事",
+            "message": "好的，正在帶您前往探索地方故事頁面。"
+        }
+    elif "usr" in dest or "成果" in dest or "aiot" in dest or "專案" in dest:
+        return {
+            "allowed": True,
+            "url": "/usr/",
+            "title": "USR 實踐與成果",
+            "message": "好的，正在帶您前往 USR 實踐與成果頁面。"
+        }
+    elif "連結" in dest or "相關連結" in dest or "link" in dest:
+        return {
+            "allowed": True,
+            "url": "/links/",
+            "title": "相關連結",
+            "message": "好的，為您打開相關連結頁面。"
+        }
+    elif "關於" in dest or "about" in dest:
+        return {
+            "allowed": True,
+            "url": "/about/",
+            "title": "關於我們",
+            "message": "好的，為您導向關於我們網頁。"
+        }
+    elif "聯絡" in dest or "contact" in dest:
+        return {
+            "allowed": True,
+            "url": "/contact/",
+            "title": "聯絡我們",
+            "message": "好的，正在為您導向聯絡我們頁面。"
+        }
+    elif "首頁" in dest or "home" in dest or "主頁" in dest:
+        return {
+            "allowed": True,
+            "url": "/",
+            "title": "首頁",
+            "message": "好的，正在為您回到水井村網站首頁。"
+        }
+        
+    return {
+        "allowed": False,
+        "reason": "未找到符合的公開頁面路由描述。請試試『首頁』、『水質監控』、『AR遊戲』、『網站公告』、『近期活動』或『USR專案』。"
+    }
 
 
 _TOOL_REGISTRY = {
@@ -649,6 +760,7 @@ _TOOL_REGISTRY = {
     "get_aerator_status": get_aerator_status,
     "get_pond_summary": get_pond_summary,
     "get_pond_history": get_pond_history,
+    "resolve_site_navigation": resolve_site_navigation,
 }
 
 

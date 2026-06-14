@@ -19,7 +19,39 @@
   const chatApi = panel.dataset.chatApi;
   const clearApi = panel.dataset.clearApi;
   const voiceApi = panel.dataset.voiceApi;
-  
+
+  function checkAndExecuteNavigation(text) {
+    if (!text) return text;
+    const navRegex = /\[NAVIGATE\]([\s\S]*?)\[\/NAVIGATE\]/;
+    const match = text.match(navRegex);
+    if (match) {
+      const content = match[1];
+      const lines = content.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+      let url = "";
+      let delay = 900;
+      lines.forEach(line => {
+        const colonIdx = line.indexOf(":");
+        if (colonIdx !== -1) {
+          const key = line.substring(0, colonIdx).trim().toLowerCase();
+          const val = line.substring(colonIdx + 1).trim();
+          if (key === "url") {
+            url = val;
+          } else if (key === "delay") {
+            delay = parseInt(val) || 900;
+          }
+        }
+      });
+      if (url) {
+        const cleanText = text.replace(navRegex, "").trim();
+        setTimeout(() => {
+          window.location.href = url;
+        }, delay);
+        return cleanText;
+      }
+    }
+    return text;
+  }
+
   const defaultInputPlaceholder = input ? (input.getAttribute("placeholder") || "") : "";
   // 語音輸入變數
   let mediaRecorder = null;
@@ -574,7 +606,10 @@
 
   function parseInlineMarkdown(text) {
     return text
-      .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+      .replace(/\[([^\]]+)\]\(\s*([^)]+?)\s*\)(?:\s*\(\s*\2\s*\))?/g, function(match, label, href) {
+        const cleanHref = href.trim();
+        return `<a href="${cleanHref}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+      })
       .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
       .replace(/\*(.+?)\*/g, "<em>$1</em>")
       .replace(/`(.+?)`/g, "<code>$1</code>");
@@ -670,7 +705,8 @@
       typing.remove();
       hideWaiting();
       if (response.ok) {
-        const botReply = data.reply || "我目前沒有找到合適的回覆。";
+        let botReply = data.reply || "我目前沒有找到合適的回覆。";
+        botReply = checkAndExecuteNavigation(botReply);
         addMessage("水井龜", botReply, "bot");
         saveMessage("水井龜", botReply, "bot");
       } else {

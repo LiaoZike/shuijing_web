@@ -5,12 +5,15 @@ pip install python-dotenv
 
 # 1.壓縮檔案
 cd ..
-rm .\shuijing.zip
+Remove-Item -Path .\shuijing.zip -ErrorAction SilentlyContinue
+Remove-Item -Path .\shuijing_static.zip -ErrorAction SilentlyContinue
 
-robocopy shuijing_web shuijing_web_clean /E /XD .venv __pycache__ staticfiles
+robocopy shuijing_web shuijing_web_clean /E /XD .venv __pycache__ staticfiles static
 Compress-Archive -Path shuijing_web_clean\* -DestinationPath shuijing.zip -Force
 Remove-Item -Recurse -Force shuijing_web_clean
-
+robocopy shuijing_web\static shuijing_static_clean\static /E /XD __pycache__
+Compress-Archive -Path shuijing_static_clean\* -DestinationPath shuijing_static.zip -Force
+Remove-Item -Recurse -Force shuijing_static_clean
 
 # 2.上傳zip到文件區
 https://www.pythonanywhere.com/user/web41243166/files/home/web41243166
@@ -19,6 +22,7 @@ https://www.pythonanywhere.com/user/web41243166/files/home/web41243166
 cd ~
 rm -rf shuijing
 unzip shuijing.zip -d shuijing
+unzip shuijing_static.zip -d shuijing
 
 # 4.更改權限/產生靜態檔案
 cd shuijing
@@ -26,9 +30,9 @@ chmod -R 755 /home/web41243166/shuijing/static
 python manage.py collectstatic
 chmod -R 755 /home/web41243166/shuijing/staticfiles
 chmod -R 755 /home/web41243166/shuijing/media
-chmod 644 /home/web41243166/shuijing/chat/templates/chat/chat.html
-chmod 755 /home/web41243166/shuijing/chat/templates/chat
 chmod 755 /home/web41243166/shuijing/chat/templates
+chmod 755 /home/web41243166/shuijing/chat/templates/chat
+chmod 644 /home/web41243166/shuijing/chat/templates/chat/chat.html
 
 find /home/web41243166/shuijing/media -type f -exec chmod 644 {} \;
 

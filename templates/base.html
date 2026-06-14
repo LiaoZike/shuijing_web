@@ -75,10 +75,6 @@
                     <li><a class="dropdown-item" href="{% url 'related_links' %}">在地商家連結</a></li>
                 </ul>
             </li>
-            <li class="nav-item">
-                <a class="nav-link {% if request.resolver_match.app_name == 'guide' %}active{% endif %}"
-                href="{% url 'guide:home' %}">互動導覽</a>
-            </li>
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle {% if 'event' in request.resolver_match.url_name or 'notice' in request.resolver_match.url_name %}active{% endif %}"
                 href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -88,6 +84,10 @@
                     <li><a class="dropdown-item" href="{% url 'notice_list' %}">最新公告</a></li>
                     <li><a class="dropdown-item" href="{% url 'event_list' %}">近期活動</a></li>
                 </ul>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.app_name == 'guide' %}active{% endif %}"
+                href="{% url 'guide:home' %}">互動導覽</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {% if request.resolver_match.namespace == 'water' and request.resolver_match.url_name != 'ar_feed' %}active{% endif %}"
@@ -451,7 +451,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 {% block link_js %}{% endblock %}
-<script src="{% static 'js/core/mascot_chat.js' %}?v=1.6"></script>
+<script src="{% static 'js/core/mascot_chat.js' %}?v=1.8"></script>
 {% block extra_js %}{% endblock %}
 {% block script %}{% endblock %}
 <script>

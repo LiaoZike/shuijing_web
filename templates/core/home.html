@@ -124,21 +124,42 @@
     <div class="container">
         <div class="section-heading">
             <p class="eyebrow">PLATFORM</p>
-            <h2>重要資訊先到位。</h2>
-            <p>登入、魚池地圖、警戒值設定，是水質平台最常用的三件事。</p>
+            <h2>重要資訊與新興科技。</h2>
+            <p>包含核心水質監控、AI 養殖諮詢與 AR 互動混養遊戲，提升您的養殖管理效率與科技化體驗。</p>
         </div>
         <div class="platform-grid">
-            <a href="{% url 'water:dashboard' %}" class="platform-card feature-card" data-aos="fade-up">
-                <i class="bi bi-droplet-half"></i>
+            <a href="{% url 'water:dashboard' %}" class="platform-card platform-card--monitor" data-aos="fade-up">
+                <div class="icon-wrapper"><i class="bi bi-droplet-half"></i></div>
                 <h3>個人魚池監控</h3>
                 <p>只顯示已綁定帳號的魚池，避免資料混在一起。</p>
                 <span>查看儀表板 <i class="bi bi-arrow-right"></i></span>
             </a>
-            <a href="{% url 'login_portal' %}?next={% url 'water:dashboard' %}" class="platform-card" data-aos="fade-up" data-aos-delay="80">
-                <i class="bi bi-map"></i>
+            {% if user.is_authenticated %}
+            <a href="{% url 'water:dashboard' %}" class="platform-card platform-card--map" data-aos="fade-up" data-aos-delay="80">
+                <div class="icon-wrapper"><i class="bi bi-map"></i></div>
+                <h3>地圖化感測器</h3>
+                <p>用池區示意圖標出感測器位置，旁邊直接設定警戒值。</p>
+                <span>查看配置地圖 <i class="bi bi-arrow-right"></i></span>
+            </a>
+            {% else %}
+            <a href="{% url 'login_portal' %}?next={% url 'water:dashboard' %}" class="platform-card platform-card--map" data-aos="fade-up" data-aos-delay="80">
+                <div class="icon-wrapper"><i class="bi bi-map"></i></div>
                 <h3>地圖化感測器</h3>
                 <p>用池區示意圖標出感測器位置，旁邊直接設定警戒值。</p>
                 <span>登入設定 <i class="bi bi-arrow-right"></i></span>
+            </a>
+            {% endif %}
+            <a href="{% url 'chat-page' %}" class="platform-card platform-card--ai" data-aos="fade-up" data-aos-delay="160">
+                <div class="icon-wrapper"><i class="bi bi-robot"></i></div>
+                <h3>AI 養殖諮詢</h3>
+                <p>引進 AI 科技解答養殖疑難，支援語音發問、水質異常診斷與混養策略建議。</p>
+                <span>開啟 AI 諮詢 <i class="bi bi-arrow-right"></i></span>
+            </a>
+            <a href="{% url 'water:ar_feed' %}" class="platform-card platform-card--ar" data-aos="fade-up" data-aos-delay="240">
+                <div class="icon-wrapper"><i class="bi bi-vr"></i></div>
+                <h3>AR 混養模擬遊戲</h3>
+                <p>將鏡頭對準實體辨識圖卡，體驗即時水車增氧、引水調節與消滅害蟲的科教互動。</p>
+                <span>開始 AR 體驗 <i class="bi bi-arrow-right"></i></span>
             </a>
         </div>
     </div>
