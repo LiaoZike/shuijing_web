@@ -306,6 +306,39 @@
           <a-entity id="aeratorSplashGroup"></a-entity>
         </a-entity>
 
+        <!-- Water exchange inlet pipe visual -->
+        <a-entity
+          id="waterExchangeAssembly"
+          position="0.36 0.045 -0.18"
+          rotation="0 -42 0"
+          scale="0.52 0.52 0.52"
+          visible="false"
+        >
+          <a-cylinder
+            position="0 0.025 0"
+            radius="0.024"
+            height="0.18"
+            rotation="0 0 90"
+            material="color: #1d5268; opacity: 0.82; transparent: true; roughness: 0.3"
+          ></a-cylinder>
+          <a-cylinder
+            position="-0.095 0.025 0"
+            radius="0.032"
+            height="0.035"
+            rotation="0 0 90"
+            material="color: #7ee8ff; opacity: 0.74; transparent: true; roughness: 0.2"
+          ></a-cylinder>
+          <a-cone
+            position="-0.155 0.010 0"
+            radius-bottom="0.026"
+            radius-top="0.010"
+            height="0.14"
+            rotation="0 0 70"
+            material="color: #90e0ef; opacity: 0.58; transparent: true; depthWrite: false"
+          ></a-cone>
+          <a-entity id="waterExchangeFlowGroup"></a-entity>
+        </a-entity>
+
         <a-entity id="feedGroup"></a-entity>
 
         <!-- 曝氣泡泡容器 -->
@@ -367,7 +400,6 @@
 
     <!-- 下方控制面板 -->
     <div class="control-panel">
-
       <div class="selected-card">
         <div>
           <div class="selected-name" id="sceneName">文蛤混養體驗池</div>
@@ -377,22 +409,21 @@
         </div>
 
         <div class="round-info" id="timeInfo">
-          剩餘時間 <span id="roundVal">60</span> 秒
+          ⏱️ <span id="roundVal">60</span>s | 🌱 <span id="growthVal">0</span>
         </div>
+      </div>
+
+      <!-- 成長值進度條 (空間節省、高度顯著) -->
+      <div class="progress-row">
+        <span class="progress-title">🌱 生物成長度</span>
+        <div class="progress-bar-wrapper">
+          <div id="growthBar" class="progress-bar-fill"></div>
+        </div>
+        <span class="progress-percent" id="growthPercentVal">0%</span>
       </div>
 
       <!-- 操作按鈕容器 -->
       <div class="action-buttons-container" id="actionButtonsContainer"></div>
-
-      <div class="progress-area">
-        <div class="progress-label">
-          <span>成長值</span>
-          <strong id="growthVal">0</strong>
-        </div>
-        <div class="progress-bar">
-          <div id="growthBar" class="progress-fill"></div>
-        </div>
-      </div>
 
       <div id="messageLog" class="message-log">
         請選擇養殖場景，並點擊按鈕來進行漁塭環境決策管理。

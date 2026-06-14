@@ -241,7 +241,7 @@ video#arjs-webcam {
   right: 8px;
   bottom: 8px;
   z-index: 25;
-  padding: 8px 14px;
+  padding: 10px 14px 8px 14px;
   border-radius: 16px;
   color: #fff;
   background: rgba(0, 20, 32, 0.85);
@@ -250,6 +250,48 @@ video#arjs-webcam {
   -webkit-backdrop-filter: blur(16px);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
   pointer-events: auto;
+}
+
+.progress-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 0 4px;
+}
+
+.progress-title {
+  font-size: 11px;
+  font-weight: 900;
+  color: #caf0f8;
+  white-space: nowrap;
+}
+
+.progress-bar-wrapper {
+  flex: 1;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.progress-bar-fill {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, #52b788, #74c69d);
+  box-shadow: 0 0 8px rgba(116, 198, 157, 0.6);
+  border-radius: 999px;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.progress-percent {
+  font-size: 11px;
+  font-weight: 900;
+  color: #7ee8ff;
+  min-width: 32px;
+  text-align: right;
+  font-family: monospace;
 }
 
 .selected-card {
@@ -374,49 +416,21 @@ video#arjs-webcam {
   text-decoration: none;
 }
 
-.progress-area {
-  margin-top: 6px;
-}
-
-.progress-label {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 2px;
-  font-size: 11px;
-  font-weight: 700;
-  color: #caf0f8;
-}
-
-.progress-bar {
-  width: 100%;
-  height: 6px;
-  border-radius: 999px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.progress-fill {
-  width: 0%;
-  height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #52b788, #74c69d);
-  box-shadow: 0 0 8px rgba(116, 198, 157, 0.5);
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
 
 .message-log {
   margin-top: 6px;
-  min-height: 24px;
-  padding: 4px 8px;
-  border-radius: 8px;
+  min-height: unset;
+  max-height: unset;
+  padding: 0;
+  border: none;
+  background: none;
+  box-shadow: none;
   font-size: 11px;
-  line-height: 1.5;
-  color: #e9fbff;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
-  max-height: 38px;
-  overflow-y: auto;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Environmental Weather Event Overlay */
@@ -942,9 +956,9 @@ video#arjs-webcam {
   .message-log {
     margin-top: 5px;
     font-size: 10px;
-    padding: 4px 7px;
-    min-height: 24px;
-    max-height: 34px;
+    padding: 0;
+    min-height: unset;
+    max-height: unset;
   }
 
   .result-card {

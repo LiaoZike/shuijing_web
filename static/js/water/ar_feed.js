@@ -1,3 +1,127 @@
+// Dynamic Web Audio API Sound Synthesizer
+const AudioSynth = {
+  ctx: null,
+  
+  init() {
+    if (!this.ctx) {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+  },
+  
+  playFeed() {
+    this.init();
+    if (!this.ctx) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    const now = this.ctx.currentTime;
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(350, now);
+    osc.frequency.exponentialRampToValueAtTime(1400, now + 0.12);
+    gain.gain.setValueAtTime(0.45, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+    osc.start(now);
+    osc.stop(now + 0.13);
+  },
+  
+  playSquish() {
+    this.init();
+    if (!this.ctx) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    const now = this.ctx.currentTime;
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(220, now);
+    osc.frequency.exponentialRampToValueAtTime(40, now + 0.15);
+    gain.gain.setValueAtTime(0.75, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+    osc.start(now);
+    osc.stop(now + 0.16);
+  },
+  
+  playCrunch() {
+    this.init();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const bufferSize = this.ctx.sampleRate * 0.18;
+    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      const t = i / bufferSize;
+      const noise = Math.random() * 2 - 1;
+      const mod = Math.sin(t * 120);
+      data[i] = noise * (1 - t) * (mod > 0 ? 0.7 : 0.2);
+    }
+    const noiseNode = this.ctx.createBufferSource();
+    noiseNode.buffer = buffer;
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.70, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+    noiseNode.connect(gain);
+    gain.connect(this.ctx.destination);
+    noiseNode.start(now);
+    noiseNode.stop(now + 0.19);
+  },
+  
+  playClick() {
+    this.init();
+    if (!this.ctx) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    const now = this.ctx.currentTime;
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(650, now);
+    gain.gain.setValueAtTime(0.35, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+    osc.start(now);
+    osc.stop(now + 0.05);
+  },
+  
+  playWin() {
+    this.init();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const notes = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5 arpeggio
+    notes.forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+      gain.gain.setValueAtTime(0.45, now + idx * 0.12);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.35);
+      osc.start(now + idx * 0.12);
+      osc.stop(now + idx * 0.12 + 0.36);
+    });
+  },
+  
+  playLose() {
+    this.init();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(330, now);
+    osc.frequency.linearRampToValueAtTime(110, now + 0.65);
+    gain.gain.setValueAtTime(0.50, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+    osc.start(now);
+    osc.stop(now + 0.66);
+  }
+};
+
 // Global Game State
 const state = {
   gameStarted: false,
@@ -197,13 +321,30 @@ AFRAME.registerComponent('fish-swim-simulation', {
       }
     }
 
+    // 6. Aerator Avoidance Force (Steer away from aerator assembly at x = -0.50, z = 0)
+    const aeratorAvoidanceForce = new THREE.Vector3();
+    const aeratorX = -0.50;
+    const aeratorZ = 0;
+    const dx = pos.x - aeratorX;
+    const dz = pos.z - aeratorZ;
+    const distToAerator = Math.sqrt(dx * dx + dz * dz);
+    if (distToAerator < 0.16) {
+      const forceMag = (0.16 - distToAerator) * 4.0;
+      if (distToAerator > 0.001) {
+        aeratorAvoidanceForce.set(dx, 0, dz).normalize().multiplyScalar(forceMag);
+      } else {
+        aeratorAvoidanceForce.set(1, 0, 0).multiplyScalar(forceMag);
+      }
+    }
+
     // Combine Steering Forces
     const steerForce = new THREE.Vector3()
       .add(wanderForce)
       .add(boundaryForce)
       .add(heightForce)
       .add(separationForce)
-      .add(foodForce);
+      .add(foodForce)
+      .add(aeratorAvoidanceForce);
 
     // Update Velocity
     this.velocity.addScaledVector(steerForce, dt);
@@ -326,11 +467,28 @@ AFRAME.registerComponent('shrimp-move-simulation', {
       }
     }
 
+    // 4. Aerator Avoidance Force (Steer away from aerator assembly at x = -0.50, z = 0)
+    const aeratorAvoidanceForce = new THREE.Vector3();
+    const aeratorX = -0.50;
+    const aeratorZ = 0;
+    const dx = pos.x - aeratorX;
+    const dz = pos.z - aeratorZ;
+    const distToAerator = Math.sqrt(dx * dx + dz * dz);
+    if (distToAerator < 0.16) {
+      const forceMag = (0.16 - distToAerator) * 4.0;
+      if (distToAerator > 0.001) {
+        aeratorAvoidanceForce.set(dx, 0, dz).normalize().multiplyScalar(forceMag);
+      } else {
+        aeratorAvoidanceForce.set(1, 0, 0).multiplyScalar(forceMag);
+      }
+    }
+
     // Combine forces
     const force = new THREE.Vector3()
       .add(wanderForce)
       .add(boundaryForce)
-      .add(foodForce);
+      .add(foodForce)
+      .add(aeratorAvoidanceForce);
 
     this.velocity.addScaledVector(force, dt);
     
@@ -405,6 +563,10 @@ AFRAME.registerComponent('food-pellet', {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
+  window.addEventListener('pointerdown', () => {
+    AudioSynth.init();
+  }, { once: true });
+
   const initialNode = document.getElementById("initial-water-data");
   const glbExistsNode = document.getElementById("glb-exists-data");
 
@@ -520,6 +682,7 @@ document.addEventListener("DOMContentLoaded", () => {
     restartBtn: document.getElementById("restartBtn"),
     growthVal: document.getElementById("growthVal"),
     growthBar: document.getElementById("growthBar"),
+    growthPercentVal: document.getElementById("growthPercentVal"),
     messageLog: document.getElementById("messageLog"),
     resultOverlay: document.getElementById("resultOverlay"),
     resultBadge: document.getElementById("resultBadge"),
@@ -533,6 +696,8 @@ document.addEventListener("DOMContentLoaded", () => {
     aeratorAssembly: document.getElementById("aeratorAssembly"),
     aeratorWheel: document.getElementById("aeratorWheel"),
     aeratorSplashGroup: document.getElementById("aeratorSplashGroup"),
+    waterExchangeAssembly: document.getElementById("waterExchangeAssembly"),
+    waterExchangeFlowGroup: document.getElementById("waterExchangeFlowGroup"),
     feedGroup: document.getElementById("feedGroup"),
     bubbleGroup: document.getElementById("bubbleGroup"),
   };
@@ -783,10 +948,17 @@ document.addEventListener("DOMContentLoaded", () => {
     el.sceneName.textContent = pondConfig.name;
     el.sceneDesc.textContent = pondConfig.desc;
     el.roundVal.textContent = state.timeRemaining;
-    el.growthVal.textContent = Math.round(state.growth);
+    if (el.growthVal) {
+      el.growthVal.textContent = Math.round(state.growth);
+    }
 
     const growthPercent = clamp(state.growth, 0, 100);
-    el.growthBar.style.width = `${growthPercent}%`;
+    if (el.growthBar) {
+      el.growthBar.style.width = `${growthPercent}%`;
+    }
+    if (el.growthPercentVal) {
+      el.growthPercentVal.textContent = `${Math.round(growthPercent)}%`;
+    }
 
     // Visual model size changes based on biological growth
     const scaleFactor = 1.0 + (state.growth * 0.006);
@@ -831,6 +1003,7 @@ document.addEventListener("DOMContentLoaded", () => {
     aerateBtn.textContent = state.aeratorOn ? "🔌 關閉曝氣水車" : "💨 開啟曝氣水車";
     aerateBtn.addEventListener("click", () => {
       if (state.timeRemaining <= 0) return;
+      AudioSynth.playClick();
       state.aeratorOn = !state.aeratorOn;
       updateAeratorVisual(0);
       pushMessage(state.aeratorOn ? "⚡ 啟動增氧水車！消耗成長值但能持續提升溶氧。" : "🔌 關閉增氧水車。");
@@ -844,7 +1017,9 @@ document.addEventListener("DOMContentLoaded", () => {
     exchangeBtn.textContent = state.waterExchangeOn ? "🛑 停止換水" : "💧 引水換水";
     exchangeBtn.addEventListener("click", () => {
       if (state.timeRemaining <= 0) return;
+      AudioSynth.playClick();
       state.waterExchangeOn = !state.waterExchangeOn;
+      updateWaterExchangeVisual();
       pushMessage(state.waterExchangeOn ? "🌊 開始引水調節！持續控制藻相並降低濁度。" : "🛑 停止引水調節。");
       renderActionButtons();
     });
@@ -854,7 +1029,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const finishBtn = document.createElement("button");
     finishBtn.className = "action-btn btn-action-finish";
     finishBtn.textContent = "完成體驗";
-    finishBtn.addEventListener("click", finishExperience);
+    finishBtn.addEventListener("click", () => {
+      AudioSynth.playClick();
+      finishExperience();
+    });
     el.actionButtonsContainer.appendChild(finishBtn);
   }
 
@@ -929,6 +1107,8 @@ document.addEventListener("DOMContentLoaded", () => {
   function spawnFeedPellet(x, z) {
     if (!el.feedGroup) return;
 
+    AudioSynth.playFeed();
+
     const pellet = document.createElement("a-sphere");
     pellet.className = "food-pellet";
     pellet.setAttribute("radius", "0.012");
@@ -946,14 +1126,16 @@ document.addEventListener("DOMContentLoaded", () => {
     if (crabEl.dataset.squished === "true") return;
     crabEl.dataset.squished = "true";
 
+    AudioSynth.playSquish();
+
     state.growth = Math.min(100, state.growth + 10);
     pushMessage("💥 成功消滅螃蟹侵入者！獲得成長值 +10。");
 
     // Flatten squash animation
     crabEl.setAttribute('animation', 'property: scale; to: 1 0.05 1; dur: 200; easing: easeOutQuad');
     
-    // Fade elements
-    crabEl.querySelectorAll('a-box, a-sphere').forEach(child => {
+    // Fade elements (including the red target ring)
+    crabEl.querySelectorAll('a-box, a-sphere, a-ring').forEach(child => {
       child.setAttribute('animation__fade', 'property: material.opacity; to: 0; dur: 400');
       child.setAttribute('material', 'transparent: true');
     });
@@ -1047,14 +1229,20 @@ document.addEventListener("DOMContentLoaded", () => {
     crab.dataset.speed = "0.026"; // Crawl speed (m/s)
     crab.dataset.squished = "false";
 
-    // Adding a red glowing target ring at the bottom of the crab so it is always visible/tappable
+    // Adding a red glowing target ring at the bottom of the crab so it is always visible/tappable (enlarged for mobile usability)
     const ring = document.createElement('a-ring');
-    ring.setAttribute('radius-inner', '0.06');
-    ring.setAttribute('radius-outer', '0.08');
+    ring.setAttribute('radius-inner', '0.12');
+    ring.setAttribute('radius-outer', '0.13');
     ring.setAttribute('rotation', '-90 0 0');
-    ring.setAttribute('material', 'color: #ff3b3b; shader: flat; opacity: 0.90; transparent: true; depthWrite: false');
+    ring.setAttribute('material', 'color: #ff3b3b; shader: flat; opacity: 0.85; transparent: true; depthWrite: false');
     ring.setAttribute('animation', 'property: scale; from: 0.85 0.85 0.85; to: 1.15 1.15 1.15; dir: alternate; dur: 350; loop: true');
     crab.appendChild(ring);
+
+    // Large invisible hit target sphere (radius 0.14m) to make tapping easier on mobile
+    const hitBox = document.createElement('a-sphere');
+    hitBox.setAttribute('radius', '0.14');
+    hitBox.setAttribute('material', 'opacity: 0; transparent: true; depthWrite: false; shader: flat');
+    crab.appendChild(hitBox);
 
     if (glbExists.crab) {
       const model = document.createElement('a-entity');
@@ -1141,6 +1329,7 @@ document.addEventListener("DOMContentLoaded", () => {
         targetClam.setAttribute('rotation', '90 45 180');
         targetClam.removeAttribute('class');
         targetClam.dataset.eaten = "true";
+        AudioSynth.playCrunch();
         
         // Hide the clam's green ring when eaten
         const ring = document.getElementById(targetClam.id + "_ring");
@@ -1222,16 +1411,45 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 460);
   }
 
+  function updateWaterExchangeVisual() {
+    if (!el.waterExchangeAssembly) return;
+    el.waterExchangeAssembly.setAttribute("visible", state.waterExchangeOn ? "true" : "false");
+  }
+
+  function spawnWaterExchangeStream() {
+    if (!el.waterExchangeFlowGroup) return;
+
+    const stream = document.createElement("a-sphere");
+    const x = -0.135 + Math.random() * 0.018;
+    const y = 0.006 + Math.random() * 0.010;
+    const z = (Math.random() - 0.5) * 0.022;
+    const endX = x - 0.105 - Math.random() * 0.045;
+    const endY = y - 0.018 - Math.random() * 0.008;
+    const endZ = z + (Math.random() - 0.5) * 0.034;
+    const size = 0.005 + Math.random() * 0.007;
+
+    stream.setAttribute("radius", String(size));
+    stream.setAttribute("material", "color: #7ee8ff; opacity: 0.78; transparent: true; depthWrite: false");
+    stream.setAttribute("position", `${x} ${y} ${z}`);
+    stream.setAttribute("animation", `property: position; to: ${endX} ${endY} ${endZ}; dur: 520; easing: easeOutQuad`);
+    stream.setAttribute("animation__fade", "property: material.opacity; from: 0.78; to: 0; delay: 260; dur: 240");
+
+    el.waterExchangeFlowGroup.appendChild(stream);
+    setTimeout(() => {
+      stream.remove();
+    }, 560);
+  }
+
   function spawnExchangeParticle() {
     if (!el.feedGroup) return;
     const particle = document.createElement("a-sphere");
     
-    // Swirl inwards from edge
-    const angle = Math.random() * Math.PI * 2;
-    const startX = 0.56 * Math.cos(angle);
-    const startZ = 0.56 * Math.sin(angle);
-    const endX = 0.18 * Math.cos(angle);
-    const endZ = 0.18 * Math.sin(angle);
+    // Flow inward from the inlet side.
+    const angle = -0.45 + (Math.random() - 0.5) * 0.55;
+    const startX = 0.52 * Math.cos(angle);
+    const startZ = 0.52 * Math.sin(angle);
+    const endX = 0.14 * Math.cos(angle + 0.15);
+    const endZ = 0.14 * Math.sin(angle + 0.15);
 
     particle.setAttribute("radius", "0.007");
     particle.setAttribute("material", "color: #90e0ef; opacity: 0.75; transparent: true");
@@ -1251,6 +1469,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const dt = Math.min((time - lastTime) / 1000, 0.1);
     lastTime = time;
     updateAeratorVisual(dt);
+    updateWaterExchangeVisual();
 
     if (state.gameActive && state.timeRemaining > 0) {
       // 1. Natural Parameter decays & Rotting Food penalties
@@ -1296,6 +1515,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Spawn water exchange inward particles
         if (time - lastExchangeTime > 160) {
           spawnExchangeParticle();
+          spawnWaterExchangeStream();
           lastExchangeTime = time;
         }
       }
@@ -1550,6 +1770,13 @@ document.addEventListener("DOMContentLoaded", () => {
   function finishExperience() {
     state.gameActive = false;
     const result = calculateResult();
+
+    // Trigger Win or Lose sounds
+    if (result.score >= 60 && state.isGameOverReason === "") {
+      AudioSynth.playWin();
+    } else {
+      AudioSynth.playLose();
+    }
 
     // Turn off actuators
     state.aeratorOn = false;
@@ -1861,6 +2088,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const startBtn = document.getElementById("startGameBtn");
     if (startBtn) {
       startBtn.addEventListener("click", () => {
+        AudioSynth.init();
         const overlay = document.getElementById("instructionsOverlay");
         if (overlay) overlay.classList.add("hidden");
         state.instructionsCleared = true;
