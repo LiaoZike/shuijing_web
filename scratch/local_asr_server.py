@@ -238,8 +238,9 @@ def load_model(model_id: str, model_dir: Path, device_arg: str) -> None:
     try:
         import numpy as np
         print("[MODEL] Warming up GPU/CUDA context with a dummy forward pass...")
-        dummy_pcm = np.zeros(16000, dtype=np.float32)
-        pipe(dummy_pcm)
+        # 使用 0.1 秒的靜音音訊並限制生成為 3 個 token，避免 Whisper 因為靜音產生長字串生成循環，以加速啟動
+        dummy_pcm = np.zeros(1600, dtype=np.float32)
+        pipe(dummy_pcm, generate_kwargs={"max_new_tokens": 3})
         print("[MODEL] Warm-up completed successfully.")
     except Exception as e:
         print(f"[WARN] Model warm-up failed (non-fatal): {e}")

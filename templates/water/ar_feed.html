@@ -354,7 +354,7 @@
     <div class="top-hud">
       <div class="brand">
         <div class="brand-title">水境 AR 漁塭管理任務</div>
-        <div class="brand-subtitle">請將鏡頭對準辨識圖卡體驗</div>
+        <div class="brand-subtitle">請對準圖卡體驗 (<a href="{% static 'water/assets/ar_code.png' %}" target="_blank" style="color: #7ee8ff; text-decoration: underline;">點此取得辨識圖卡</a>)</div>
       </div>
 
       <div id="markerStatus" class="marker-status offline">
@@ -471,6 +471,20 @@
         <div class="instructions-title">水境 AR 漁塭管理任務</div>
         <div class="instructions-subtitle">操作與學習指南</div>
         <div class="instructions-body">
+          <!-- 顯眼的圖卡下載橫幅 -->
+          <div class="ar-code-banner" style="background: linear-gradient(135deg, rgba(74, 201, 226, 0.15) 0%, rgba(30, 144, 255, 0.08) 100%); border: 1.5px solid rgba(74, 201, 226, 0.45); border-radius: 10px; padding: 12px 16px; margin: 12px 0 18px 0; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(0,0,0,0.25);">
+            <div style="display: flex; align-items: center; gap: 10px; text-align: left;">
+              <span style="font-size: 22px;">📷</span>
+              <div>
+                <div style="font-size: 13px; font-weight: bold; color: #fff; margin-bottom: 2px;">第一步：準備 AR 辨識圖卡</div>
+                <div style="font-size: 11px; color: rgba(255,255,255,0.75);">請開啟圖卡並用手機鏡頭對準它以載入 3D 魚池</div>
+              </div>
+            </div>
+            <a href="{% static 'water/assets/ar_code.png' %}" target="_blank" style="background: #4cc9f0; color: #0f1c23; padding: 7px 14px; border-radius: 6px; font-size: 12px; font-weight: bold; text-decoration: none; display: inline-block; box-shadow: 0 0 10px rgba(76,201,240,0.3); transition: all 0.2s;" onmouseover="this.style.transform='scale(1.05)'; this.style.background='#3a0ca3'; this.style.color='#fff';" onmouseout="this.style.transform='scale(1)'; this.style.background='#4cc9f0'; this.style.color='#0f1c23';">
+              點此開啟
+            </a>
+          </div>
+
           <p>歡迎來到生態混養池！請在 <strong>60 秒</strong> 內維持水質良好並守護文蛤：</p>
           
           <p><strong>⚙️ 核心操作：</strong></p>

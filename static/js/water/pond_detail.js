@@ -738,6 +738,13 @@
                 saveAeratorAjax(draggedElement.dataset.aeratorId);
             }
         }
+        if (isDraggingOccurred) {
+            ignoreNextMapClick = true;
+            window.setTimeout(() => {
+                ignoreNextMapClick = false;
+            }, 250);
+        }
+        isDraggingOccurred = false;
         draggedElement = null;
         document.removeEventListener('mousemove', onDragMove);
         document.removeEventListener('mouseup', onDragEnd);
@@ -756,10 +763,13 @@
             draggedElement.classList.remove('dragging');
             saveGatesAjax();
         }
-        ignoreNextMapClick = true;
-        window.setTimeout(() => {
-            ignoreNextMapClick = false;
-        }, 250);
+        if (isDraggingOccurred) {
+            ignoreNextMapClick = true;
+            window.setTimeout(() => {
+                ignoreNextMapClick = false;
+            }, 250);
+        }
+        isDraggingOccurred = false;
         draggedElement = null;
         document.removeEventListener('mousemove', onGateDragMove);
         document.removeEventListener('mouseup', onGateDragEnd);

@@ -484,7 +484,7 @@ def regenerate_token(request, pond):
     return {"status": "success", "message": f"感測器 {sensor.name} 的上傳金鑰已更新。", "sensor": sensor}
 
 
-@login_required(login_url="login_portal")
+@csrf_exempt
 def voice_transcribe(request):
     if request.method != "POST":
         return JsonResponse({"status": "error", "error": "Only POST method is allowed."}, status=405)
